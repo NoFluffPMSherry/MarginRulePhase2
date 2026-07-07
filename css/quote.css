@@ -32,6 +32,7 @@
 .gtype-used{color:#F79009}
 .gprice{font-size:16px;font-weight:800;color:var(--ink)}
 .gcapd{font-size:9px;font-weight:800;color:var(--amber);background:var(--amber-lt);border-radius:3px;padding:0 4px;margin-top:1px}
+.gcondtag{font-size:9px;font-weight:800;color:#7A5AF8;background:#F4EEFF;border-radius:3px;padding:0 4px;margin-top:1px}
 .gcell-sel .gcell-in{background:#EAF2FE;box-shadow:inset 0 0 0 2px #1D6FE0}
 .gcorner{position:absolute;top:0;right:0;width:0;height:0;border-top:16px solid var(--green);border-left:16px solid transparent}
 .gcorner svg{position:absolute;top:-15px;right:0;color:#fff}

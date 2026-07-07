@@ -159,8 +159,12 @@
 .vage-num .unit{padding:0 10px;font-size:12px;color:var(--text-3);font-weight:700;background:var(--surface-2);align-self:stretch;display:flex;align-items:center;border-left:1px solid var(--border)}
 .vage-eff{display:flex;flex-wrap:wrap;gap:7px;align-items:center;padding:13px 15px;background:var(--surface-2);border:1px solid #EDEFF2;border-radius:11px}
 .vage-eff-lbl{font-size:10.5px;font-weight:800;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-right:2px}
+.vage-tog{font-family:inherit;cursor:pointer;transition:.1s}
+.vage-tog:disabled{cursor:default}
 .vage-ok{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;padding:4px 11px;border-radius:999px;background:var(--blue-lt);color:var(--blue);border:1px solid #BBD3F7}
 .vage-no{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:700;padding:4px 11px;border-radius:999px;background:var(--red-lt);color:var(--red);border:1px solid #FECDCA;text-decoration:line-through;text-decoration-color:rgba(217,45,32,.5)}
+.vage-tog.vage-ok:hover:not(:disabled){background:#CFE2FB}
+.vage-tog.vage-no:hover:not(:disabled){background:#FCDBD8}
 
 @media(max-width:1160px){.bl{grid-template-columns:1fr!important}.rail{position:static}}
 

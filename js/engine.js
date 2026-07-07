@@ -101,11 +101,12 @@ const EXCEPTION_GROUPS = [
 ];
 const NOT_ACCEPTABLE = ['Used','Parallel','Aftermarket','Recon / Exchange'];
 
-/* vehicle-age gate: when the vehicle is younger than maxYears, only OEM is acceptable */
+/* vehicle-age gate: when the vehicle is younger than maxYears, only allowedTypes are acceptable */
 const CURRENT_YEAR = 2026;
-const VEHICLE_AGE_RULE_INIT = { enabled:true, maxYears:3 };
+const VEHICLE_AGE_RULE_INIT = { enabled:true, maxYears:3, allowedTypes:['oem'] };
 const vehicleAge = year => CURRENT_YEAR - year;
-const ageForcesOEM = (year, ageRule) => !!(ageRule && ageRule.enabled && vehicleAge(year) < ageRule.maxYears);
+const ageRuleActive = (year, ageRule) => !!(ageRule && ageRule.enabled && vehicleAge(year) < ageRule.maxYears);
+const ageAllowsType = (typeId, year, ageRule) => !ageRuleActive(year, ageRule) || (ageRule.allowedTypes||[]).includes(typeId);
 
 const PT_COLOR = id => (PART_TYPES_INIT.find(p=>p.id===id)||{}).color || '#98A2B3';
 const PT_NAME  = id => (PART_TYPES_INIT.find(p=>p.id===id)||{}).name || id;
@@ -215,5 +216,31 @@ const COND_SAMPLE = {
   offers:{ oem:{list:659.80,cost:527.84}, parallel:{list:659.80,cost:290.00}, aftermarket:{list:659.80,cost:305.00} },
 };
 
-window.MRO = { METHODS, CAP_TYPES, resolveRule, clauseValue, isNA, fmt, fmt0, PART_TYPES_INIT, SAMPLE_PARTS, EXCEPTION_GROUPS, NOT_ACCEPTABLE, PT_COLOR, PT_NAME, CURRENT_YEAR, VEHICLE_AGE_RULE_INIT, vehicleAge, ageForcesOEM,
-  COND_PREDICATES, COND_OUTCOMES, COND_CAP_TYPES, resolveConditional, condMatches, typeAvailable, COND_RULES_INIT, COND_SAMPLE };
+/* ══════════════════ PERSISTENCE — bridges the Margin Rules screen and Check Price ══════════════════
+   Static site, no backend: "Save Changes" writes here, Check Price reads it on load. Falls back to
+   the INIT constants above whenever nothing has been saved yet (or storage is unavailable). */
+const STORAGE_KEY = 'mro_rule_config_v1';
+function loadRuleConfig(){
+  try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : null; }
+  catch(e){ return null; }
+}
+function saveRuleConfig(cfg){
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg)); return true; }
+  catch(e){ return false; }
+}
+function getActiveTypes(){
+  const saved = loadRuleConfig();
+  return (saved && Array.isArray(saved.types) && saved.types.length) ? saved.types : PART_TYPES_INIT;
+}
+function getActiveAgeRule(){
+  const saved = loadRuleConfig();
+  return (saved && saved.ageRule) ? saved.ageRule : VEHICLE_AGE_RULE_INIT;
+}
+function getActiveCondRules(){
+  const saved = loadRuleConfig();
+  return (saved && Array.isArray(saved.condRules)) ? saved.condRules : COND_RULES_INIT;
+}
+
+window.MRO = { METHODS, CAP_TYPES, resolveRule, clauseValue, isNA, fmt, fmt0, PART_TYPES_INIT, SAMPLE_PARTS, EXCEPTION_GROUPS, NOT_ACCEPTABLE, PT_COLOR, PT_NAME, CURRENT_YEAR, VEHICLE_AGE_RULE_INIT, vehicleAge, ageRuleActive, ageAllowsType,
+  COND_PREDICATES, COND_OUTCOMES, COND_CAP_TYPES, resolveConditional, condMatches, typeAvailable, COND_RULES_INIT, COND_SAMPLE,
+  loadRuleConfig, saveRuleConfig, getActiveTypes, getActiveAgeRule, getActiveCondRules };

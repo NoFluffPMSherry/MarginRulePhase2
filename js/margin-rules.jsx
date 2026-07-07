@@ -1,10 +1,10 @@
 (function(){
 const { useState, useMemo } = React;
 const { METHODS, CAP_TYPES, resolveRule, isNA, fmt,
-        PART_TYPES_INIT, SAMPLE_PARTS, EXCEPTION_GROUPS, NOT_ACCEPTABLE,
-        VEHICLE_AGE_RULE_INIT,
+        SAMPLE_PARTS, EXCEPTION_GROUPS, NOT_ACCEPTABLE,
         COND_PREDICATES, COND_OUTCOMES, COND_CAP_TYPES, resolveConditional, condMatches,
-        COND_RULES_INIT, COND_SAMPLE } = window.MRO;
+        COND_SAMPLE,
+        saveRuleConfig, getActiveTypes, getActiveAgeRule, getActiveCondRules } = window.MRO;
 const { TopNav } = window.MROShared;
 
 /* ─── value input ─── */
@@ -179,7 +179,7 @@ function SummaryCard({ types, ageRule, condRules }){
         <div className="sum-li" key={pt.id}><span className="bullet">•</span><span><b>{pt.name}:</b> {line(pt)}</span></div>
       ))}
       {ageRule && ageRule.enabled && (
-        <div className="sum-li"><span className="bullet">•</span><span><b>Vehicle age:</b> OEM only if under {ageRule.maxYears} years old</span></div>
+        <div className="sum-li"><span className="bullet">•</span><span><b>Vehicle age:</b> {types.filter(t=>(ageRule.allowedTypes||[]).includes(t.id)).map(t=>t.name).join(' / ') || 'nothing'} only if under {ageRule.maxYears} years old</span></div>
       )}
       {(condRules||[]).filter(r=>r.enabled).map(r=>{
         const nm = id => (types.find(t=>t.id===id)||{}).name || id;
@@ -423,14 +423,20 @@ function ConditionalRules({ rules, setRules, types }){
   );
 }
 
-/* ─── vehicle age rule (rule-level OEM-only gate) ─── */
-function VehicleAgeRule({ rule, setRule }){
-  const blocked = ['Aftermarket','Recon / Exchange','Parallel','Recycled','Used'];
+/* ─── vehicle age rule (rule-level acceptable-part-types gate) ─── */
+function VehicleAgeRule({ rule, setRule, types }){
+  const allowed = rule.allowedTypes || [];
+  const allowedNames = types.filter(t=>allowed.includes(t.id)).map(t=>t.name).join(' / ') || 'nothing';
+  const toggle = id => {
+    if(!rule.enabled) return;
+    const next = allowed.includes(id) ? allowed.filter(x=>x!==id) : [...allowed, id];
+    setRule({...rule, allowedTypes:next});
+  };
   return (
     <div className="sec">
       <div className="sec-head">
         <div className="sec-title">Vehicle Age Rule</div>
-        <span className="count">{rule.enabled ? `OEM only under ${rule.maxYears} yrs` : 'Off'}</span>
+        <span className="count">{rule.enabled ? `${allowedNames} only under ${rule.maxYears} yrs` : 'Off'}</span>
       </div>
       <div className="sec-body">
         <div className={"vage"+(rule.enabled?'':' off')}>
@@ -439,13 +445,20 @@ function VehicleAgeRule({ rule, setRule }){
             <div className="vage-sent">
               If the vehicle is less than
               <span className="vage-num"><input type="number" min="1" max="15" value={rule.maxYears} disabled={!rule.enabled} onChange={e=>setRule({...rule, maxYears:Math.max(1,parseInt(e.target.value)||1)})}/><span className="unit">yrs</span></span>
-              old, <b>only OEM parts are acceptable</b>.
+              old, only <b>{allowedNames}</b> parts are acceptable.
             </div>
           </div>
           <div className="vage-eff">
-            <span className="vage-eff-lbl">Effect</span>
-            <span className="vage-ok"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12l5 5L20 7"/></svg>OEM</span>
-            {blocked.map(b=><span className="vage-no" key={b}>{b}</span>)}
+            <span className="vage-eff-lbl">Effect · click to toggle</span>
+            {types.map(t=>{
+              const on = allowed.includes(t.id);
+              return (
+                <button key={t.id} type="button" className={"vage-tog "+(on?'vage-ok':'vage-no')} disabled={!rule.enabled} onClick={()=>toggle(t.id)}>
+                  {on && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12l5 5L20 7"/></svg>}
+                  {t.name}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -544,14 +557,25 @@ function Exceptions({ groups, setGroups }){
 
 /* ═══════════════ RULE BUILDER PAGE ═══════════════ */
 function RuleBuilder(){
-  const [types, setTypes] = useState(PART_TYPES_INIT);
+  const [types, setTypes] = useState(getActiveTypes());
   const [focusId, setFocusId] = useState('oem');
   const [samplePart, setSamplePart] = useState(SAMPLE_PARTS[0]);
   const [exceptions, setExceptions] = useState(EXCEPTION_GROUPS);
-  const [ageRule, setAgeRule] = useState(VEHICLE_AGE_RULE_INIT);
-  const [condRules, setCondRules] = useState(COND_RULES_INIT);
+  const [ageRule, setAgeRule] = useState(getActiveAgeRule());
+  const [condRules, setCondRules] = useState(getActiveCondRules());
+  const [saved, setSaved] = useState(false);
   const focusPt = types.find(t=>t.id===focusId) || types[0];
   const updateType = pt => setTypes(types.map(t=>t.id===pt.id?pt:t));
+  const handleSave = () => {
+    saveRuleConfig({ types, ageRule, condRules });
+    setSaved(true);
+    setTimeout(()=>setSaved(false), 2000);
+  };
+  const handleCancel = () => {
+    setTypes(getActiveTypes());
+    setAgeRule(getActiveAgeRule());
+    setCondRules(getActiveCondRules());
+  };
 
   return (
     <>
@@ -600,7 +624,7 @@ function RuleBuilder(){
               </div>
             </div>
 
-            <VehicleAgeRule rule={ageRule} setRule={setAgeRule}/>
+            <VehicleAgeRule rule={ageRule} setRule={setAgeRule} types={types}/>
             <ConditionalRules rules={condRules} setRules={setCondRules} types={types}/>
             <Exceptions groups={exceptions} setGroups={setExceptions}/>
           </div>
@@ -608,9 +632,12 @@ function RuleBuilder(){
           <div className="rail">
             <ExamplePanel pt={focusPt} samplePart={samplePart} setSamplePart={setSamplePart}/>
             <SummaryCard types={types} ageRule={ageRule} condRules={condRules}/>
-            <div className="rail-actions">
-              <button className="btn btn-ghost btn-lg" style={{justifyContent:'center'}}>Cancel</button>
-              <button className="btn btn-green btn-lg" style={{justifyContent:'center'}}>Save Changes</button>
+            <div className="rail-actions" style={{flexDirection:'column',gap:8}}>
+              <div style={{display:'flex',gap:8,width:'100%'}}>
+                <button className="btn btn-ghost btn-lg" style={{justifyContent:'center',flex:1}} onClick={handleCancel}>Cancel</button>
+                <button className="btn btn-green btn-lg" style={{justifyContent:'center',flex:1}} onClick={handleSave}>{saved ? 'Saved ✓' : 'Save Changes'}</button>
+              </div>
+              <div style={{fontSize:11.5,color:'var(--text-3)',textAlign:'center'}}>Saved rules apply immediately on Check Price.</div>
             </div>
           </div>
         </div>

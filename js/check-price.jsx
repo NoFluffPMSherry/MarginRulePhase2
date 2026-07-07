@@ -1,7 +1,8 @@
 (function(){
 const { useState, useEffect } = React;
-const { METHODS, CAP_TYPES, resolveRule, fmt,
-        PART_TYPES_INIT, VEHICLE_AGE_RULE_INIT, vehicleAge, ageForcesOEM } = window.MRO;
+const { METHODS, CAP_TYPES, resolveRule, resolveConditional, fmt,
+        PART_TYPES_INIT, vehicleAge, ageRuleActive, ageAllowsType,
+        getActiveTypes, getActiveAgeRule, getActiveCondRules } = window.MRO;
 const { TopNav } = window.MROShared;
 
 /* ═══════════════ CHECK PRICE GRID (Phase-1 layout) ═══════════════ */
@@ -41,24 +42,34 @@ const QPARTS = [
     s:{} },
 ];
 
-const ruleFor = id => PART_TYPES_INIT.find(t=>t.id===id);
-/* is this supplier offer acceptable given exceptions + vehicle-age gate? */
-const cellAllowed = (part, sup, ageOEM) => {
+const ruleFor = (id, types) => (types||PART_TYPES_INIT).find(t=>t.id===id) || PART_TYPES_INIT.find(t=>t.id===id);
+/* one representative {list,cost} offer per part type on this line — feeds the conditional overlay */
+const lineOffers = part => {
+  const offers = {};
+  QSUP.forEach(s=>{ const o = part.s[s.key]; if(o && !offers[s.typeId]) offers[s.typeId] = { list:part.list, cost:o.cost }; });
+  return offers;
+};
+/* is this supplier offer acceptable given exceptions + vehicle-age gate + conditional rules? */
+const cellAllowed = (part, sup, ageBlocked, overrides) => {
   if(part.exc && part.exc.mode==='directbill') return false;   // whole part is off-platform
   if(part.exc && part.exc.mode==='oem' && sup.type!=='OEM') return false;  // safety exception
-  if(ageOEM && sup.type!=='OEM') return false;                // vehicle under age threshold
+  if(ageBlocked(sup.typeId)) return false;                     // vehicle under age threshold, type not on the allowed list
+  if(overrides && overrides[sup.typeId]===null) return false;  // a conditional rule blocks this type on this line
   return true;
 };
-/* why a cell is locked — safety exception takes precedence over age gate */
-const lockKind = (part, sup, ageOEM) => {
+/* why a cell is locked — safety exception takes precedence over age gate, then conditional rules */
+const lockKind = (part, sup, ageBlocked, overrides) => {
   if(part.exc && part.exc.mode==='oem' && sup.type!=='OEM') return 'safety';
-  if(ageOEM && sup.type!=='OEM') return 'age';
+  if(ageBlocked(sup.typeId)) return 'age';
+  if(overrides && overrides[sup.typeId]===null) return 'conditional';
   return null;
 };
-const qcell = (part, sup) => {
+const qcell = (part, sup, types, overrides) => {
   const o = part.s[sup.key];
   if(!o) return null;
-  const res = resolveRule(ruleFor(sup.typeId), { list:part.list, cost:o.cost });
+  const base = resolveRule(ruleFor(sup.typeId, types), { list:part.list, cost:o.cost });
+  const ov = overrides && overrides[sup.typeId];
+  const res = (ov!=null && ov!==base.sell) ? {...base, sell:ov, capped:false, overridden:true} : base;
   return { cost:o.cost, etd:o.etd, comment:o.c, flag:o.flag, res, sup };
 };
 const pillLabel = pt => {
@@ -72,30 +83,44 @@ function QuoteGrid(){
   const [sel, setSel] = useState({ 1:'oemd', 2:'oemd', 6:'pn', 8:'reco' });
   const [applied, setApplied] = useState(true);
   const [modelYear, setModelYear] = useState(2024);
-  const ageRule = VEHICLE_AGE_RULE_INIT;
+  // pricing rules + vehicle age rule + conditional rules — loaded from whatever was last saved on the Margin Rules screen
+  const [types] = useState(getActiveTypes());
+  const ageRule = getActiveAgeRule();
+  const condRules = getActiveCondRules();
   const age = vehicleAge(modelYear);
-  const ageOEM = ageForcesOEM(modelYear, ageRule);
+  const ageActive = ageRuleActive(modelYear, ageRule);
+  const ageBlocked = typeId => !ageAllowsType(typeId, modelYear, ageRule);
+  const ageAllowedNames = types.filter(t=>(ageRule.allowedTypes||[]).includes(t.id)).map(t=>t.name).join(' / ') || 'nothing';
+
+  // conditional cross-type overlay, resolved per line — {partId: {typeId: overriddenSellPrice}}
+  const condByPart = {};
+  QPARTS.forEach(p=>{
+    const overrides = {};
+    resolveConditional(types, lineOffers(p), condRules).trace.forEach(t=>{ overrides[t.target] = t.after; });
+    condByPart[p.id] = overrides;
+  });
+  const condHitCount = QPARTS.filter(p=>Object.keys(condByPart[p.id]).length>0).length;
 
   // drop selections that become invalid when the age gate switches on
   useEffect(()=>{
     setSel(prev=>{
       const next={...prev}; let changed=false;
-      QPARTS.forEach(p=>{ const k=prev[p.id]; if(k){ const s=QSUP.find(x=>x.key===k); if(s && !cellAllowed(p,s,ageOEM)){ next[p.id]=null; changed=true; } } });
+      QPARTS.forEach(p=>{ const k=prev[p.id]; if(k){ const s=QSUP.find(x=>x.key===k); if(s && !cellAllowed(p,s,ageBlocked,condByPart[p.id])){ next[p.id]=null; changed=true; } } });
       return changed?next:prev;
     });
-  },[ageOEM]);
+  },[ageActive]);
 
   const toggle = (id, key) => {
     const part = QPARTS.find(p=>p.id===id);
     const sup = QSUP.find(s=>s.key===key);
-    if(part && sup && !cellAllowed(part, sup, ageOEM)) return;   // locked cells aren't selectable
+    if(part && sup && !cellAllowed(part, sup, ageBlocked, condByPart[id])) return;   // locked cells aren't selectable
     setSel(prev => ({...prev, [id]: prev[id]===key ? null : key}));
   };
 
   const totals = {};
-  QSUP.forEach(s=>{ totals[s.key] = QPARTS.reduce((a,p)=>{ const c=qcell(p,s); return a+((c && cellAllowed(p,s,ageOEM))?c.res.sell:0); },0); });
+  QSUP.forEach(s=>{ totals[s.key] = QPARTS.reduce((a,p)=>{ const c=qcell(p,s,types,condByPart[p.id]); return a+((c && cellAllowed(p,s,ageBlocked,condByPart[p.id]))?c.res.sell:0); },0); });
 
-  const selData = QPARTS.map(p=>{ const k=sel[p.id]; if(!k) return null; const s=QSUP.find(x=>x.key===k); return (s && cellAllowed(p,s,ageOEM)) ? qcell(p,s) : null; }).filter(Boolean);
+  const selData = QPARTS.map(p=>{ const k=sel[p.id]; if(!k) return null; const s=QSUP.find(x=>x.key===k); return (s && cellAllowed(p,s,ageBlocked,condByPart[p.id])) ? qcell(p,s,types,condByPart[p.id]) : null; }).filter(Boolean);
   const cost = selData.reduce((a,c)=>a+c.cost,0);
   const sell = selData.reduce((a,c)=>a+c.res.sell,0);
   const profit = sell - cost;
@@ -122,9 +147,9 @@ function QuoteGrid(){
               <select className="sel sel-sm" value={modelYear} onChange={e=>setModelYear(+e.target.value)}>
                 {[2026,2025,2024,2023,2022,2021,2020,2019,2018].map(y=><option key={y} value={y}>{y}</option>)}
               </select>
-              <span className={"q1-agechip "+(ageOEM?'on':'off')}>
-                {ageOEM && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg>}
-                {age} yr{age===1?'':'s'} old{ageOEM?' · OEM only':''}
+              <span className={"q1-agechip "+(ageActive?'on':'off')}>
+                {ageActive && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg>}
+                {age} yr{age===1?'':'s'} old{ageActive?` · ${ageAllowedNames} only`:''}
               </span>
             </div>
           </div>
@@ -154,10 +179,17 @@ function QuoteGrid(){
           </div>
         )}
 
-        {ageOEM && (
+        {ageActive && (
           <div className="q1-agebanner">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" style={{flexShrink:0,marginTop:1}}><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/><path d="M9 12l2 2 4-4"/></svg>
-            <span><b>Vehicle is {age} years old ({modelYear}) — under the {ageRule.maxYears}-year threshold.</b> Allianz <b>OEM-only</b> rule is in effect: non-OEM offers are locked on every part, not just safety categories.</span>
+            <span><b>Vehicle is {age} years old ({modelYear}) — under the {ageRule.maxYears}-year threshold.</b> Allianz <b>{ageAllowedNames}-only</b> rule is in effect: offers outside {ageAllowedNames} are locked on every part, not just safety categories.</span>
+          </div>
+        )}
+
+        {condHitCount>0 && (
+          <div className="q1-exc" style={{background:'#F4EEFF',border:'1px solid #E4D9FB',color:'#7A5AF8'}}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" style={{flexShrink:0,marginTop:1}}><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+            <span><b style={{color:'#5A3FD1'}}>{condHitCount} part{condHitCount===1?'':'s'} affected by conditional cross-type rules</b> — set on the Margin Rules screen. Prices recalculated based on other part types quoted on the same line.</span>
           </div>
         )}
 
@@ -173,7 +205,7 @@ function QuoteGrid(){
           <span className="q1-rulebar-lbl">Active Margin Rule:</span>
           <select className="sel sel-sm" style={{minWidth:130}}><option>Allianz — My Shop</option><option>Allianz Baseline</option><option>Standard</option></select>
           <div className="q1-pills">
-            {PART_TYPES_INIT.map(pt=>(
+            {types.map(pt=>(
               <span key={pt.id} className={"q1-pill "+pt.id}>
                 {pt.name} {pillLabel(pt)}
                 {pt.clauses.length>1 && <span className="combo">◇</span>}
@@ -244,20 +276,21 @@ function QuoteGrid(){
                       </div>
                     </td>
                   ) : QSUP.map(s=>{
-                    const c = qcell(p, s);
+                    const overrides = condByPart[p.id];
+                    const c = qcell(p, s, types, overrides);
                     if(!c) return <td key={s.key} className="gcell empty"><div className="gcell-in"/></td>;
-                    const kind = lockKind(p, s, ageOEM);
+                    const kind = lockKind(p, s, ageBlocked, overrides);
                     if(kind) return (
-                      <td key={s.key} className="gcell gcell-locked" title={kind==='age' ? `Not acceptable — vehicle under ${ageRule.maxYears} years (OEM only)` : 'Not acceptable under Allianz OEM-only safety rule'}>
+                      <td key={s.key} className="gcell gcell-locked" title={kind==='age' ? `Not acceptable — vehicle under ${ageRule.maxYears} years (${ageAllowedNames} only)` : kind==='conditional' ? 'Not acceptable — blocked by a conditional rule on this line' : 'Not acceptable under Allianz OEM-only safety rule'}>
                         <div className="gcell-in">
                           <div className={"gtype gl-strike gtype-"+s.cls}>{s.type}</div>
                           <div className="gl-price">{fmt(c.res.sell)}</div>
-                          <div className="gl-tag"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 018 0v3"/></svg>{kind==='age' ? `< ${ageRule.maxYears} yrs` : 'OEM only'}</div>
+                          <div className="gl-tag"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 018 0v3"/></svg>{kind==='age' ? `< ${ageRule.maxYears} yrs` : kind==='conditional' ? 'rule blocked' : 'OEM only'}</div>
                         </div>
                       </td>
                     );
                     const selected = sel[p.id]===s.key;
-                    const reassure = (p.exc || ageOEM) && s.type==='OEM';
+                    const reassure = (p.exc && s.type==='OEM') || (ageActive && !ageBlocked(s.typeId));
                     return (
                       <td key={s.key} className={"gcell "+(selected?'gcell-sel':'')+(reassure?' gcell-okexc':'')} onClick={()=>toggle(p.id, s.key)}>
                         <div className="gcell-in">
@@ -265,10 +298,11 @@ function QuoteGrid(){
                           <div className="gprice">{fmt(c.res.sell)}</div>
                           <div className="gprofit">+{fmt(c.res.sell - c.cost)}</div>
                           {c.res.capped && <div className="gcapd">⛰ capped</div>}
+                          {c.res.overridden && !c.res.capped && <div className="gcondtag">⇄ rule-matched</div>}
                           <div className="getd">ETD {c.etd}</div>
                         </div>
                         {c.flag && !selected && <div className="gcorner"/>}
-                        <CellPop part={p} c={c}/>
+                        <CellPop part={p} c={c} types={types}/>
                       </td>
                     );
                   })}
@@ -287,9 +321,9 @@ function QuoteGrid(){
 }
 
 /* price-cell hover popover — rich, Phase 2 aware */
-function CellPop({ part, c }){
+function CellPop({ part, c, types }){
   const { res, cost, sup } = c;
-  const pt = ruleFor(sup.typeId);
+  const pt = ruleFor(sup.typeId, types);
   const higher = pt.resolver==='higher';
   const markup = cost>0 ? (res.sell-cost)/cost*100 : 0;
   const disc = part.list>0 ? (part.list-cost)/part.list*100 : 0;
