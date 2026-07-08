@@ -30,8 +30,8 @@ function PricingRow({ pt, onChange, focus, onFocus }){
   const capType = CAP_TYPES[pt.cap.type] || CAP_TYPES.priceCeiling;
 
   return (
-    <div className="pt-row" onClick={onFocus}>
-      <div className={"pt-main focusable "+(focus?'pt-focus-ring':'')}>
+    <div className={"pt-row "+(focus?'pt-focused':'')} onClick={onFocus}>
+      <div className="pt-main focusable">
         <div className="pt-name"><span className="pt-dot" style={{background:pt.color}}/>{pt.name}</div>
         <select className="sel" value={pt.clauses[0].method} onChange={e=>setClause(0,{method:e.target.value})}>
           {Object.entries(METHODS).map(([k,m])=><option key={k} value={k}>{m.label}</option>)}
@@ -356,11 +356,13 @@ function CondCard({ rule, onChange, onDelete, types }){
                 <select className="cr-capsel" value={rule.outcome.cap.type} onChange={e=>setOut({cap:{...rule.outcome.cap, type:e.target.value}})}>
                   {Object.entries(COND_CAP_TYPES).map(([k,c])=><option key={k} value={k}>{c.label}</option>)}
                 </select>
-                <CrNum kind={capType.pre?'dollar':'pct'} value={rule.outcome.cap.value} onChange={v=>setOut({cap:{...rule.outcome.cap, value:v}})}/>
+                {capType.kind!=='flat' && (
+                  <CrNum kind={capType.pre?'dollar':'pct'} value={rule.outcome.cap.value} onChange={v=>setOut({cap:{...rule.outcome.cap, value:v}})}/>
+                )}
                 <button className="cr-capx" onClick={()=>setOut({cap:{...rule.outcome.cap, enabled:false}})}>×</button>
               </span>
             ) : (
-              <button className="cr-capadd" onClick={()=>setOut({cap:{enabled:true, type:'priceCeiling', value:400}})}>
+              <button className="cr-capadd" onClick={()=>setOut({cap:{enabled:true, type:'capAtList', value:0}})}>
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M3 20h18L14 4l-4 8-3-3-4 11z"/></svg>add cap
               </button>
             )
@@ -474,37 +476,29 @@ function VehicleAgeRule({ rule, setRule, types }){
 function ExcCard({ g, onChange, onDelete }){
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState('');
-  const oem = g.action==='oem-only';
   const addPart = () => { if(!draft.trim())return; onChange({...g, parts:[...g.parts, draft.trim()]}); setDraft(''); setAdding(false); };
   return (
     <div className="xg-card">
       <div className="xg-head">
-        <div className="xg-ico" style={oem?{background:'var(--blue-lt)',color:'var(--blue)'}:{background:'#F4EEFF',color:'#7A5AF8'}}>
-          {oem
-            ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg>
-            : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M2 7h20v10H2zM2 11h20"/></svg>}
+        <div className="xg-ico" style={{background:'var(--blue-lt)',color:'var(--blue)'}}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg>
         </div>
         <div className="xg-name">{g.category}</div>
-        <span className={"xg-badge "+(oem?'oem':'bill')}>
-          {oem
-            ? <><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12l5 5L20 7"/></svg>OEM only</>
-            : <>Direct bill · off-platform</>}
+        <span className="xg-badge oem">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12l5 5L20 7"/></svg>OEM only
         </span>
         <button className="xg-del" onClick={onDelete} title="Remove category">×</button>
       </div>
       <div className="xg-body">
-        {oem && (
-          <div className="xg-na">
-            <span className="lbl">Not acceptable:</span>
-            {NOT_ACCEPTABLE.map(t=><span className="na-chip" key={t}>✕ {t}</span>)}
-          </div>
-        )}
+        <div className="xg-na">
+          <span className="lbl">Not acceptable:</span>
+          {NOT_ACCEPTABLE.map(t=><span className="na-chip" key={t}>✕ {t}</span>)}
+        </div>
         <div className="xg-parts">
           {g.parts.map((p,i)=>(
             <span className="part-chip" key={i}>{p}<span className="rm" onClick={()=>onChange({...g, parts:g.parts.filter((_,idx)=>idx!==i)})}>×</span></span>
           ))}
         </div>
-        {g.note && <div className="xg-cnote"><b>Direct-bill arrangement.</b> {g.note}</div>}
         <div className="xg-addpart">
           {adding ? (
             <div style={{display:'flex',gap:8,alignItems:'center'}}>
@@ -525,13 +519,12 @@ function ExcCard({ g, onChange, onDelete }){
 
 function Exceptions({ groups, setGroups }){
   const [cat, setCat] = useState('');
-  const [action, setAction] = useState('oem-only');
   const partCount = groups.reduce((a,g)=>a+g.parts.length,0);
   const update = g => setGroups(groups.map(x=>x.id===g.id?g:x));
   const del = id => setGroups(groups.filter(x=>x.id!==id));
   const addCat = () => {
     if(!cat.trim())return;
-    setGroups([...groups, {id:'c'+groups.length+1, category:cat.trim(), action, parts:[], note: action==='direct-bill'?'Managed off-platform via nominated supplier. Requires prior assessor approval.':undefined}]);
+    setGroups([...groups, {id:'c'+groups.length+1, category:cat.trim(), action:'oem-only', parts:[]}]);
     setCat('');
   };
   return (
@@ -548,10 +541,6 @@ function Exceptions({ groups, setGroups }){
         <div className="exc-add">
           <span className="lbl">New category</span>
           <input className="txt" style={{flex:1,minWidth:200}} placeholder="Category name — e.g. Steering Safety…" value={cat} onChange={e=>setCat(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addCat()}/>
-          <select className="sel sel-sm" value={action} onChange={e=>setAction(e.target.value)}>
-            <option value="oem-only">OEM only</option>
-            <option value="direct-bill">Direct bill · off-platform</option>
-          </select>
           <button className="btn btn-green btn-sm" onClick={addCat}>Add category</button>
         </div>
       </div>

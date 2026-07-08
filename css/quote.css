@@ -114,8 +114,6 @@
 .q1-exc b{color:#1657C7}
 .pn-exc{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:800;padding:2px 8px;border-radius:5px;text-transform:uppercase;letter-spacing:.04em;margin-top:6px}
 .pn-exc.oem{background:var(--blue-lt);color:var(--blue);border:1px solid #BBD3F7}
-.pn-exc.db{background:#F4EEFF;color:#7A5AF8;border:1px solid #E0D0FB}
-.qg-cb-lock{border:1.5px dashed var(--border-2)!important;background:var(--surface-2)!important;color:var(--text-3);display:flex;align-items:center;justify-content:center}
 .qg-excrow .qg-partcell{background:#FCFDFF}
 
 /* locked (not-acceptable) supplier cell */
@@ -128,14 +126,6 @@
 
 /* acceptable OEM cell on an exception row — subtle reassurance ring */
 .gcell-okexc .gcell-in{box-shadow:inset 0 0 0 1px #DCEBFB}
-
-/* direct-bill banner spanning supplier columns */
-.gcell-directbill{background:linear-gradient(180deg,#FBF7FF,#F8F5FE);padding:14px 18px;vertical-align:middle;text-align:left}
-.db-inner{display:flex;align-items:center;gap:13px}
-.db-ico{width:36px;height:36px;border-radius:10px;background:#F4EEFF;color:#7A5AF8;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.db-t{font-size:13px;font-weight:800;color:var(--ink)}
-.db-s{font-size:11.5px;color:var(--text-2);margin-top:2px;line-height:1.5}
-.db-badge{margin-left:auto;font-size:10px;font-weight:800;color:#7A5AF8;background:#F4EEFF;border:1px solid #E0D0FB;border-radius:999px;padding:5px 12px;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
 
 /* ── vehicle-age rule on the quote ── */
 .q1-vehctl{display:flex;align-items:center;gap:9px;margin-top:9px}
