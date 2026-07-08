@@ -37,9 +37,6 @@ const QPARTS = [
   { id:10, name:'R/F ABS SPEED SENSOR', dealer:'95671-G3000', list:214.80,
     exc:{ mode:'oem', category:'ABS / Braking Safety Systems' },
     s:{ oemd:{cost:171.84,etd:'Same Day',c:true}, pn:{cost:78.00,etd:'1-2 Days'}, eco:{cost:52.00,etd:'2-3 Days',flag:true} } },
-  { id:11, name:'A/C CONDENSER (FRONT)', dealer:'97606-G3000', list:512.00,
-    exc:{ mode:'directbill', category:'Radiators & Condensers', supplier:'AAA' },
-    s:{} },
 ];
 
 const ruleFor = (id, types) => (types||PART_TYPES_INIT).find(t=>t.id===id) || PART_TYPES_INIT.find(t=>t.id===id);
@@ -51,7 +48,6 @@ const lineOffers = part => {
 };
 /* is this supplier offer acceptable given exceptions + vehicle-age gate + conditional rules? */
 const cellAllowed = (part, sup, ageBlocked, overrides) => {
-  if(part.exc && part.exc.mode==='directbill') return false;   // whole part is off-platform
   if(part.exc && part.exc.mode==='oem' && sup.type!=='OEM') return false;  // safety exception
   if(ageBlocked(sup.typeId)) return false;                     // vehicle under age threshold, type not on the allowed list
   if(overrides && overrides[sup.typeId]===null) return false;  // a conditional rule blocks this type on this line
@@ -69,7 +65,7 @@ const qcell = (part, sup, types, overrides) => {
   if(!o) return null;
   const base = resolveRule(ruleFor(sup.typeId, types), { list:part.list, cost:o.cost });
   const ov = overrides && overrides[sup.typeId];
-  const res = (ov!=null && ov!==base.sell) ? {...base, sell:ov, capped:false, overridden:true} : base;
+  const res = (ov!=null && ov!==base.sell) ? {...base, sell:ov, capped:false, overridden:true, preOverride:base.sell} : base;
   return { cost:o.cost, etd:o.etd, comment:o.c, flag:o.flag, res, sup };
 };
 const pillLabel = pt => {
@@ -196,7 +192,7 @@ function QuoteGrid(){
         {QPARTS.some(p=>p.exc) && (
           <div className="q1-exc">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" style={{flexShrink:0,marginTop:1}}><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/><path d="M9 12l2 2 4-4"/></svg>
-            <span><b>{QPARTS.filter(p=>p.exc).length} parts on this quote fall under Allianz exception rules.</b> Safety-critical categories are OEM-only — cheaper non-OEM offers are locked. Radiators &amp; condensers are billed direct off-platform.</span>
+            <span><b>{QPARTS.filter(p=>p.exc).length} parts on this quote fall under Allianz exception rules.</b> Safety-critical categories are OEM-only — cheaper non-OEM offers are locked.</span>
           </div>
         )}
 
@@ -243,39 +239,21 @@ function QuoteGrid(){
             </thead>
             <tbody>
               {QPARTS.map(p=>{
-                const db = p.exc && p.exc.mode==='directbill';
                 return (
                 <tr key={p.id} className={p.exc?'qg-excrow':''}>
                   <td className="qg-partcell">
-                    {db ? (
-                      <div className="qg-cb qg-cb-lock" title="Off-platform — not selectable here"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 018 0v3"/></svg></div>
-                    ) : (
-                      <div className="qg-cb" style={sel[p.id]?{background:'#1D6FE0',borderColor:'#1D6FE0'}:{}}>{sel[p.id] && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" style={{margin:'1px'}}><path d="M5 12l5 5L20 7"/></svg>}</div>
-                    )}
+                    <div className="qg-cb" style={sel[p.id]?{background:'#1D6FE0',borderColor:'#1D6FE0'}:{}}>{sel[p.id] && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" style={{margin:'1px'}}><path d="M5 12l5 5L20 7"/></svg>}</div>
                     <div>
                       <div className="qg-pn">{p.name}</div>
                       <div className="qg-ps">Dealer: #{p.dealer}<br/>List: {fmt(p.list)} ea</div>
                       {p.exc && (
-                        <span className={"pn-exc "+(db?'db':'oem')}>
-                          {db
-                            ? <><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M2 7h20v10H2zM2 11h20"/></svg>Direct bill</>
-                            : <><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg>OEM only</>}
+                        <span className="pn-exc oem">
+                          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg>OEM only
                         </span>
                       )}
                     </div>
                   </td>
-                  {db ? (
-                    <td className="gcell-directbill" colSpan={QSUP.length}>
-                      <div className="db-inner">
-                        <div className="db-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 7h20v10H2zM2 11h20"/></svg></div>
-                        <div>
-                          <div className="db-t">Managed off-platform — direct bill via {p.exc.supplier}</div>
-                          <div className="db-s">{p.exc.category} · not orderable through PartsCheck suppliers. Requires prior assessor approval.</div>
-                        </div>
-                        <span className="db-badge">Assessor approval</span>
-                      </div>
-                    </td>
-                  ) : QSUP.map(s=>{
+                  {QSUP.map(s=>{
                     const overrides = condByPart[p.id];
                     const c = qcell(p, s, types, overrides);
                     if(!c) return <td key={s.key} className="gcell empty"><div className="gcell-in"/></td>;
@@ -295,8 +273,9 @@ function QuoteGrid(){
                       <td key={s.key} className={"gcell "+(selected?'gcell-sel':'')+(reassure?' gcell-okexc':'')} onClick={()=>toggle(p.id, s.key)}>
                         <div className="gcell-in">
                           <div className={"gtype gtype-"+s.cls}>{s.type}{c.comment && <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style={{opacity:.55}}><path d="M21 6H3v12h4v3l3-3h11z"/></svg>}</div>
+                          {c.res.overridden && <div className="gprice-was">{fmt(c.res.preOverride)}</div>}
                           <div className="gprice">{fmt(c.res.sell)}</div>
-                          <div className="gprofit">+{fmt(c.res.sell - c.cost)}</div>
+                          <div className={"gprofit"+(c.res.sell - c.cost < 0 ? ' neg' : '')}>{c.res.sell - c.cost >= 0 ? '+' : ''}{fmt(c.res.sell - c.cost)}</div>
                           {c.res.capped && <div className="gcapd">⛰ capped</div>}
                           {c.res.overridden && !c.res.capped && <div className="gcondtag">⇄ rule-matched</div>}
                           <div className="getd">ETD {c.etd}</div>
@@ -348,10 +327,11 @@ function CellPop({ part, c, types }){
         );
       })}
       {res.capped && <div className="gpop-sub cap"><span className="gpop-k">⛰ {CAP_TYPES[pt.cap.type].chip.replace('#',pt.cap.value)}</span><span className="gpop-v">{fmt(res.sell)}</span></div>}
+      {res.overridden && <div className="gpop-sub match"><span className="gpop-k">⇄ Matched by conditional rule</span><span className="gpop-v">{fmt(res.preOverride)} → {fmt(res.sell)}</span></div>}
       <div className="gpop-r"><span className="gpop-k">Mark Up</span><span className="gpop-v">{markup.toFixed(1)}%</span></div>
       <div className="gpop-r"><span className="gpop-k">List Price</span><span className="gpop-v">{fmt(part.list)}</span></div>
       <div className="gpop-final"><span className="gpop-k">Sell Price</span><span className="gpop-v">{fmt(res.sell)}</span></div>
-      <div className="gpop-r" style={{borderBottom:'none'}}><span className="gpop-k">Profit</span><span className="gpop-v" style={{color:'var(--green-d)'}}>{fmt(res.sell-cost)}</span></div>
+      <div className="gpop-r" style={{borderBottom:'none'}}><span className="gpop-k">Profit</span><span className="gpop-v" style={{color: res.sell-cost < 0 ? 'var(--red)' : 'var(--green-d)'}}>{fmt(res.sell-cost)}</span></div>
     </div>
   );
 }

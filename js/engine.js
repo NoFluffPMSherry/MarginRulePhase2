@@ -15,26 +15,23 @@ const CAP_TYPES = {
   capAtList:     { label:'Cap at list price', kind:'flat', chip:'list price cap' },
   priceCeiling:  { label:'Cap at custom amount', pre:'$', kind:'dollar', chip:'$# cap' },
   pctListCeiling:{ label:'Cap at % of list', suf:'%', kind:'pct', chip:'#% list cap' },
-  costCap:       { label:'Markup only on cost up to', pre:'$', kind:'dollar', chip:'markup ≤ $#' },
 };
 
 function isNA(rule){ return rule.clauses[0] && rule.clauses[0].method === 'notAccepted'; }
 
-function clauseValue(cl, part, cap){
+function clauseValue(cl, part){
   const { list, cost } = part;
   if(cl.method === 'pctList')   return list * cl.value/100;
   if(cl.method === 'listPrice') return list;
   if(cl.method === 'manual')    return cl.value;
   if(cl.method === 'notAccepted') return 0;
-  if(cap && cap.enabled && cap.type==='costCap' && cost > cap.value)
-    return cap.value*(1+cl.value/100) + (cost - cap.value);
   return cost * (1 + cl.value/100);
 }
 
 function resolveRule(rule, part){
   if(isNA(rule)) return { na:true, sell:0, steps:[], capped:false };
   const cap = rule.cap;
-  const steps = rule.clauses.map((cl,i) => ({ i, cl, v: clauseValue(cl, part, cap) }));
+  const steps = rule.clauses.map((cl,i) => ({ i, cl, v: clauseValue(cl, part) }));
   let sell, winnerIdx = 0;
   if(steps.length === 1){ sell = steps[0].v; }
   else {
@@ -62,7 +59,7 @@ const PART_TYPES_INIT = [
   { id:'oem', name:'OEM', color:'#1D6FE0',
     clauses:[{method:'pctList',value:90},{method:'markupCost',value:20}],
     resolver:'higher', join:'OR',
-    cap:{enabled:true, type:'costCap', value:300} },
+    cap:{enabled:true, type:'capAtList', value:0} },
   { id:'aftermarket', name:'Aftermarket', color:'#DB6D00',
     clauses:[{method:'pctList',value:75}], resolver:'higher', join:'OR',
     cap:{enabled:false, type:'capAtList', value:0} },
@@ -97,9 +94,6 @@ const EXCEPTION_GROUPS = [
     parts:['Electronic Control Modules'] },
   { id:'suspension', category:'Suspension', action:'oem-only',
     parts:['Ball Joint','Link Arm','Stabilizer Links'] },
-  { id:'radiator', category:'Radiators & Condensers', action:'direct-bill',
-    parts:['Radiator','Condenser (Front)','Condenser (Rear)'],
-    note:'Managed exclusively through a direct-bill arrangement with the nominated supplier (AAA). Not acceptable through any other supplier or pricing method without prior assessor approval.' },
 ];
 const NOT_ACCEPTABLE = ['Used','Parallel','Aftermarket','Recon / Exchange'];
 
@@ -137,10 +131,11 @@ const COND_OUTCOMES = {
   notAccepted: { label:'not be accepted',            verb:'blocked'   },
 };
 
-/* caps available inside a conditional outcome (ceilings only) */
+/* caps available inside a conditional outcome (ceilings only) — same three options as the per-type pricing cap */
 const COND_CAP_TYPES = {
-  priceCeiling:   { label:'cap at', pre:'$',  chip:'≤ $#'      },
-  pctListCeiling: { label:'cap at', suf:'%',  chip:'≤ #% list' },
+  capAtList:      { label:'cap at list price', kind:'flat', chip:'≤ list price' },
+  priceCeiling:   { label:'cap at custom amount', pre:'$', kind:'dollar', chip:'≤ $#'      },
+  pctListCeiling: { label:'cap at % of list',  suf:'%', kind:'pct', chip:'≤ #% list' },
 };
 
 /* availability = an offer exists for the type AND its own rule doesn't mark it Not Accepted */
@@ -149,6 +144,7 @@ function typeAvailable(pt, offers){ return !!offers[pt.id] && !isNA(pt); }
 function applyCondCap(sell, cap, part){
   if(!cap || !cap.enabled || sell==null || !part) return { sell, capped:false };
   let ceil = null;
+  if(cap.type==='capAtList')      ceil = part.list;
   if(cap.type==='priceCeiling')   ceil = cap.value;
   if(cap.type==='pctListCeiling') ceil = part.list * cap.value/100;
   if(ceil!=null && sell > ceil) return { sell:ceil, capped:true };
@@ -189,7 +185,7 @@ function resolveConditional(partTypes, offers, condRules){
       after = null;
     } else if(oc.type==='method'){
       if(!tOffer) return;                                  // need target's own numbers
-      after = clauseValue(oc.clause, tOffer, null);
+      after = clauseValue(oc.clause, tOffer);
     } else {
       refSell = base[oc.ref];
       if(refSell==null) return;                            // reference not on this line → no effect
