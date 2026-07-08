@@ -2,41 +2,47 @@
 const { useState, useEffect } = React;
 const { METHODS, CAP_TYPES, resolveRule, resolveConditional, fmt,
         PART_TYPES_INIT, vehicleAge, ageRuleActive, ageAllowsType,
-        getActiveTypes, getActiveAgeRule, getActiveCondRules } = window.MRO;
+        getActiveTypes, getActiveAgeRule, getActiveCondRules,
+        getDemoModelYear, saveDemoModelYear } = window.MRO;
 const { TopNav } = window.MROShared;
 
-/* ═══════════════ CHECK PRICE GRID (Phase-1 layout) ═══════════════ */
+/* ═══════════════ CHECK PRICE GRID (Phase-1 layout) ═══════════════
+   Supplier names, dealer part numbers and list prices below are modelled on a real
+   PartsCheck quote (generic catalog data, not customer-identifying) so the numbers
+   read as authentic in front of repairers/insurers rather than obviously round demo figures. */
+/* one column per part type — each supplier's own colour/label is derived from its typeId
+   so it always matches the dot colour configured for that type on the Margin Rules screen */
 const QSUP = [
-  { key:'oemd', name:'OEM Direct',    color:'#1D6FE0', type:'OEM',       cls:'oem',   typeId:'oem' },
-  { key:'pn',   name:'Parts Network', color:'#9333EA', type:'CERT AFTM', cls:'cert',  typeId:'parallel' },
-  { key:'ats',  name:'ATS Parts',     color:'#C026D3', type:'OEM',       cls:'oem',   typeId:'oem' },
-  { key:'eco',  name:'Eco Parts',     color:'#12B76A', type:'USED',      cls:'used',  typeId:'recycled' },
-  { key:'reco', name:'Reco Centre',   color:'#F79009', type:'RECON',     cls:'recon', typeId:'recon' },
+  { key:'jfa', name:'James Frizelles Automotive', type:'OEM',       typeId:'oem' },
+  { key:'acm', name:'ACM Parts (QLD)',            type:'AFTERMARKET', typeId:'aftermarket' },
+  { key:'apg', name:'Auto Parts Group (QLD)',     type:'CERT AFTM', typeId:'parallel' },
+  { key:'sap', name:'Statewide Recon Parts',      type:'RECON',     typeId:'recon' },
+  { key:'wgr', name:'Willawong Auto Recyclers',   type:'USED',      typeId:'recycled' },
 ];
 const QPARTS = [
-  { id:1, name:'FRONT BUMPER', dealer:'86510-G3700', list:659.80,
-    s:{ oemd:{cost:527.84,etd:'2-3 Days',c:true}, pn:{cost:290.00,etd:'1-2 Days'}, ats:{cost:305.00,etd:'Same Day',flag:true}, reco:{cost:300.00,etd:'3-5 Days'} } },
-  { id:2, name:'LOWER BUMPER COVER', dealer:'86512-G3700', list:261.26,
-    s:{ oemd:{cost:209.01,etd:'Same Day',c:true}, pn:{cost:112.00,etd:'1-2 Days'}, ats:{cost:135.00,etd:'2-3 Days',c:true}, eco:{cost:82.00,etd:'3-5 Days'} } },
-  { id:3, name:'R/F OUT BUMPER BRKT', dealer:'86514-G3000', list:41.16,
-    s:{ eco:{cost:15.00,etd:'Same Day',flag:true} } },
-  { id:4, name:'RIGHT HEADLAMP ASSY', dealer:'92102-G3115', list:2259.56,
-    s:{ pn:{cost:980.00,etd:'Same Day',c:true,flag:true}, eco:{cost:1427.00,etd:'2-3 Days',c:true}, reco:{cost:1180.00,etd:'1-2 Days'} } },
-  { id:5, name:'R/BADGE "N-LINE"', dealer:'86312-G4700', list:70.14,
-    s:{ eco:{cost:22.00,etd:'Same Day',flag:true} } },
-  { id:6, name:'R/H SILL PANEL MOULD', dealer:'9124106', list:965.50,
-    s:{ oemd:{cost:640.00,etd:'2-3 Days'}, pn:{cost:470.00,etd:'1-2 Days',c:true,flag:true}, ats:{cost:490.00,etd:'Same Day'}, eco:{cost:300.00,etd:'2-3 Days'} } },
-  { id:7, name:'GUARD L/H', dealer:'66311-G3000', list:512.40,
-    s:{ oemd:{cost:410.00,etd:'2-3 Days'}, pn:{cost:300.00,etd:'1-2 Days'}, ats:{cost:395.00,etd:'Same Day'} } },
-  { id:8, name:'BONNET', dealer:'66400-G3000', list:1120.00,
-    s:{ oemd:{cost:720.00,etd:'3-5 Days',c:true}, ats:{cost:735.00,etd:'2-3 Days'}, reco:{cost:600.00,etd:'1-2 Days'} } },
+  { id:1, name:'FRONT BUMPER COVER', dealer:'DR6150031EBB', list:652.15,
+    s:{ jfa:{cost:255.00,etd:'2-3 Days',c:true}, acm:{cost:150.00,etd:'Same Day',flag:true}, apg:{cost:190.00,etd:'1-2 Days'}, wgr:{cost:140.00,etd:'3-5 Days'} } },
+  { id:2, name:'FRT BUMPER ABSORBER', dealer:'D03P50111', list:147.06,
+    s:{ jfa:{cost:60.00,etd:'Same Day',c:true}, apg:{cost:48.00,etd:'1-2 Days'} } },
+  { id:3, name:'L/F GUARD BRACKET', dealer:'D652500U1C', list:105.81,
+    s:{ jfa:{cost:44.00,etd:'2-3 Days'}, acm:{cost:27.00,etd:'Same Day',flag:true} } },
+  { id:4, name:'FRT BUMPER SUPPORT', dealer:'DF7150070C', list:308.62,
+    s:{ jfa:{cost:140.00,etd:'2-3 Days'}, acm:{cost:85.00,etd:'Same Day'}, apg:{cost:146.16,etd:'1-2 Days',c:true,flag:true}, wgr:{cost:90.91,etd:'3-5 Days'} } },
+  { id:5, name:'FRT BUMPER GRILLE', dealer:'DR61501T1C', list:225.55,
+    s:{ jfa:{cost:85.00,etd:'2-3 Days'}, acm:{cost:52.00,etd:'Same Day',flag:true} } },
+  { id:6, name:'L/F HEADLAMP ASSY', dealer:'DF89510L0F', list:722.45,
+    s:{ jfa:{cost:205.00,etd:'2-3 Days'}, acm:{cost:125.00,etd:'Same Day'}, apg:{cost:238.76,etd:'1-2 Days'}, wgr:{cost:118.18,etd:'2-3 Days',flag:true} } },
+  { id:7, name:'R/F GUARD BRACKET', dealer:'D652500U1D', list:98.40,
+    s:{ apg:{cost:68.00,etd:'1-2 Days',flag:true}, sap:{cost:55.00,etd:'3-5 Days'} } },
+  { id:8, name:'FRT BUMPER MOULD RH', dealer:'DR61502T1C', list:189.30,
+    s:{ jfa:{cost:78.00,etd:'2-3 Days'}, sap:{cost:62.00,etd:'1-2 Days',flag:true} } },
   // ── Parts caught by Allianz exception rules ──
-  { id:9, name:'DRIVER AIRBAG MODULE', dealer:'56900-G3000', list:1486.40,
+  { id:9, name:'DRIVER AIRBAG MODULE', dealer:'56900-YOUI', list:1420.00,
     exc:{ mode:'oem', category:'Airbag Systems' },
-    s:{ oemd:{cost:1189.12,etd:'3-5 Days',c:true}, ats:{cost:1205.00,etd:'2-3 Days'}, pn:{cost:640.00,etd:'1-2 Days',c:true}, eco:{cost:410.00,etd:'Same Day',flag:true} } },
-  { id:10, name:'R/F ABS SPEED SENSOR', dealer:'95671-G3000', list:214.80,
+    s:{ jfa:{cost:1150.00,etd:'3-5 Days',c:true}, acm:{cost:680.00,etd:'2-3 Days'}, apg:{cost:610.00,etd:'1-2 Days',c:true}, wgr:{cost:395.00,etd:'Same Day',flag:true} } },
+  { id:10, name:'R/F ABS SPEED SENSOR', dealer:'95671-YOUI', list:205.00,
     exc:{ mode:'oem', category:'ABS / Braking Safety Systems' },
-    s:{ oemd:{cost:171.84,etd:'Same Day',c:true}, pn:{cost:78.00,etd:'1-2 Days'}, eco:{cost:52.00,etd:'2-3 Days',flag:true} } },
+    s:{ jfa:{cost:165.00,etd:'Same Day',c:true}, apg:{cost:74.00,etd:'1-2 Days'}, wgr:{cost:50.00,etd:'2-3 Days',flag:true} } },
 ];
 
 const ruleFor = (id, types) => (types||PART_TYPES_INIT).find(t=>t.id===id) || PART_TYPES_INIT.find(t=>t.id===id);
@@ -48,14 +54,14 @@ const lineOffers = part => {
 };
 /* is this supplier offer acceptable given exceptions + vehicle-age gate + conditional rules? */
 const cellAllowed = (part, sup, ageBlocked, overrides) => {
-  if(part.exc && part.exc.mode==='oem' && sup.type!=='OEM') return false;  // safety exception
+  if(part.exc && part.exc.mode==='oem' && sup.typeId!=='oem') return false;  // safety exception
   if(ageBlocked(sup.typeId)) return false;                     // vehicle under age threshold, type not on the allowed list
   if(overrides && overrides[sup.typeId]===null) return false;  // a conditional rule blocks this type on this line
   return true;
 };
 /* why a cell is locked — safety exception takes precedence over age gate, then conditional rules */
 const lockKind = (part, sup, ageBlocked, overrides) => {
-  if(part.exc && part.exc.mode==='oem' && sup.type!=='OEM') return 'safety';
+  if(part.exc && part.exc.mode==='oem' && sup.typeId!=='oem') return 'safety';
   if(ageBlocked(sup.typeId)) return 'age';
   if(overrides && overrides[sup.typeId]===null) return 'conditional';
   return null;
@@ -76,9 +82,11 @@ const pillLabel = pt => {
 };
 
 function QuoteGrid(){
-  const [sel, setSel] = useState({ 1:'oemd', 2:'oemd', 6:'pn', 8:'reco' });
+  const [sel, setSel] = useState({ 1:'jfa', 2:'jfa', 6:'apg', 8:'sap' });
   const [applied, setApplied] = useState(true);
-  const [modelYear, setModelYear] = useState(2024);
+  // persisted so picking a model year to demo the age gate survives navigating to Margin Rules and back
+  const [modelYear, setModelYearState] = useState(()=>getDemoModelYear());
+  const setModelYear = y => { setModelYearState(y); saveDemoModelYear(y); };
   // pricing rules + vehicle age rule + conditional rules — loaded from whatever was last saved on the Margin Rules screen
   const [types] = useState(getActiveTypes());
   const ageRule = getActiveAgeRule();
@@ -87,6 +95,8 @@ function QuoteGrid(){
   const ageActive = ageRuleActive(modelYear, ageRule);
   const ageBlocked = typeId => !ageAllowsType(typeId, modelYear, ageRule);
   const ageAllowedNames = types.filter(t=>(ageRule.allowedTypes||[]).includes(t.id)).map(t=>t.name).join(' / ') || 'nothing';
+  // colour comes from whatever's configured for this type on the Margin Rules screen — never hardcoded per supplier
+  const colorFor = typeId => (types.find(t=>t.id===typeId)||{}).color || '#98A2B3';
 
   // conditional cross-type overlay, resolved per line — {partId: {typeId: overriddenSellPrice}}
   const condByPart = {};
@@ -114,7 +124,7 @@ function QuoteGrid(){
   };
 
   const totals = {};
-  QSUP.forEach(s=>{ totals[s.key] = QPARTS.reduce((a,p)=>{ const c=qcell(p,s,types,condByPart[p.id]); return a+((c && cellAllowed(p,s,ageBlocked,condByPart[p.id]))?c.res.sell:0); },0); });
+  QSUP.forEach(s=>{ totals[s.key] = QPARTS.reduce((a,p)=>{ const c=qcell(p,s,types,condByPart[p.id]); return a+((c && cellAllowed(p,s,ageBlocked,condByPart[p.id]))?c.cost:0); },0); });
 
   const selData = QPARTS.map(p=>{ const k=sel[p.id]; if(!k) return null; const s=QSUP.find(x=>x.key===k); return (s && cellAllowed(p,s,ageBlocked,condByPart[p.id])) ? qcell(p,s,types,condByPart[p.id]) : null; }).filter(Boolean);
   const cost = selData.reduce((a,c)=>a+c.cost,0);
@@ -228,9 +238,9 @@ function QuoteGrid(){
                 </th>
                 {QSUP.map(s=>(
                   <th key={s.key} className="qg-suph">
-                    <div className="qg-supbar" style={{background:s.color}}/>
+                    <div className="qg-supbar" style={{background:colorFor(s.typeId)}}/>
                     <div className="qg-supinner">
-                      <div className="qg-supav" style={{borderColor:s.color,color:s.color}}><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0z"/></svg></div>
+                      <div className="qg-supav" style={{borderColor:colorFor(s.typeId),color:colorFor(s.typeId)}}><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0z"/></svg></div>
                       <div className="qg-supname">{s.name}</div>
                     </div>
                   </th>
@@ -261,20 +271,19 @@ function QuoteGrid(){
                     if(kind) return (
                       <td key={s.key} className="gcell gcell-locked" title={kind==='age' ? `Not acceptable — vehicle under ${ageRule.maxYears} years (${ageAllowedNames} only)` : kind==='conditional' ? 'Not acceptable — blocked by a conditional rule on this line' : 'Not acceptable under Allianz OEM-only safety rule'}>
                         <div className="gcell-in">
-                          <div className={"gtype gl-strike gtype-"+s.cls}>{s.type}</div>
-                          <div className="gl-price">{fmt(c.res.sell)}</div>
+                          <div className="gtype gl-strike">{s.type}</div>
+                          <div className="gl-price">{fmt(c.cost)}</div>
                           <div className="gl-tag"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 018 0v3"/></svg>{kind==='age' ? `< ${ageRule.maxYears} yrs` : kind==='conditional' ? 'rule blocked' : 'OEM only'}</div>
                         </div>
                       </td>
                     );
                     const selected = sel[p.id]===s.key;
-                    const reassure = (p.exc && s.type==='OEM') || (ageActive && !ageBlocked(s.typeId));
+                    const reassure = (p.exc && s.typeId==='oem') || (ageActive && !ageBlocked(s.typeId));
                     return (
                       <td key={s.key} className={"gcell "+(selected?'gcell-sel':'')+(reassure?' gcell-okexc':'')} onClick={()=>toggle(p.id, s.key)}>
                         <div className="gcell-in">
-                          <div className={"gtype gtype-"+s.cls}>{s.type}{c.comment && <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style={{opacity:.55}}><path d="M21 6H3v12h4v3l3-3h11z"/></svg>}</div>
-                          {c.res.overridden && <div className="gprice-was">{fmt(c.res.preOverride)}</div>}
-                          <div className="gprice">{fmt(c.res.sell)}</div>
+                          <div className="gtype" style={{color:colorFor(s.typeId)}}>{s.type}{c.comment && <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style={{opacity:.55}}><path d="M21 6H3v12h4v3l3-3h11z"/></svg>}</div>
+                          <div className="gprice">{fmt(c.cost)}</div>
                           <div className={"gprofit"+(c.res.sell - c.cost < 0 ? ' neg' : '')}>{c.res.sell - c.cost >= 0 ? '+' : ''}{fmt(c.res.sell - c.cost)}</div>
                           {c.res.capped && <div className="gcapd">⛰ capped</div>}
                           {c.res.overridden && !c.res.capped && <div className="gcondtag">⇄ rule-matched</div>}

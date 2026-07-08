@@ -239,6 +239,17 @@ function getActiveCondRules(){
   return (saved && Array.isArray(saved.condRules)) ? saved.condRules : COND_RULES_INIT;
 }
 
+/* demo vehicle year on Check Price — kept separate from the rule config above (it's per-quote
+   state, not a margin rule) but still persisted so it survives navigating to Margin Rules and back. */
+const DEMO_YEAR_KEY = 'mro_demo_model_year';
+function getDemoModelYear(){
+  try { const raw = localStorage.getItem(DEMO_YEAR_KEY); const y = raw ? parseInt(raw,10) : NaN; return isNaN(y) ? 2024 : y; }
+  catch(e){ return 2024; }
+}
+function saveDemoModelYear(year){
+  try { localStorage.setItem(DEMO_YEAR_KEY, String(year)); } catch(e){}
+}
+
 window.MRO = { METHODS, CAP_TYPES, resolveRule, clauseValue, isNA, fmt, fmt0, PART_TYPES_INIT, SAMPLE_PARTS, EXCEPTION_GROUPS, NOT_ACCEPTABLE, PT_COLOR, PT_NAME, CURRENT_YEAR, VEHICLE_AGE_RULE_INIT, vehicleAge, ageRuleActive, ageAllowsType,
-  COND_PREDICATES, COND_OUTCOMES, COND_CAP_TYPES, resolveConditional, condMatches, typeAvailable, COND_RULES_INIT, COND_SAMPLE,
+  COND_PREDICATES, COND_OUTCOMES, COND_CAP_TYPES, resolveConditional, condMatches, typeAvailable, COND_RULES_INIT, COND_SAMPLE, getDemoModelYear, saveDemoModelYear,
   loadRuleConfig, saveRuleConfig, getActiveTypes, getActiveAgeRule, getActiveCondRules };
