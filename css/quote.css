@@ -31,6 +31,7 @@
 .gtype-recon{color:#12B76A}
 .gtype-used{color:#F79009}
 .gprice{font-size:16px;font-weight:800;color:var(--ink)}
+.gprice-was{font-size:11px;font-weight:700;color:var(--text-4);text-decoration:line-through;margin-top:2px}
 .gcapd{font-size:9px;font-weight:800;color:var(--amber);background:var(--amber-lt);border-radius:3px;padding:0 4px;margin-top:1px}
 .gcondtag{font-size:9px;font-weight:800;color:#7A5AF8;background:#F4EEFF;border-radius:3px;padding:0 4px;margin-top:1px}
 .gcell-sel .gcell-in{background:#EAF2FE;box-shadow:inset 0 0 0 2px #1D6FE0}
@@ -59,6 +60,7 @@
 .gpop-sub.loser{opacity:.5}
 .gpop-sub.loser .gpop-v{text-decoration:line-through}
 .gpop-sub.cap .gpop-k,.gpop-sub.cap .gpop-v{color:var(--amber)}
+.gpop-sub.match .gpop-k,.gpop-sub.match .gpop-v{color:#7A5AF8}
 .gpop-tagm{font-size:8px;font-weight:800;padding:1px 4px;border-radius:3px;background:var(--green-lt);color:var(--green-d);margin-left:5px}
 
 .qg-totrow td{background:linear-gradient(180deg,#F4FAF5,var(--surface-2));border-top:2px solid #D6E9DB;border-bottom:none;padding:14px 6px;text-align:center;font-weight:800;font-size:13px;color:var(--ink)}
@@ -108,6 +110,7 @@
 
 .getd{font-size:10px;color:var(--text-3);margin-top:4px}
 .gprofit{font-size:11px;font-weight:800;color:var(--green-d);margin-top:3px}
+.gprofit.neg{color:var(--red)}
 
 /* ── exception states on the quote grid ── */
 .q1-exc{display:flex;align-items:flex-start;gap:9px;background:var(--blue-lt);border:1px solid #CFE2FB;border-radius:10px;padding:10px 15px;font-size:12.5px;color:var(--blue);margin-bottom:12px;line-height:1.5}

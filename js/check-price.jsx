@@ -65,7 +65,7 @@ const qcell = (part, sup, types, overrides) => {
   if(!o) return null;
   const base = resolveRule(ruleFor(sup.typeId, types), { list:part.list, cost:o.cost });
   const ov = overrides && overrides[sup.typeId];
-  const res = (ov!=null && ov!==base.sell) ? {...base, sell:ov, capped:false, overridden:true} : base;
+  const res = (ov!=null && ov!==base.sell) ? {...base, sell:ov, capped:false, overridden:true, preOverride:base.sell} : base;
   return { cost:o.cost, etd:o.etd, comment:o.c, flag:o.flag, res, sup };
 };
 const pillLabel = pt => {
@@ -273,8 +273,9 @@ function QuoteGrid(){
                       <td key={s.key} className={"gcell "+(selected?'gcell-sel':'')+(reassure?' gcell-okexc':'')} onClick={()=>toggle(p.id, s.key)}>
                         <div className="gcell-in">
                           <div className={"gtype gtype-"+s.cls}>{s.type}{c.comment && <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style={{opacity:.55}}><path d="M21 6H3v12h4v3l3-3h11z"/></svg>}</div>
+                          {c.res.overridden && <div className="gprice-was">{fmt(c.res.preOverride)}</div>}
                           <div className="gprice">{fmt(c.res.sell)}</div>
-                          <div className="gprofit">+{fmt(c.res.sell - c.cost)}</div>
+                          <div className={"gprofit"+(c.res.sell - c.cost < 0 ? ' neg' : '')}>{c.res.sell - c.cost >= 0 ? '+' : ''}{fmt(c.res.sell - c.cost)}</div>
                           {c.res.capped && <div className="gcapd">⛰ capped</div>}
                           {c.res.overridden && !c.res.capped && <div className="gcondtag">⇄ rule-matched</div>}
                           <div className="getd">ETD {c.etd}</div>
@@ -326,10 +327,11 @@ function CellPop({ part, c, types }){
         );
       })}
       {res.capped && <div className="gpop-sub cap"><span className="gpop-k">⛰ {CAP_TYPES[pt.cap.type].chip.replace('#',pt.cap.value)}</span><span className="gpop-v">{fmt(res.sell)}</span></div>}
+      {res.overridden && <div className="gpop-sub match"><span className="gpop-k">⇄ Matched by conditional rule</span><span className="gpop-v">{fmt(res.preOverride)} → {fmt(res.sell)}</span></div>}
       <div className="gpop-r"><span className="gpop-k">Mark Up</span><span className="gpop-v">{markup.toFixed(1)}%</span></div>
       <div className="gpop-r"><span className="gpop-k">List Price</span><span className="gpop-v">{fmt(part.list)}</span></div>
       <div className="gpop-final"><span className="gpop-k">Sell Price</span><span className="gpop-v">{fmt(res.sell)}</span></div>
-      <div className="gpop-r" style={{borderBottom:'none'}}><span className="gpop-k">Profit</span><span className="gpop-v" style={{color:'var(--green-d)'}}>{fmt(res.sell-cost)}</span></div>
+      <div className="gpop-r" style={{borderBottom:'none'}}><span className="gpop-k">Profit</span><span className="gpop-v" style={{color: res.sell-cost < 0 ? 'var(--red)' : 'var(--green-d)'}}>{fmt(res.sell-cost)}</span></div>
     </div>
   );
 }
