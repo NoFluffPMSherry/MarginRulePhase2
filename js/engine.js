@@ -12,8 +12,9 @@ const METHODS = {
 };
 
 const CAP_TYPES = {
-  priceCeiling:  { label:'Cap sell price at', pre:'$', kind:'dollar', chip:'$# cap' },
-  pctListCeiling:{ label:'Cap sell at % of list', suf:'%', kind:'pct', chip:'#% list cap' },
+  capAtList:     { label:'Cap at list price', kind:'flat', chip:'list price cap' },
+  priceCeiling:  { label:'Cap at custom amount', pre:'$', kind:'dollar', chip:'$# cap' },
+  pctListCeiling:{ label:'Cap at % of list', suf:'%', kind:'pct', chip:'#% list cap' },
   costCap:       { label:'Markup only on cost up to', pre:'$', kind:'dollar', chip:'markup ≤ $#' },
 };
 
@@ -45,6 +46,7 @@ function resolveRule(rule, part){
   let capped = false, preCapSell = sell;
   if(cap && cap.enabled){
     let ceil = null;
+    if(cap.type==='capAtList')      ceil = part.list;
     if(cap.type==='priceCeiling')   ceil = cap.value;
     if(cap.type==='pctListCeiling') ceil = part.list * cap.value/100;
     if(ceil != null && sell > ceil){ sell = ceil; capped = true; }
@@ -63,13 +65,13 @@ const PART_TYPES_INIT = [
     cap:{enabled:true, type:'costCap', value:300} },
   { id:'aftermarket', name:'Aftermarket', color:'#DB6D00',
     clauses:[{method:'pctList',value:75}], resolver:'higher', join:'OR',
-    cap:{enabled:false, type:'priceCeiling', value:0} },
+    cap:{enabled:false, type:'capAtList', value:0} },
   { id:'recon', name:'Reconditioned', color:'#7A5AF8',
     clauses:[{method:'pctList',value:75}], resolver:'higher', join:'OR',
-    cap:{enabled:false, type:'priceCeiling', value:0} },
+    cap:{enabled:false, type:'capAtList', value:0} },
   { id:'parallel', name:'Parallel', color:'#0BA5A5',
     clauses:[{method:'pctList',value:80}], resolver:'higher', join:'OR',
-    cap:{enabled:false, type:'priceCeiling', value:0} },
+    cap:{enabled:false, type:'capAtList', value:0} },
   { id:'recycled', name:'Recycled', color:'#12B76A',
     clauses:[{method:'markupCost',value:20}], resolver:'higher', join:'OR',
     cap:{enabled:true, type:'pctListCeiling', value:70} },

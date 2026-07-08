@@ -30,14 +30,14 @@ function PricingRow({ pt, onChange, focus, onFocus }){
   const capType = CAP_TYPES[pt.cap.type] || CAP_TYPES.priceCeiling;
 
   return (
-    <div className="pt-row">
-      <div className={"pt-main focusable "+(focus?'pt-focus-ring':'')} onClick={onFocus}>
+    <div className="pt-row" onClick={onFocus}>
+      <div className={"pt-main focusable "+(focus?'pt-focus-ring':'')}>
         <div className="pt-name"><span className="pt-dot" style={{background:pt.color}}/>{pt.name}</div>
-        <select className="sel" value={pt.clauses[0].method} onClick={e=>e.stopPropagation()} onChange={e=>setClause(0,{method:e.target.value})}>
+        <select className="sel" value={pt.clauses[0].method} onChange={e=>setClause(0,{method:e.target.value})}>
           {Object.entries(METHODS).map(([k,m])=><option key={k} value={k}>{m.label}</option>)}
         </select>
-        <div onClick={e=>e.stopPropagation()}><ValInput method={pt.clauses[0].method} value={pt.clauses[0].value} onChange={v=>setClause(0,{value:v})}/></div>
-        <input className="txt" placeholder="Type or select…" onClick={e=>e.stopPropagation()} defaultValue=""/>
+        <div><ValInput method={pt.clauses[0].method} value={pt.clauses[0].value} onChange={v=>setClause(0,{value:v})}/></div>
+        <input className="txt" placeholder="Type or select…" defaultValue=""/>
       </div>
 
       {/* combination sub-line */}
@@ -77,10 +77,14 @@ function PricingRow({ pt, onChange, focus, onFocus }){
           <select className="sel sel-sm" value={pt.cap.type} onChange={e=>setCap({type:e.target.value})}>
             {Object.entries(CAP_TYPES).map(([k,c])=><option key={k} value={k}>{c.label}</option>)}
           </select>
-          <div className={"valbox"+(capType.pre?' dollar':'')} style={{width:110}}>
-            <input type="number" value={pt.cap.value} onChange={e=>setCap({value:parseFloat(e.target.value)||0})}/>
-            <span className="unit">{capType.pre||capType.suf}</span>
-          </div>
+          {capType.kind==='flat' ? (
+            <div className="valbox-flat" style={{width:110}}>list price</div>
+          ) : (
+            <div className={"valbox"+(capType.pre?' dollar':'')} style={{width:110}}>
+              <input type="number" value={pt.cap.value} onChange={e=>setCap({value:parseFloat(e.target.value)||0})}/>
+              <span className="unit">{capType.pre||capType.suf}</span>
+            </div>
+          )}
           <button className="sub-x" onClick={()=>setCap({enabled:false})}>×</button>
         </div>
       )}

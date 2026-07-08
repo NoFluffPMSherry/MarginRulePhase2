@@ -61,6 +61,7 @@ button,input,select,textarea{font-family:inherit}
 .valbox input{border:none;outline:none;padding:10px 8px;font-size:14px;font-weight:700;text-align:right;width:100%;background:none;color:var(--ink);font-family:inherit}
 .valbox .unit{padding:0 11px;font-size:13px;color:var(--text-3);font-weight:600;background:var(--surface-2);align-self:stretch;display:flex;align-items:center;border-left:1px solid var(--border)}
 .valbox.dollar .unit{border-left:none;border-right:1px solid var(--border)}
+.valbox-flat{display:flex;align-items:center;padding:10px 12px;font-size:13px;font-weight:600;color:var(--text-3);background:var(--surface-2);border:1.5px solid var(--border);border-radius:10px}
 .txt{width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;color:var(--text);outline:none;background:#fff;transition:.12s;font-family:inherit}
 .txt::placeholder{color:var(--text-4)}
 .txt:focus{border-color:var(--green);box-shadow:0 0 0 3px var(--green-lt)}
