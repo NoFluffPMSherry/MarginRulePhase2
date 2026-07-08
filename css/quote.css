@@ -33,7 +33,7 @@
 .gcorner{position:absolute;top:0;right:0;width:0;height:0;border-top:16px solid var(--green);border-left:16px solid transparent}
 .gcorner svg{position:absolute;top:-15px;right:0;color:#fff}
 
-.gpop{position:absolute;top:calc(100% - 6px);left:50%;transform:translateX(-50%);width:274px;background:#fff;border:1.5px solid var(--green);border-radius:10px;box-shadow:var(--sh-lg);z-index:20;padding:12px 14px;text-align:left;display:none;cursor:default}
+.gpop{position:absolute;top:calc(100% - 6px);left:50%;transform:translateX(-50%);width:274px;background:#fff;border:1.5px solid var(--green);border-radius:10px;box-shadow:var(--sh-lg);z-index:45;padding:12px 14px;text-align:left;display:none;cursor:default}
 .gcell:hover:not(.empty) .gpop{display:block}
 .gpop-r{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px;border-bottom:1px solid var(--border-lt)}
 .gpop-r:last-child{border-bottom:none}
@@ -76,6 +76,8 @@
 .q1-resp-lbl{font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;text-align:right}
 .q1-resp-dots{display:flex;gap:5px;justify-content:flex-end}
 .q1-chk{width:24px;height:24px;border-radius:50%;background:var(--green-lt);color:var(--green-d);display:flex;align-items:center;justify-content:center;font-size:12px;border:1px solid #BBEBC9}
+/* sticks the cost/sell/profit + active rule bar under the top nav while the grid scrolls beneath it */
+.q1-sticky{position:sticky;top:64px;z-index:40;background:var(--bg);padding-bottom:14px;border-bottom:1px solid var(--border-lt);box-shadow:0 8px 16px -12px rgba(16,24,40,.12)}
 .q1-metrics{display:grid;grid-template-columns:repeat(3,1fr);background:#fff;border:1px solid #EDEFF2;border-radius:16px;padding:22px 28px;margin-bottom:14px;box-shadow:0 1px 2px rgba(16,24,40,.04),0 14px 30px -20px rgba(16,24,40,.24)}
 .q1-metric{padding-left:28px;border-left:1px solid #F0F1F4}
 .q1-metric:first-child{padding-left:0;border-left:none}
@@ -85,7 +87,7 @@
 .q1-metric-s{font-size:11.5px;color:var(--text-3);margin-top:6px}
 .q1-applied{display:flex;align-items:center;gap:8px;background:var(--green-lt);border:1px solid #BBEBC9;border-radius:10px;padding:10px 15px;font-size:12.5px;color:var(--green-d);margin-bottom:12px}
 .q1-applied .x{margin-left:auto;cursor:pointer;opacity:.55;font-size:16px}
-.q1-rulebar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-bottom:14px;margin-bottom:2px}
+.q1-rulebar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .q1-rulebar-lbl{font-size:12.5px;font-weight:700;color:var(--text-2)}
 .q1-pills{display:flex;gap:7px;flex-wrap:wrap}
 .q1-pill{font-size:11px;font-weight:700;padding:5px 11px;border-radius:999px;border:1.5px solid;display:inline-flex;gap:5px;align-items:center;white-space:nowrap}

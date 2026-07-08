@@ -170,11 +170,34 @@ function QuoteGrid(){
           </div>
         </div>
 
-        {/* Metric cards */}
-        <div className="q1-metrics">
-          <div className="q1-metric"><div className="q1-metric-k">Your Cost</div><div className="q1-metric-v">{fmt(cost)}</div><div className="q1-metric-s">{selCount} of {QPARTS.length} parts · paid to suppliers</div></div>
-          <div className="q1-metric"><div className="q1-metric-k">Your Sell</div><div className="q1-metric-v">{fmt(sell)}</div><div className="q1-metric-s">filed to Allianz under this rule</div></div>
-          <div className="q1-metric"><div className="q1-metric-k">Your Profit</div><div className="q1-metric-v profit">{fmt(profit)}</div><div className="q1-metric-s">{margin.toFixed(1)}% margin on selection</div></div>
+        {/* Sticky header — stays in view while scrolling the grid: cost/sell/profit + active rule */}
+        <div className="q1-sticky">
+          <div className="q1-metrics">
+            <div className="q1-metric"><div className="q1-metric-k">Your Cost</div><div className="q1-metric-v">{fmt(cost)}</div><div className="q1-metric-s">{selCount} of {QPARTS.length} parts · paid to suppliers</div></div>
+            <div className="q1-metric"><div className="q1-metric-k">Your Sell</div><div className="q1-metric-v">{fmt(sell)}</div><div className="q1-metric-s">filed to Allianz under this rule</div></div>
+            <div className="q1-metric"><div className="q1-metric-k">Your Profit</div><div className="q1-metric-v profit">{fmt(profit)}</div><div className="q1-metric-s">{margin.toFixed(1)}% margin on selection</div></div>
+          </div>
+
+          {/* Active margin rule bar */}
+          <div className="q1-rulebar">
+            <span className="q1-rulebar-lbl">Active Margin Rule:</span>
+            <select className="sel sel-sm" style={{minWidth:130}}><option>Allianz — My Shop</option><option>Allianz Baseline</option><option>Standard</option></select>
+            <div className="q1-pills">
+              {types.map(pt=>(
+                <span key={pt.id} className={"q1-pill "+pt.id}>
+                  {pt.name} {pillLabel(pt)}
+                  {pt.clauses.length>1 && <span className="combo">◇</span>}
+                  {pt.cap.enabled && <span>⛰</span>}
+                </span>
+              ))}
+            </div>
+            <div className="q1-rr">
+              <span>Quick Select:</span>
+              <select className="sel sel-sm"><option>— None —</option><option>Max Profit</option><option>Min Cost</option><option>OEM Dealer</option></select>
+              <button className="qtool-btn"><span className="pdf">▤</span>Print</button>
+              <div className="q1-view"><span className="on"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span></div>
+            </div>
+          </div>
         </div>
 
         {applied && (
@@ -205,27 +228,6 @@ function QuoteGrid(){
             <span><b>{QPARTS.filter(p=>p.exc).length} parts on this quote fall under Allianz exception rules.</b> Safety-critical categories are OEM-only — cheaper non-OEM offers are locked.</span>
           </div>
         )}
-
-        {/* Active margin rule bar */}
-        <div className="q1-rulebar">
-          <span className="q1-rulebar-lbl">Active Margin Rule:</span>
-          <select className="sel sel-sm" style={{minWidth:130}}><option>Allianz — My Shop</option><option>Allianz Baseline</option><option>Standard</option></select>
-          <div className="q1-pills">
-            {types.map(pt=>(
-              <span key={pt.id} className={"q1-pill "+pt.id}>
-                {pt.name} {pillLabel(pt)}
-                {pt.clauses.length>1 && <span className="combo">◇</span>}
-                {pt.cap.enabled && <span>⛰</span>}
-              </span>
-            ))}
-          </div>
-          <div className="q1-rr">
-            <span>Quick Select:</span>
-            <select className="sel sel-sm"><option>— None —</option><option>Max Profit</option><option>Min Cost</option><option>OEM Dealer</option></select>
-            <button className="qtool-btn"><span className="pdf">▤</span>Print</button>
-            <div className="q1-view"><span className="on"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span></div>
-          </div>
-        </div>
 
         {/* Grid */}
         <div className="qscroll">
