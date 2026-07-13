@@ -1,10 +1,10 @@
 (function(){
 const { useState, useMemo } = React;
 const { METHODS, CAP_TYPES, resolveRule, isNA, fmt,
-        SAMPLE_PARTS, EXCEPTION_GROUPS, NOT_ACCEPTABLE,
-        COND_PREDICATES, COND_OUTCOMES, COND_CAP_TYPES, resolveConditional, condMatches,
+        SAMPLE_PARTS, EXCEPTION_GROUPS, VEHICLE_BRANDS, AGE_OPERATORS,
+        COND_PREDICATES, COND_OUTCOMES, COND_CAP_TYPES, SUPPLIER_TYPES, resolveConditional, condMatches,
         COND_SAMPLE,
-        saveRuleConfig, getActiveTypes, getActiveAgeRule, getActiveCondRules } = window.MRO;
+        saveRuleConfig, getActiveTypes, getActiveAgeRules, getActiveCondRules, getActiveExceptions } = window.MRO;
 const { TopNav } = window.MROShared;
 
 /* ─── value input ─── */
@@ -162,7 +162,7 @@ function ExamplePanel({ pt, samplePart, setSamplePart }){
 }
 
 /* ─── summary card (auto bullets) ─── */
-function SummaryCard({ types, ageRule, condRules }){
+function SummaryCard({ types, ageRules, condRules }){
   const line = pt => {
     if(isNA(pt)) return 'Not accepted';
     const parts = pt.clauses.map(cl=>{
@@ -182,15 +182,21 @@ function SummaryCard({ types, ageRule, condRules }){
       {types.map(pt=>(
         <div className="sum-li" key={pt.id}><span className="bullet">•</span><span><b>{pt.name}:</b> {line(pt)}</span></div>
       ))}
-      {ageRule && ageRule.enabled && (
-        <div className="sum-li"><span className="bullet">•</span><span><b>Vehicle age:</b> {types.filter(t=>(ageRule.allowedTypes||[]).includes(t.id)).map(t=>t.name).join(' / ') || 'nothing'} only if under {ageRule.maxYears} years old</span></div>
-      )}
+      {(ageRules||[]).filter(r=>r.enabled).map(r=>{
+        const brand = VEHICLE_BRANDS.find(b=>b.id===r.brand) || VEHICLE_BRANDS[0];
+        const op = AGE_OPERATORS[r.operator] || AGE_OPERATORS.lt;
+        const allowedNames = types.filter(t=>(r.allowedTypes||[]).includes(t.id)).map(t=>t.name).join(' / ') || 'nothing';
+        return (
+          <div className="sum-li" key={r.id}><span className="bullet">•</span><span><b>Vehicle age:</b> {allowedNames} only if {brand.id==='any'?'vehicle':brand.name} age is {op.label} {r.years} years</span></div>
+        );
+      })}
       {(condRules||[]).filter(r=>r.enabled).map(r=>{
         const nm = id => (types.find(t=>t.id===id)||{}).name || id;
         const oc = COND_OUTCOMES[r.outcome.type];
         const cond = r.conditions.map(c=>{
           const p = COND_PREDICATES[c.predicate];
-          return `${nm(c.partType)} ${p.label}${p.needsRef?' '+nm(c.ref):''}`;
+          const sup = c.supplierType && c.supplierType!=='any' ? ` from a ${SUPPLIER_TYPES.find(s=>s.id===c.supplierType).name} supplier` : '';
+          return `${nm(c.partType)}${sup} ${p.label}${p.needsRef?' '+nm(c.ref):''}`;
         }).join(` ${r.join} `);
         let then;
         if(r.outcome.type==='method'){
@@ -233,6 +239,21 @@ function PtSelect({ value, onChange, types, cls, exclude }){
   );
 }
 
+/* supplier-type filter — who's fulfilling the offer, independent of the part's own brand category */
+function SupplierSelect({ value, onChange }){
+  const v = value || 'any';
+  const cur = SUPPLIER_TYPES.find(s=>s.id===v) || SUPPLIER_TYPES[0];
+  return (
+    <span className="cr-supcond">
+      <span className="cr-supword">from</span>
+      <span className="cr-dot" style={{background:cur.color}}/>
+      <select className="cr-supsel" value={v} onChange={e=>onChange(e.target.value)}>
+        {SUPPLIER_TYPES.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}
+      </select>
+    </span>
+  );
+}
+
 /* compact % / $ value input for method + cap operands */
 function CrNum({ kind, value, onChange }){
   const dollar = kind==='dollar';
@@ -253,7 +274,7 @@ function CondCard({ rule, onChange, onDelete, types }){
   const addCond = () => {
     const used = new Set(rule.conditions.map(c=>c.partType));
     const next = types.find(t=>!used.has(t.id)) || types[0];
-    set({ conditions:[...rule.conditions, {partType:next.id, predicate:'available'}] });
+    set({ conditions:[...rule.conditions, {partType:next.id, predicate:'available', supplierType:'any'}] });
   };
   const rmCond = i => set({ conditions: rule.conditions.filter((_,idx)=>idx!==i) });
 
@@ -270,7 +291,7 @@ function CondCard({ rule, onChange, onDelete, types }){
   // live effect on the sample line
   const res = resolveConditional(types, COND_SAMPLE.offers, [{...rule, enabled:true}]);
   const hit = res.trace.find(t=>t.target===rule.target);
-  const matched = condMatches(rule, res.avail, res.base);
+  const matched = condMatches(rule, res.avail, res.base, COND_SAMPLE.offers);
   const nm = id => (types.find(t=>t.id===id)||{}).name || id;
 
   return (
@@ -291,6 +312,7 @@ function CondCard({ rule, onChange, onDelete, types }){
               )}
               <span className="cr-cond">
                 <PtSelect value={c.partType} onChange={v=>setCond(i,{partType:v})} types={types} cls="cr-ptsel"/>
+                <SupplierSelect value={c.supplierType} onChange={v=>setCond(i,{supplierType:v})}/>
                 <select className="cr-predsel" value={c.predicate} onChange={e=>{
                   const p=e.target.value; const needsRef=COND_PREDICATES[p].needsRef;
                   setCond(i,{predicate:p, ref: needsRef ? (c.ref || (types.find(t=>t.id!==c.partType)||{}).id) : undefined});
@@ -398,7 +420,7 @@ function ConditionalRules({ rules, setRules, types }){
   const add = () => {
     const a = types[0], b = types.find(t=>t.id!==a.id) || a;
     setRules([...rules, { id:'cr'+rules.length+1+'-'+a.id+b.id, enabled:true, join:'AND',
-      conditions:[{partType:a.id,predicate:'available'},{partType:b.id,predicate:'available'}],
+      conditions:[{partType:a.id,predicate:'available',supplierType:'any'},{partType:b.id,predicate:'available',supplierType:'any'}],
       target:a.id, outcome:{type:'matchRef', ref:b.id, cap:{enabled:false,type:'priceCeiling',value:0}} }]);
   };
   const active = rules.filter(r=>r.enabled).length;
@@ -429,54 +451,101 @@ function ConditionalRules({ rules, setRules, types }){
   );
 }
 
-/* ─── vehicle age rule (rule-level acceptable-part-types gate) ─── */
-function VehicleAgeRule({ rule, setRule, types }){
+/* ─── vehicle age rules (rule-level acceptable-part-types gate) ───
+   Each rule reads: For <brand> vehicles, if age is <op> <years> years, only <allowedTypes>
+   are acceptable. Multiple rules run in parallel — a type is blocked on a line if ANY
+   matching rule (across all enabled rules whose brand + age condition hits) excludes it. */
+function AgeRuleCard({ rule, onChange, onDelete, types }){
+  const set = patch => onChange({...rule, ...patch});
   const allowed = rule.allowedTypes || [];
   const allowedNames = types.filter(t=>allowed.includes(t.id)).map(t=>t.name).join(' / ') || 'nothing';
   const toggle = id => {
     if(!rule.enabled) return;
     const next = allowed.includes(id) ? allowed.filter(x=>x!==id) : [...allowed, id];
-    setRule({...rule, allowedTypes:next});
+    set({allowedTypes:next});
   };
   return (
-    <div className="sec">
-      <div className="sec-head">
-        <div className="sec-title">Vehicle Age Rule</div>
-        <span className="count">{rule.enabled ? `${allowedNames} only under ${rule.maxYears} yrs` : 'Off'}</span>
-      </div>
-      <div className="sec-body">
-        <div className={"vage"+(rule.enabled?'':' off')}>
-          <div className="vage-lead">
-            <label className="switch"><input type="checkbox" checked={rule.enabled} onChange={e=>setRule({...rule, enabled:e.target.checked})}/><span className="switch-slider"/></label>
-            <div className="vage-sent">
-              If the vehicle is less than
-              <span className="vage-num"><input type="number" min="1" max="15" value={rule.maxYears} disabled={!rule.enabled} onChange={e=>setRule({...rule, maxYears:Math.max(1,parseInt(e.target.value)||1)})}/><span className="unit">yrs</span></span>
-              old, only <b>{allowedNames}</b> parts are acceptable.
-            </div>
-          </div>
-          <div className="vage-eff">
-            <span className="vage-eff-lbl">Effect · click to toggle</span>
-            {types.map(t=>{
-              const on = allowed.includes(t.id);
-              return (
-                <button key={t.id} type="button" className={"vage-tog "+(on?'vage-ok':'vage-no')} disabled={!rule.enabled} onClick={()=>toggle(t.id)}>
-                  {on && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12l5 5L20 7"/></svg>}
-                  {t.name}
-                </button>
-              );
-            })}
-          </div>
+    <div className={"vage vage-card"+(rule.enabled?'':' off')}>
+      <div className="vage-lead">
+        <label className="switch"><input type="checkbox" checked={rule.enabled} onChange={e=>set({enabled:e.target.checked})}/><span className="switch-slider"/></label>
+        <div className="vage-sent">
+          For
+          <select className="sel sel-sm" disabled={!rule.enabled} value={rule.brand||'any'} onChange={e=>set({brand:e.target.value})}>
+            {VEHICLE_BRANDS.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
+          </select>
+          vehicles, if age is
+          <select className="sel sel-sm" disabled={!rule.enabled} value={rule.operator||'lt'} onChange={e=>set({operator:e.target.value})}>
+            {Object.entries(AGE_OPERATORS).map(([k,o])=><option key={k} value={k}>{o.label}</option>)}
+          </select>
+          <span className="vage-num"><input type="number" min="0" max="30" value={rule.years} disabled={!rule.enabled} onChange={e=>set({years:Math.max(0,parseInt(e.target.value)||0)})}/><span className="unit">yrs</span></span>
+          old, only <b>{allowedNames}</b> parts are acceptable.
         </div>
+        <button className="cr-del" onClick={onDelete} title="Delete rule">×</button>
+      </div>
+      <div className="vage-eff">
+        <span className="vage-eff-lbl">Effect · click to toggle</span>
+        {types.map(t=>{
+          const on = allowed.includes(t.id);
+          return (
+            <button key={t.id} type="button" className={"vage-tog "+(on?'vage-ok':'vage-no')} disabled={!rule.enabled} onClick={()=>toggle(t.id)}>
+              {on && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12l5 5L20 7"/></svg>}
+              {t.name}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-/* ─── exceptions (safety-critical category groups, A&G style) ─── */
-function ExcCard({ g, onChange, onDelete }){
+function VehicleAgeRules({ rules, setRules, types }){
+  const update = r => setRules(rules.map(x=>x.id===r.id?r:x));
+  const del = id => setRules(rules.filter(x=>x.id!==id));
+  const add = () => setRules([...rules, { id:'var'+(rules.length+1)+'-'+Math.round(Math.random()*1e6), enabled:true, brand:'any', operator:'lt', years:3, allowedTypes:['oem'] }]);
+  const active = rules.filter(r=>r.enabled).length;
+  return (
+    <div className="sec">
+      <div className="sec-head">
+        <div className="sec-title">Vehicle Age Rules</div>
+        <span className="count">{active} active</span>
+      </div>
+      <div className="sec-body">
+        <div className="cr-intro">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" style={{flexShrink:0,marginTop:1}}><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+          <span>Gate acceptable part types by vehicle age and brand — e.g. <b>for any brand under 3 years, OEM only</b>. Multiple rules can run in parallel; a type is blocked if any matching rule excludes it.</span>
+        </div>
+        {rules.length===0 ? (
+          <div className="cr-empty"><b>No vehicle age rules yet</b>Add one to restrict part types by vehicle age.</div>
+        ) : (
+          <div className="cr-wrap">
+            {rules.map(r=><AgeRuleCard key={r.id} rule={r} onChange={update} onDelete={()=>del(r.id)} types={types}/>)}
+          </div>
+        )}
+        <button className="cr-add" onClick={add}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M12 5v14M5 12h14"/></svg>
+          Add vehicle age rule
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ─── exceptions (safety-critical category groups, A&G style) ───
+   Which part types are acceptable is per-category and configurable (not hardcoded to
+   OEM), and each category can carry its own pricing allowance that overrides the
+   normal per-type rule for parts in that category — e.g. OEM at 100% of list for
+   airbags vs. the shop's usual 90%. */
+function ExcCard({ g, onChange, onDelete, types }){
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState('');
   const addPart = () => { if(!draft.trim())return; onChange({...g, parts:[...g.parts, draft.trim()]}); setDraft(''); setAdding(false); };
+  const allowed = g.allowedTypes || [];
+  const allowedNames = types.filter(t=>allowed.includes(t.id)).map(t=>t.name);
+  const badgeLabel = allowedNames.length===0 ? 'Not accepted' : allowedNames.length===types.length ? 'All types' : allowedNames.join(' + ')+' only';
+  const toggleType = id => onChange({...g, allowedTypes: allowed.includes(id) ? allowed.filter(x=>x!==id) : [...allowed, id]});
+  const override = g.override || {enabled:false, method:'pctList', value:100};
+  const setOverride = patch => onChange({...g, override:{...override, ...patch}});
+  const om = METHODS[override.method];
   return (
     <div className="xg-card">
       <div className="xg-head">
@@ -484,15 +553,23 @@ function ExcCard({ g, onChange, onDelete }){
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg>
         </div>
         <div className="xg-name">{g.category}</div>
-        <span className="xg-badge oem">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12l5 5L20 7"/></svg>OEM only
+        <span className={"xg-badge "+(allowedNames.length===0?'':'oem')} style={allowedNames.length===0?{background:'var(--red-lt)',color:'var(--red)'}:undefined}>
+          {allowedNames.length>0 && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12l5 5L20 7"/></svg>}{badgeLabel}
         </span>
         <button className="xg-del" onClick={onDelete} title="Remove category">×</button>
       </div>
       <div className="xg-body">
-        <div className="xg-na">
-          <span className="lbl">Not acceptable:</span>
-          {NOT_ACCEPTABLE.map(t=><span className="na-chip" key={t}>✕ {t}</span>)}
+        <div className="vage-eff" style={{marginBottom:12}}>
+          <span className="vage-eff-lbl">Acceptable part types · click to toggle</span>
+          {types.map(t=>{
+            const on = allowed.includes(t.id);
+            return (
+              <button key={t.id} type="button" className={"vage-tog "+(on?'vage-ok':'vage-no')} onClick={()=>toggleType(t.id)}>
+                {on && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12l5 5L20 7"/></svg>}
+                {t.name}
+              </button>
+            );
+          })}
         </div>
         <div className="xg-parts">
           {g.parts.map((p,i)=>(
@@ -512,31 +589,56 @@ function ExcCard({ g, onChange, onDelete }){
             </button>
           )}
         </div>
+        <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',marginTop:13,paddingTop:12,borderTop:'1px solid #F1F2F5'}}>
+          <span className="vage-eff-lbl" style={{marginRight:0}}>Allowance</span>
+          {override.enabled ? (
+            <>
+              <select className="sel sel-sm" value={override.method} onChange={e=>{
+                const mm=e.target.value; setOverride({method:mm, value: METHODS[mm].kind==='dollar'?300:(mm==='pctList'?100:20)});
+              }}>
+                {Object.entries(METHODS).filter(([k])=>k!=='notAccepted').map(([k,mo])=><option key={k} value={k}>{mo.label}</option>)}
+              </select>
+              {om.kind!=='flat' && (
+                <div className={"valbox"+(om.kind==='dollar'?' dollar':'')} style={{width:110}}>
+                  <input type="number" value={override.value} onChange={e=>setOverride({value:parseFloat(e.target.value)||0})}/>
+                  <span className="unit">{om.kind==='dollar'?'$':'%'}</span>
+                </div>
+              )}
+              <span style={{fontSize:11.5,color:'var(--text-3)'}}>for {allowedNames.join(' / ')||'accepted types'} on these parts</span>
+              <button className="sub-x" onClick={()=>setOverride({enabled:false})}>×</button>
+            </>
+          ) : (
+            <button className="add-link muted" onClick={()=>setOverride({enabled:true})}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M12 5v14M5 12h14"/></svg>
+              Add pricing allowance for these parts
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-function Exceptions({ groups, setGroups }){
+function Exceptions({ groups, setGroups, types }){
   const [cat, setCat] = useState('');
   const partCount = groups.reduce((a,g)=>a+g.parts.length,0);
   const update = g => setGroups(groups.map(x=>x.id===g.id?g:x));
   const del = id => setGroups(groups.filter(x=>x.id!==id));
   const addCat = () => {
     if(!cat.trim())return;
-    setGroups([...groups, {id:'c'+groups.length+1, category:cat.trim(), action:'oem-only', parts:[]}]);
+    setGroups([...groups, {id:'c'+groups.length+1, category:cat.trim(), allowedTypes:['oem'], override:{enabled:false, method:'pctList', value:100}, parts:[]}]);
     setCat('');
   };
   return (
     <div className="sec">
-      <div className="sec-head"><div className="sec-title">Exceptions · Parts flagged as not acceptable</div><span className="count">{groups.length} categories · {partCount} parts</span></div>
+      <div className="sec-head"><div className="sec-title">Exceptions · Safety-critical category overrides</div><span className="count">{groups.length} categories · {partCount} parts</span></div>
       <div className="sec-body">
         <div className="xg-note0">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" style={{flexShrink:0,marginTop:1}}><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/><path d="M12 9v4m0 4h.01"/></svg>
-          <span><b>OEM only for these safety-critical categories.</b> Used, Parallel, Aftermarket and Recon/Exchange are not acceptable. Any exception is managed case-by-case with prior assessor approval.</span>
+          <span><b>Safety-critical categories restrict which part types are acceptable.</b> Set the acceptable type(s) and, if this category needs different pricing to the standard rule (e.g. OEM at 100% of list instead of the usual 90%), add an allowance. Any exception is managed case-by-case with prior assessor approval.</span>
         </div>
         <div className="xg">
-          {groups.map(g=><ExcCard key={g.id} g={g} onChange={update} onDelete={()=>del(g.id)}/>)}
+          {groups.map(g=><ExcCard key={g.id} g={g} onChange={update} onDelete={()=>del(g.id)} types={types}/>)}
         </div>
         <div className="exc-add">
           <span className="lbl">New category</span>
@@ -553,21 +655,22 @@ function RuleBuilder(){
   const [types, setTypes] = useState(getActiveTypes());
   const [focusId, setFocusId] = useState('oem');
   const [samplePart, setSamplePart] = useState(SAMPLE_PARTS[0]);
-  const [exceptions, setExceptions] = useState(EXCEPTION_GROUPS);
-  const [ageRule, setAgeRule] = useState(getActiveAgeRule());
+  const [exceptions, setExceptions] = useState(getActiveExceptions());
+  const [ageRules, setAgeRules] = useState(getActiveAgeRules());
   const [condRules, setCondRules] = useState(getActiveCondRules());
   const [saved, setSaved] = useState(false);
   const focusPt = types.find(t=>t.id===focusId) || types[0];
   const updateType = pt => setTypes(types.map(t=>t.id===pt.id?pt:t));
   const handleSave = () => {
-    saveRuleConfig({ types, ageRule, condRules });
+    saveRuleConfig({ types, ageRules, condRules, exceptions });
     setSaved(true);
     setTimeout(()=>setSaved(false), 2000);
   };
   const handleCancel = () => {
     setTypes(getActiveTypes());
-    setAgeRule(getActiveAgeRule());
+    setAgeRules(getActiveAgeRules());
     setCondRules(getActiveCondRules());
+    setExceptions(getActiveExceptions());
   };
 
   return (
@@ -617,14 +720,14 @@ function RuleBuilder(){
               </div>
             </div>
 
-            <VehicleAgeRule rule={ageRule} setRule={setAgeRule} types={types}/>
+            <VehicleAgeRules rules={ageRules} setRules={setAgeRules} types={types}/>
             <ConditionalRules rules={condRules} setRules={setCondRules} types={types}/>
-            <Exceptions groups={exceptions} setGroups={setExceptions}/>
+            <Exceptions groups={exceptions} setGroups={setExceptions} types={types}/>
           </div>
 
           <div className="rail">
             <ExamplePanel pt={focusPt} samplePart={samplePart} setSamplePart={setSamplePart}/>
-            <SummaryCard types={types} ageRule={ageRule} condRules={condRules}/>
+            <SummaryCard types={types} ageRules={ageRules} condRules={condRules}/>
             <div className="rail-actions" style={{flexDirection:'column',gap:8}}>
               <div style={{display:'flex',gap:8,width:'100%'}}>
                 <button className="btn btn-ghost btn-lg" style={{justifyContent:'center',flex:1}} onClick={handleCancel}>Cancel</button>

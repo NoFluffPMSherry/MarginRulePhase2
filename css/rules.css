@@ -144,12 +144,14 @@
 .switch input:checked + .switch-slider{background:var(--green)}
 .switch input:checked + .switch-slider:before{transform:translateX(16px)}
 
-/* vehicle age rule (builder) */
+/* vehicle age rules (builder) */
 .vage{opacity:1;transition:.15s}
 .vage.off{opacity:.5}
+.vage-card{border:1px solid #E7EAEF;border-radius:15px;background:#fff;padding:14px 16px;box-shadow:0 1px 2px rgba(16,24,40,.04),0 10px 24px -18px rgba(16,24,40,.2)}
+.vage-card:hover{box-shadow:0 1px 2px rgba(16,24,40,.05),0 14px 30px -18px rgba(16,24,40,.26)}
 .vage-lead{display:flex;align-items:center;gap:12px;padding:4px 0 14px}
 .vage-lead .switch{flex-shrink:0}
-.vage-sent{font-size:14px;color:var(--text);font-weight:500;display:flex;align-items:center;gap:8px;flex-wrap:wrap;line-height:2}
+.vage-sent{font-size:14px;color:var(--text);font-weight:500;display:flex;align-items:center;gap:8px;flex-wrap:wrap;line-height:2;flex:1}
 .vage-sent b{color:var(--ink);font-weight:800}
 .vage-num{display:inline-flex;align-items:center;border:1.5px solid var(--border);border-radius:9px;overflow:hidden;background:#fff}
 .vage-num input{border:none;outline:none;width:46px;text-align:center;padding:7px 4px;font-size:15px;font-weight:800;color:var(--ink);font-family:inherit;background:none}
@@ -196,6 +198,9 @@
 .cr-outsel:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-lt)}
 .cr-refsel{appearance:none;border:1px solid #BBD3F7;background:var(--blue-lt);border-radius:999px;font-size:13px;font-weight:800;color:var(--blue);cursor:pointer;outline:none;padding:5px 22px 5px 12px;font-family:inherit;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%231D6FE0'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center}
 .cr-refcond{display:inline-flex;align-items:center;gap:7px;background:#fff;border:1px solid #BBD3F7;border-radius:999px;padding:4px 5px 4px 11px}
+.cr-supcond{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--border);border-radius:999px;padding:4px 5px 4px 10px}
+.cr-supword{font-size:10.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--text-3)}
+.cr-supsel{appearance:none;border:none;background:none;font-size:12.5px;font-weight:700;color:var(--text-2);cursor:pointer;outline:none;padding:2px 16px 2px 2px;font-family:inherit;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%2398A2B3'/%3E%3C/svg%3E") no-repeat right 2px center}
 .cr-methsel{appearance:none;border:1px solid var(--border);background:#fff;border-radius:8px;font-size:12.5px;font-weight:700;color:var(--text);cursor:pointer;outline:none;padding:6px 26px 6px 11px;font-family:inherit;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M0 0l4.5 6 4.5-6z' fill='%2398A2B3'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center}
 .cr-num{display:inline-flex;align-items:center;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:#fff}
 .cr-num.dollar{flex-direction:row-reverse}

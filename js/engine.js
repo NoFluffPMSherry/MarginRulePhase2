@@ -81,28 +81,62 @@ const SAMPLE_PARTS = [
   { id:'clip',   name:'Bumper Clip Kit',    list:35.38,  cost:8.60  },
 ];
 
+const EXC_OVERRIDE_OFF = { enabled:false, method:'pctList', value:100 };
 const EXCEPTION_GROUPS = [
-  { id:'airbag', category:'Airbag Systems', action:'oem-only',
+  { id:'airbag', category:'Airbag Systems', allowedTypes:['oem'], override:{...EXC_OVERRIDE_OFF},
     parts:['Driver Airbag','Passenger Airbag','Knee Airbags','Curtain Airbags','Airbag Electronic Control Unit','Airbag Sensors','Crash Sensor'] },
-  { id:'abs', category:'ABS / Braking Safety Systems', action:'oem-only',
+  { id:'abs', category:'ABS / Braking Safety Systems', allowedTypes:['oem'], override:{...EXC_OVERRIDE_OFF},
     parts:['ABS Speed Sensor','ABS Sensor Cable','ABS Control Unit','ABS Hydraulic Pump'] },
-  { id:'restraints', category:'Restraints', action:'oem-only',
+  { id:'restraints', category:'Restraints', allowedTypes:['oem'], override:{...EXC_OVERRIDE_OFF},
     parts:['Seat Belts','Seat Belt Stalk'] },
-  { id:'interior', category:'Interior', action:'oem-only',
+  { id:'interior', category:'Interior', allowedTypes:['oem'], override:{...EXC_OVERRIDE_OFF},
     parts:['Instrument Panel / Dash (airbag-integrated)','Front Seat Cover (airbag-integrated)'] },
-  { id:'electronic', category:'Electronic Safety Systems', action:'oem-only',
+  { id:'electronic', category:'Electronic Safety Systems', allowedTypes:['oem'], override:{...EXC_OVERRIDE_OFF},
     parts:['Electronic Control Modules'] },
-  { id:'suspension', category:'Suspension', action:'oem-only',
+  { id:'suspension', category:'Suspension', allowedTypes:['oem'], override:{...EXC_OVERRIDE_OFF},
     parts:['Ball Joint','Link Arm','Stabilizer Links'] },
 ];
-const NOT_ACCEPTABLE = ['Used','Parallel','Aftermarket','Recon / Exchange'];
 
-/* vehicle-age gate: when the vehicle is younger than maxYears, only allowedTypes are acceptable */
+/* vehicle-age gate: each rule tests (brand, age vs years) — when it matches, only allowedTypes
+   are acceptable. Multiple rules can be active in parallel; a type is blocked if ANY matching
+   rule excludes it (equivalent to intersecting every matching rule's allowedTypes). */
 const CURRENT_YEAR = 2026;
-const VEHICLE_AGE_RULE_INIT = { enabled:true, maxYears:3, allowedTypes:['oem'] };
+
+const VEHICLE_BRANDS = [
+  { id:'any',        name:'Any brand' },
+  { id:'toyota',      name:'Toyota' },
+  { id:'mazda',       name:'Mazda' },
+  { id:'hyundai',     name:'Hyundai' },
+  { id:'kia',         name:'Kia' },
+  { id:'ford',        name:'Ford' },
+  { id:'holden',      name:'Holden' },
+  { id:'mitsubishi',  name:'Mitsubishi' },
+  { id:'nissan',      name:'Nissan' },
+  { id:'subaru',      name:'Subaru' },
+  { id:'volkswagen',  name:'Volkswagen' },
+  { id:'bmw',         name:'BMW' },
+  { id:'mercedes',    name:'Mercedes-Benz' },
+  { id:'isuzu',       name:'Isuzu' },
+];
+
+const AGE_OPERATORS = {
+  lt: { label:'less than',    symbol:'<', test:(age,years)=>age<years },
+  gt: { label:'greater than', symbol:'>', test:(age,years)=>age>years },
+  eq: { label:'equal to',     symbol:'=', test:(age,years)=>age===years },
+};
+
+const VEHICLE_AGE_RULES_INIT = [
+  { id:'var1', enabled:true, brand:'any', operator:'lt', years:3, allowedTypes:['oem'] },
+];
+
 const vehicleAge = year => CURRENT_YEAR - year;
-const ageRuleActive = (year, ageRule) => !!(ageRule && ageRule.enabled && vehicleAge(year) < ageRule.maxYears);
-const ageAllowsType = (typeId, year, ageRule) => !ageRuleActive(year, ageRule) || (ageRule.allowedTypes||[]).includes(typeId);
+const brandMatches = (rule, brand) => !rule.brand || rule.brand==='any' || rule.brand===brand;
+const ageRuleMatches = (year, brand, rule) => !!(rule && rule.enabled && brandMatches(rule, brand)
+  && AGE_OPERATORS[rule.operator||'lt'].test(vehicleAge(year), rule.years));
+const matchingAgeRules = (year, brand, ageRules) => (ageRules||[]).filter(r=>ageRuleMatches(year, brand, r));
+const ageRuleActive = (year, brand, ageRules) => matchingAgeRules(year, brand, ageRules).length>0;
+const ageAllowsType = (typeId, year, brand, ageRules) =>
+  !matchingAgeRules(year, brand, ageRules).some(r=>!(r.allowedTypes||[]).includes(typeId));
 
 const PT_COLOR = id => (PART_TYPES_INIT.find(p=>p.id===id)||{}).color || '#98A2B3';
 const PT_NAME  = id => (PART_TYPES_INIT.find(p=>p.id===id)||{}).name || id;
@@ -120,6 +154,16 @@ const COND_PREDICATES = {
   cheaper:     { label:'is cheaper than',        needsRef:true  },
   dearer:      { label:'is more expensive than', needsRef:true  },
 };
+
+/* Supplier type — who's actually fulfilling the offer, independent of the part's own brand
+   category (e.g. a recycler can supply a genuine OEM take-off part). 'any' = no filter. */
+const SUPPLIER_TYPES = [
+  { id:'any',         name:'Any supplier', color:'#98A2B3' },
+  { id:'oem',         name:'OEM',          color:'#1D6FE0' },
+  { id:'aftermarket', name:'Aftermarket',  color:'#DB6D00' },
+  { id:'recycled',    name:'Recycled',     color:'#12B76A' },
+  { id:'used',        name:'Used',         color:'#667085' },
+];
 
 /* Outcome kinds. `method` sets an explicit pricing formula on the target;
    `matchRef`/`capRef` reference another type's computed price. Any non-block
@@ -141,6 +185,14 @@ const COND_CAP_TYPES = {
 /* availability = an offer exists for the type AND its own rule doesn't mark it Not Accepted */
 function typeAvailable(pt, offers){ return !!offers[pt.id] && !isNA(pt); }
 
+/* does the offer on this line for c.partType come from the supplier type the condition asks for?
+   'any'/unset = no filter, always true. */
+function supplierMatches(c, offers){
+  if(!c.supplierType || c.supplierType==='any') return true;
+  const o = offers[c.partType];
+  return !!o && o.supplierType === c.supplierType;
+}
+
 function applyCondCap(sell, cap, part){
   if(!cap || !cap.enabled || sell==null || !part) return { sell, capped:false };
   let ceil = null;
@@ -151,16 +203,18 @@ function applyCondCap(sell, cap, part){
   return { sell, capped:false };
 }
 
-function evalCond(c, avail, base){
-  if(c.predicate==='available')   return !!avail[c.partType];
-  if(c.predicate==='unavailable') return !avail[c.partType];
+function evalCond(c, avail, base, offers){
+  const supplierOk = supplierMatches(c, offers);
+  if(c.predicate==='available')   return !!avail[c.partType] && supplierOk;
+  if(c.predicate==='unavailable') return !(avail[c.partType] && supplierOk);
+  if(!supplierOk) return false;
   const a = base[c.partType], b = base[c.ref];
   if(a==null || b==null) return false;
   return c.predicate==='cheaper' ? a < b : a > b;
 }
-function condMatches(rule, avail, base){
+function condMatches(rule, avail, base, offers){
   if(!rule.conditions.length) return false;
-  const r = rule.conditions.map(c=>evalCond(c, avail, base));
+  const r = rule.conditions.map(c=>evalCond(c, avail, base, offers));
   return rule.join==='AND' ? r.every(Boolean) : r.some(Boolean);
 }
 
@@ -176,7 +230,7 @@ function resolveConditional(partTypes, offers, condRules){
   const trace = [];
   (condRules||[]).forEach(rule=>{
     if(rule.enabled===false) return;
-    if(!condMatches(rule, avail, base)) return;
+    if(!condMatches(rule, avail, base, offers)) return;
     const tgt = rule.target, oc = rule.outcome, tOffer = offers[tgt];
     const before = final[tgt];
     let after = before, refSell = null, capped = false;
@@ -204,14 +258,15 @@ function resolveConditional(partTypes, offers, condRules){
 
 const COND_RULES_INIT = [
   { id:'cr1', enabled:true, join:'AND',
-    conditions:[{partType:'oem',predicate:'available'},{partType:'parallel',predicate:'available'}],
+    conditions:[{partType:'oem',predicate:'available',supplierType:'any'},{partType:'parallel',predicate:'available',supplierType:'any'}],
     target:'oem', outcome:{ type:'matchRef', ref:'parallel', cap:{enabled:false,type:'priceCeiling',value:0} } },
 ];
 
-/* worked-example line for the builder: OEM + Parallel + Aftermarket all quoted */
+/* worked-example line for the builder: OEM + Parallel + Aftermarket all quoted. The OEM offer here
+   is supplied by a recycler (a genuine take-off part) so Supplier Type filters have something to bite on. */
 const COND_SAMPLE = {
   name:'L/H Front Guard', list:659.80,
-  offers:{ oem:{list:659.80,cost:527.84}, parallel:{list:659.80,cost:290.00}, aftermarket:{list:659.80,cost:305.00} },
+  offers:{ oem:{list:659.80,cost:527.84,supplierType:'recycled'}, parallel:{list:659.80,cost:290.00,supplierType:'aftermarket'}, aftermarket:{list:659.80,cost:305.00,supplierType:'aftermarket'} },
 };
 
 /* ══════════════════ PERSISTENCE — bridges the Margin Rules screen and Check Price ══════════════════
@@ -230,13 +285,17 @@ function getActiveTypes(){
   const saved = loadRuleConfig();
   return (saved && Array.isArray(saved.types) && saved.types.length) ? saved.types : PART_TYPES_INIT;
 }
-function getActiveAgeRule(){
+function getActiveAgeRules(){
   const saved = loadRuleConfig();
-  return (saved && saved.ageRule) ? saved.ageRule : VEHICLE_AGE_RULE_INIT;
+  return (saved && Array.isArray(saved.ageRules)) ? saved.ageRules : VEHICLE_AGE_RULES_INIT;
 }
 function getActiveCondRules(){
   const saved = loadRuleConfig();
   return (saved && Array.isArray(saved.condRules)) ? saved.condRules : COND_RULES_INIT;
+}
+function getActiveExceptions(){
+  const saved = loadRuleConfig();
+  return (saved && Array.isArray(saved.exceptions)) ? saved.exceptions : EXCEPTION_GROUPS;
 }
 
 /* demo vehicle year on Check Price — kept separate from the rule config above (it's per-quote
@@ -250,6 +309,17 @@ function saveDemoModelYear(year){
   try { localStorage.setItem(DEMO_YEAR_KEY, String(year)); } catch(e){}
 }
 
-window.MRO = { METHODS, CAP_TYPES, resolveRule, clauseValue, isNA, fmt, fmt0, PART_TYPES_INIT, SAMPLE_PARTS, EXCEPTION_GROUPS, NOT_ACCEPTABLE, PT_COLOR, PT_NAME, CURRENT_YEAR, VEHICLE_AGE_RULE_INIT, vehicleAge, ageRuleActive, ageAllowsType,
-  COND_PREDICATES, COND_OUTCOMES, COND_CAP_TYPES, resolveConditional, condMatches, typeAvailable, COND_RULES_INIT, COND_SAMPLE, getDemoModelYear, saveDemoModelYear,
-  loadRuleConfig, saveRuleConfig, getActiveTypes, getActiveAgeRule, getActiveCondRules };
+/* demo vehicle brand on Check Price — same rationale as the model year above */
+const DEMO_BRAND_KEY = 'mro_demo_vehicle_brand';
+function getDemoVehicleBrand(){
+  try { return localStorage.getItem(DEMO_BRAND_KEY) || 'hyundai'; } catch(e){ return 'hyundai'; }
+}
+function saveDemoVehicleBrand(brand){
+  try { localStorage.setItem(DEMO_BRAND_KEY, brand); } catch(e){}
+}
+
+window.MRO = { METHODS, CAP_TYPES, resolveRule, clauseValue, isNA, fmt, fmt0, PART_TYPES_INIT, SAMPLE_PARTS, EXCEPTION_GROUPS, PT_COLOR, PT_NAME, CURRENT_YEAR,
+  VEHICLE_BRANDS, AGE_OPERATORS, VEHICLE_AGE_RULES_INIT, vehicleAge, ageRuleMatches, matchingAgeRules, ageRuleActive, ageAllowsType,
+  COND_PREDICATES, COND_OUTCOMES, COND_CAP_TYPES, SUPPLIER_TYPES, resolveConditional, condMatches, typeAvailable, COND_RULES_INIT, COND_SAMPLE,
+  getDemoModelYear, saveDemoModelYear, getDemoVehicleBrand, saveDemoVehicleBrand,
+  loadRuleConfig, saveRuleConfig, getActiveTypes, getActiveAgeRules, getActiveCondRules, getActiveExceptions };

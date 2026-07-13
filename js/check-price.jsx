@@ -1,9 +1,9 @@
 (function(){
 const { useState, useEffect } = React;
 const { METHODS, CAP_TYPES, resolveRule, resolveConditional, fmt,
-        PART_TYPES_INIT, vehicleAge, ageRuleActive, ageAllowsType,
-        getActiveTypes, getActiveAgeRule, getActiveCondRules,
-        getDemoModelYear, saveDemoModelYear } = window.MRO;
+        PART_TYPES_INIT, VEHICLE_BRANDS, vehicleAge, ageRuleActive, ageAllowsType, matchingAgeRules,
+        getActiveTypes, getActiveAgeRules, getActiveCondRules,
+        getDemoModelYear, saveDemoModelYear, getDemoVehicleBrand, saveDemoVehicleBrand } = window.MRO;
 const { TopNav } = window.MROShared;
 
 /* ═══════════════ CHECK PRICE GRID (Phase-1 layout) ═══════════════
@@ -84,17 +84,21 @@ const pillLabel = pt => {
 function QuoteGrid(){
   const [sel, setSel] = useState({ 1:'jfa', 2:'jfa', 6:'apg', 8:'sap' });
   const [applied, setApplied] = useState(true);
-  // persisted so picking a model year to demo the age gate survives navigating to Margin Rules and back
+  // persisted so picking a model year / make to demo the age gate survives navigating to Margin Rules and back
   const [modelYear, setModelYearState] = useState(()=>getDemoModelYear());
   const setModelYear = y => { setModelYearState(y); saveDemoModelYear(y); };
-  // pricing rules + vehicle age rule + conditional rules — loaded from whatever was last saved on the Margin Rules screen
+  const [vehicleBrand, setVehicleBrandState] = useState(()=>getDemoVehicleBrand());
+  const setVehicleBrand = b => { setVehicleBrandState(b); saveDemoVehicleBrand(b); };
+  // pricing rules + vehicle age rules + conditional rules — loaded from whatever was last saved on the Margin Rules screen
   const [types] = useState(getActiveTypes());
-  const ageRule = getActiveAgeRule();
+  const ageRules = getActiveAgeRules();
   const condRules = getActiveCondRules();
   const age = vehicleAge(modelYear);
-  const ageActive = ageRuleActive(modelYear, ageRule);
-  const ageBlocked = typeId => !ageAllowsType(typeId, modelYear, ageRule);
-  const ageAllowedNames = types.filter(t=>(ageRule.allowedTypes||[]).includes(t.id)).map(t=>t.name).join(' / ') || 'nothing';
+  const brandObj = VEHICLE_BRANDS.find(b=>b.id===vehicleBrand) || VEHICLE_BRANDS[1];
+  const matchedAgeRules = matchingAgeRules(modelYear, vehicleBrand, ageRules);
+  const ageActive = ageRuleActive(modelYear, vehicleBrand, ageRules);
+  const ageBlocked = typeId => !ageAllowsType(typeId, modelYear, vehicleBrand, ageRules);
+  const ageAllowedNames = types.filter(t=>!ageBlocked(t.id)).map(t=>t.name).join(' / ') || 'nothing';
   // colour comes from whatever's configured for this type on the Margin Rules screen — never hardcoded per supplier
   const colorFor = typeId => (types.find(t=>t.id===typeId)||{}).color || '#98A2B3';
 
@@ -114,7 +118,7 @@ function QuoteGrid(){
       QPARTS.forEach(p=>{ const k=prev[p.id]; if(k){ const s=QSUP.find(x=>x.key===k); if(s && !cellAllowed(p,s,ageBlocked,condByPart[p.id])){ next[p.id]=null; changed=true; } } });
       return changed?next:prev;
     });
-  },[ageActive]);
+  },[ageActive, modelYear, vehicleBrand]);
 
   const toggle = (id, key) => {
     const part = QPARTS.find(p=>p.id===id);
@@ -147,8 +151,12 @@ function QuoteGrid(){
         <div className="q1-head">
           <div>
             <div className="q1-qno"><span>QUOTE:</span> 89734</div>
-            <div className="q1-qsub">Hyundai Tucson · ABC123 · Insurer: <b>Allianz</b></div>
+            <div className="q1-qsub">{brandObj.name} · ABC123 · Insurer: <b>Allianz</b></div>
             <div className="q1-vehctl">
+              <span className="q1-vehctl-lbl">Make</span>
+              <select className="sel sel-sm" value={vehicleBrand} onChange={e=>setVehicleBrand(e.target.value)}>
+                {VEHICLE_BRANDS.filter(b=>b.id!=='any').map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
+              </select>
               <span className="q1-vehctl-lbl">Model year</span>
               <select className="sel sel-sm" value={modelYear} onChange={e=>setModelYear(+e.target.value)}>
                 {[2026,2025,2024,2023,2022,2021,2020,2019,2018].map(y=><option key={y} value={y}>{y}</option>)}
@@ -211,7 +219,7 @@ function QuoteGrid(){
         {ageActive && (
           <div className="q1-agebanner">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" style={{flexShrink:0,marginTop:1}}><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/><path d="M9 12l2 2 4-4"/></svg>
-            <span><b>Vehicle is {age} years old ({modelYear}) — under the {ageRule.maxYears}-year threshold.</b> Allianz <b>{ageAllowedNames}-only</b> rule is in effect: offers outside {ageAllowedNames} are locked on every part, not just safety categories.</span>
+            <span><b>{brandObj.name} vehicle is {age} years old ({modelYear}) — {matchedAgeRules.length} vehicle age rule{matchedAgeRules.length===1?'':'s'} in effect.</b> Allianz <b>{ageAllowedNames}-only</b> rule applies: offers outside {ageAllowedNames} are locked on every part, not just safety categories.</span>
           </div>
         )}
 
@@ -271,11 +279,11 @@ function QuoteGrid(){
                     if(!c) return <td key={s.key} className="gcell empty"><div className="gcell-in"/></td>;
                     const kind = lockKind(p, s, ageBlocked, overrides);
                     if(kind) return (
-                      <td key={s.key} className="gcell gcell-locked" title={kind==='age' ? `Not acceptable — vehicle under ${ageRule.maxYears} years (${ageAllowedNames} only)` : kind==='conditional' ? 'Not acceptable — blocked by a conditional rule on this line' : 'Not acceptable under Allianz OEM-only safety rule'}>
+                      <td key={s.key} className="gcell gcell-locked" title={kind==='age' ? `Not acceptable — blocked by a vehicle age rule (${ageAllowedNames} only)` : kind==='conditional' ? 'Not acceptable — blocked by a conditional rule on this line' : 'Not acceptable under Allianz OEM-only safety rule'}>
                         <div className="gcell-in">
                           <div className="gtype gl-strike">{s.type}</div>
                           <div className="gl-price">{fmt(c.cost)}</div>
-                          <div className="gl-tag"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 018 0v3"/></svg>{kind==='age' ? `< ${ageRule.maxYears} yrs` : kind==='conditional' ? 'rule blocked' : 'OEM only'}</div>
+                          <div className="gl-tag"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 018 0v3"/></svg>{kind==='age' ? 'age rule' : kind==='conditional' ? 'rule blocked' : 'OEM only'}</div>
                         </div>
                       </td>
                     );

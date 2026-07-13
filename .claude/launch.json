@@ -8,6 +8,12 @@
       "port": 5500
     },
     {
+      "name": "static-site-2",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "."],
+      "autoPort": true
+    },
+    {
       "name": "margin-rule-portal-mgmt",
       "runtimeExecutable": "npx",
       "runtimeArgs": ["serve", "-l", "5501", "C:\\Users\\abc\\AI WorkSpace\\PC 2026 RoadMap\\Initiatives\\Insurer Rules Overlay\\MarginRulePortalMgmt"],
