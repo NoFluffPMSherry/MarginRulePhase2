@@ -118,6 +118,11 @@
 .ex-step-tag{font-size:8.5px;font-weight:800;padding:1px 5px;border-radius:3px;letter-spacing:.03em;text-transform:uppercase}
 .tag-win{background:var(--green-lt);color:var(--green-d)}
 .tag-cap{background:var(--amber-lt);color:var(--amber)}
+.tag-cond{background:#F4EEFF;color:#7A5AF8}
+.ex-step.cond .ex-step-b{background:#F4EEFF;color:#7A5AF8}
+.ex-step.cond .ex-step-v{color:#7A5AF8}
+.ex-supersede-lbl{font-size:10.5px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.03em;margin-top:6px}
+.ex-cond-note{font-size:11px;color:var(--text-3);margin-top:6px}
 .ex-final{margin-top:14px;background:linear-gradient(135deg,var(--green-lt),#DCF5E4);border:1px solid #A6E4BD;border-radius:13px;padding:14px 15px}
 .ex-final-row{display:flex;align-items:center;justify-content:space-between}
 .ex-final-k{font-size:11px;font-weight:800;color:var(--green-d);text-transform:uppercase;letter-spacing:.04em}

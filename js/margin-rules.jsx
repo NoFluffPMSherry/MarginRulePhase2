@@ -106,10 +106,25 @@ function PricingRow({ pt, onChange, focus, onFocus }){
   );
 }
 
-/* ─── worked example ─── */
-function ExamplePanel({ pt, samplePart, setSamplePart }){
+/* ─── worked example ───
+   Resolves the focused type's own rule, then layers any enabled conditional rules on top —
+   for preview purposes every part type is assumed to be quoted on this line at the same
+   list/cost as the sample part, so conditions like "X is available" can actually be tested.
+   When a conditional rule fires it wins: the type rule above is shown struck through as
+   superseded rather than silently ignored, matching how Check Price resolves the same line. */
+function ExamplePanel({ pt, samplePart, setSamplePart, types, condRules }){
   const res = useMemo(()=>resolveRule(pt, samplePart), [pt, samplePart]);
-  const margin = res.sell>0 ? (res.sell - samplePart.cost)/res.sell*100 : 0;
+  const nm = id => (types||[]).find(t=>t.id===id)?.name || id;
+  const condHits = useMemo(()=>{
+    if(!types || !types.length) return [];
+    const offers = {};
+    types.forEach(t=>{ offers[t.id] = { list: samplePart.list, cost: samplePart.cost }; });
+    return resolveConditional(types, offers, condRules||[]).trace.filter(t=>t.target===pt.id);
+  }, [types, condRules, samplePart, pt.id]);
+  const overridden = condHits.length>0;
+  const finalHit = overridden ? condHits[condHits.length-1] : null;
+  const finalSell = overridden ? finalHit.after : res.sell;
+  const margin = finalSell>0 ? (finalSell - samplePart.cost)/finalSell*100 : 0;
   const higher = pt.resolver==='higher';
   return (
     <div className="ex">
@@ -125,35 +140,51 @@ function ExamplePanel({ pt, samplePart, setSamplePart }){
       </div>
       <div className="ex-body">
         <div className="ex-focus"><span className="dot" style={{background:pt.color}}/>Resolving <b style={{color:'var(--ink)'}}>{pt.name}</b></div>
-        {isNA(pt) ? (
+        {isNA(pt) && !overridden ? (
           <div className="ex-step"><div className="ex-step-b">✕</div><div className="ex-step-txt"><b>Not accepted</b> under this rule.</div></div>
         ) : <>
-          {res.steps.map((s,idx)=>{
-            const m = METHODS[s.cl.method];
-            const isWinner = res.steps.length>1 && res.winnerIdx===s.i;
-            const isLoser = res.steps.length>1 && !isWinner;
-            const desc = m.kind==='flat' ? 'dealer list' : m.kind==='dollar' ? `fixed $${s.cl.value}`
-              : s.cl.method==='pctList' ? `${s.cl.value}% × list` : `cost × ${(1+s.cl.value/100).toFixed(2)}`;
-            return (
-              <div key={idx} className={"ex-step "+(idx>0?'c2 ':'')+(isWinner?'winner ':'')+(isLoser?'muted':'')}>
-                <div className="ex-step-b">{String.fromCharCode(65+idx)}</div>
-                <div className="ex-step-txt"><b>{m.short}</b> · {desc}</div>
-                {isWinner && <span className="ex-step-tag tag-win">{higher?'HIGHER':'LOWER'}</span>}
-                <div className="ex-step-v">{fmt(s.v)}</div>
+          {!isNA(pt) && <>
+            {overridden && <div className="ex-supersede-lbl">{pt.name} type rule — superseded</div>}
+            {res.steps.map((s,idx)=>{
+              const m = METHODS[s.cl.method];
+              const isWinner = res.steps.length>1 && res.winnerIdx===s.i;
+              const isLoser = res.steps.length>1 && !isWinner;
+              const desc = m.kind==='flat' ? 'dealer list' : m.kind==='dollar' ? `fixed $${s.cl.value}`
+                : s.cl.method==='pctList' ? `${s.cl.value}% × list` : `cost × ${(1+s.cl.value/100).toFixed(2)}`;
+              return (
+                <div key={idx} className={"ex-step "+(idx>0?'c2 ':'')+(isWinner&&!overridden?'winner ':'')+((isLoser||overridden)?'muted':'')}>
+                  <div className="ex-step-b">{String.fromCharCode(65+idx)}</div>
+                  <div className="ex-step-txt"><b>{m.short}</b> · {desc}</div>
+                  {isWinner && !overridden && <span className="ex-step-tag tag-win">{higher?'HIGHER':'LOWER'}</span>}
+                  <div className="ex-step-v">{fmt(s.v)}</div>
+                </div>
+              );
+            })}
+            {res.capped && !overridden && (
+              <div className="ex-step winner">
+                <div className="ex-step-b">⛰</div>
+                <div className="ex-step-txt"><b>Cap applied</b></div>
+                <span className="ex-step-tag tag-cap">CAPPED</span>
+                <div className="ex-step-v">{fmt(res.sell)}</div>
               </div>
-            );
-          })}
-          {res.capped && (
-            <div className="ex-step winner">
-              <div className="ex-step-b">⛰</div>
-              <div className="ex-step-txt"><b>Cap applied</b></div>
-              <span className="ex-step-tag tag-cap">CAPPED</span>
-              <div className="ex-step-v">{fmt(res.sell)}</div>
+            )}
+          </>}
+          {condHits.map((hit,i)=>(
+            <div key={i} className="ex-step cond">
+              <div className="ex-step-b">⇄</div>
+              <div className="ex-step-txt">
+                <b>Conditional rule wins</b> · when {hit.rule.conditions.map(c=>nm(c.partType)).join(hit.rule.join==='AND'?' & ':' or ')}
+                {hit.ref ? ` — matched to ${nm(hit.ref)}'s rate` : ''}
+                {hit.capped ? ' · capped' : ''}
+              </div>
+              <span className="ex-step-tag tag-cond">WINS</span>
+              <div className="ex-step-v">{hit.after==null ? 'Blocked' : fmt(hit.after)}</div>
             </div>
-          )}
+          ))}
+          {overridden && <div className="ex-cond-note">Preview assumes every part type is also quoted on this line at the same list price &amp; cost, so the conditions above can be tested.</div>}
           <div className="ex-final">
-            <div className="ex-final-row"><div className="ex-final-k">Sell price</div><div className="ex-final-v">{fmt(res.sell)}</div></div>
-            <div className="ex-final-sub"><span>cost {fmt(samplePart.cost)} · profit <b>{fmt(res.sell-samplePart.cost)}</b></span><span><b>{margin.toFixed(0)}%</b> margin</span></div>
+            <div className="ex-final-row"><div className="ex-final-k">Sell price</div><div className="ex-final-v">{finalSell==null ? 'Not accepted' : fmt(finalSell)}</div></div>
+            <div className="ex-final-sub"><span>cost {fmt(samplePart.cost)} · profit <b>{finalSell==null ? '—' : fmt(finalSell-samplePart.cost)}</b></span><span><b>{finalSell==null ? '—' : margin.toFixed(0)+'%'}</b> margin</span></div>
           </div>
         </>}
       </div>
@@ -726,7 +757,7 @@ function RuleBuilder(){
           </div>
 
           <div className="rail">
-            <ExamplePanel pt={focusPt} samplePart={samplePart} setSamplePart={setSamplePart}/>
+            <ExamplePanel pt={focusPt} samplePart={samplePart} setSamplePart={setSamplePart} types={types} condRules={condRules}/>
             <SummaryCard types={types} ageRules={ageRules} condRules={condRules}/>
             <div className="rail-actions" style={{flexDirection:'column',gap:8}}>
               <div style={{display:'flex',gap:8,width:'100%'}}>

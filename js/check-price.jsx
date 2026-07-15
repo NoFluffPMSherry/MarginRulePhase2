@@ -1,6 +1,6 @@
 (function(){
 const { useState, useEffect } = React;
-const { METHODS, CAP_TYPES, resolveRule, resolveConditional, fmt,
+const { METHODS, CAP_TYPES, resolveRule, resolveConditional, fmt, PT_NAME,
         PART_TYPES_INIT, VEHICLE_BRANDS, vehicleAge, ageRuleActive, ageAllowsType, matchingAgeRules,
         getActiveTypes, getActiveAgeRules, getActiveCondRules,
         getDemoModelYear, saveDemoModelYear, getDemoVehicleBrand, saveDemoVehicleBrand } = window.MRO;
@@ -66,12 +66,15 @@ const lockKind = (part, sup, ageBlocked, overrides) => {
   if(overrides && overrides[sup.typeId]===null) return 'conditional';
   return null;
 };
-const qcell = (part, sup, types, overrides) => {
+const qcell = (part, sup, types, overrides, condTrace) => {
   const o = part.s[sup.key];
   if(!o) return null;
   const base = resolveRule(ruleFor(sup.typeId, types), { list:part.list, cost:o.cost });
   const ov = overrides && overrides[sup.typeId];
-  const res = (ov!=null && ov!==base.sell) ? {...base, sell:ov, capped:false, overridden:true, preOverride:base.sell} : base;
+  const tr = condTrace && condTrace[sup.typeId];
+  const res = (ov!=null && ov!==base.sell)
+    ? {...base, sell:ov, capped:false, overridden:true, preOverride:base.sell, condRef:tr && tr.ref, condCapped:tr && tr.capped}
+    : base;
   return { cost:o.cost, etd:o.etd, comment:o.c, flag:o.flag, res, sup };
 };
 const pillLabel = pt => {
@@ -103,11 +106,14 @@ function QuoteGrid(){
   const colorFor = typeId => (types.find(t=>t.id===typeId)||{}).color || '#98A2B3';
 
   // conditional cross-type overlay, resolved per line — {partId: {typeId: overriddenSellPrice}}
+  // condTraceByPart mirrors it but keeps the full trace entry (which ref/rule actually fired) for the popover
   const condByPart = {};
+  const condTraceByPart = {};
   QPARTS.forEach(p=>{
-    const overrides = {};
-    resolveConditional(types, lineOffers(p), condRules).trace.forEach(t=>{ overrides[t.target] = t.after; });
+    const overrides = {}, traceMap = {};
+    resolveConditional(types, lineOffers(p), condRules).trace.forEach(t=>{ overrides[t.target] = t.after; traceMap[t.target] = t; });
     condByPart[p.id] = overrides;
+    condTraceByPart[p.id] = traceMap;
   });
   const condHitCount = QPARTS.filter(p=>Object.keys(condByPart[p.id]).length>0).length;
 
@@ -275,7 +281,7 @@ function QuoteGrid(){
                   </td>
                   {QSUP.map(s=>{
                     const overrides = condByPart[p.id];
-                    const c = qcell(p, s, types, overrides);
+                    const c = qcell(p, s, types, overrides, condTraceByPart[p.id]);
                     if(!c) return <td key={s.key} className="gcell empty"><div className="gcell-in"/></td>;
                     const kind = lockKind(p, s, ageBlocked, overrides);
                     if(kind) return (
@@ -335,18 +341,26 @@ function CellPop({ part, c, types }){
       <div className="gpop-r"><span className="gpop-k">Part Type</span><span className="gpop-v">{sup.type}</span></div>
       <div className="gpop-r"><span className="gpop-k">Cost</span><span className="gpop-v">{fmt(cost)}</span></div>
       <div className="gpop-r warn"><span className="gpop-k">Supplier Discount</span><span className="gpop-v">⚠ {disc.toFixed(1)}%</span></div>
-      <div className="gpop-r"><span className="gpop-k">Rule Applied</span><span className="gpop-v">{combo ? `${higher?'higher':'lower'} of ↓` : applied(res.steps[0].cl)}</span></div>
-      {combo && res.steps.map((s,idx)=>{
-        const win = res.winnerIdx===s.i;
-        return (
-          <div key={idx} className={"gpop-sub "+(win?'win':'loser')}>
-            <span className="gpop-k">{String.fromCharCode(65+idx)} · {applied(s.cl)}{win && <span className="gpop-tagm">{higher?'HIGHER':'LOWER'}</span>}</span>
-            <span className="gpop-v">{fmt(s.v)}</span>
-          </div>
-        );
-      })}
-      {res.capped && <div className="gpop-sub cap"><span className="gpop-k">⛰ {CAP_TYPES[pt.cap.type].chip.replace('#',pt.cap.value)}</span><span className="gpop-v">{fmt(res.sell)}</span></div>}
-      {res.overridden && <div className="gpop-sub match"><span className="gpop-k">⇄ Matched by conditional rule</span><span className="gpop-v">{fmt(res.preOverride)} → {fmt(res.sell)}</span></div>}
+      <div className="gpop-r"><span className="gpop-k">Rule Applied</span><span className="gpop-v">{res.overridden ? '⇄ Conditional rule' : (combo ? `${higher?'higher':'lower'} of ↓` : applied(res.steps[0].cl))}</span></div>
+      {res.overridden ? (
+        <>
+          <div className="gpop-sub match"><span className="gpop-k">⇄ Matched to {res.condRef ? PT_NAME(res.condRef) : 'other type'}'s rate{res.condCapped ? ' · capped' : ''}</span><span className="gpop-v">{fmt(res.sell)}</span></div>
+          <div className="gpop-sub loser"><span className="gpop-k">{pt.name} type rule ({combo ? `${higher?'higher':'lower'} of ${res.steps.map(s=>applied(s.cl)).join(' / ')}` : applied(res.steps[0].cl)}) — superseded</span><span className="gpop-v">{fmt(res.preOverride)}</span></div>
+        </>
+      ) : (
+        <>
+          {combo && res.steps.map((s,idx)=>{
+            const win = res.winnerIdx===s.i;
+            return (
+              <div key={idx} className={"gpop-sub "+(win?'win':'loser')}>
+                <span className="gpop-k">{String.fromCharCode(65+idx)} · {applied(s.cl)}{win && <span className="gpop-tagm">{higher?'HIGHER':'LOWER'}</span>}</span>
+                <span className="gpop-v">{fmt(s.v)}</span>
+              </div>
+            );
+          })}
+          {res.capped && <div className="gpop-sub cap"><span className="gpop-k">⛰ {CAP_TYPES[pt.cap.type].chip.replace('#',pt.cap.value)}</span><span className="gpop-v">{fmt(res.sell)}</span></div>}
+        </>
+      )}
       <div className="gpop-r"><span className="gpop-k">Mark Up</span><span className="gpop-v">{markup.toFixed(1)}%</span></div>
       <div className="gpop-r"><span className="gpop-k">List Price</span><span className="gpop-v">{fmt(part.list)}</span></div>
       <div className="gpop-final"><span className="gpop-k">Sell Price</span><span className="gpop-v">{fmt(res.sell)}</span></div>
