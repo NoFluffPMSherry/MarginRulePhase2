@@ -46,10 +46,7 @@ function PricingRow({ pt, onChange, focus, onFocus }){
           <div className="subline reveal">
             <div className="sub-label"><span>then</span></div>
             <div className="sub-join">
-              <div className="seg">
-                <button className={"seg-btn "+(pt.join==='OR'?'on':'')} onClick={()=>onChange({...pt, join:'OR'})}>OR</button>
-                <button className={"seg-btn "+(pt.join==='AND'?'on':'')} onClick={()=>onChange({...pt, join:'AND', resolver:'lower'})}>AND</button>
-              </div>
+              <div className="seg"><span className="seg-btn on" style={{cursor:'default'}}>OR</span></div>
               <span style={{fontSize:12,color:'var(--text-2)',fontWeight:600}}>use the</span>
               <div className="seg">
                 <button className={"seg-btn "+(pt.resolver==='higher'?'on':'')} onClick={()=>onChange({...pt, resolver:'higher'})}>↑ higher</button>
@@ -94,7 +91,7 @@ function PricingRow({ pt, onChange, focus, onFocus }){
         <div className="pt-adds">
           {pt.clauses.length<2 && <button className="add-link" onClick={addClause}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M12 5v14M5 12h14"/></svg>
-            Add OR / AND condition
+            Add OR condition
           </button>}
           {!pt.cap.enabled && <button className="add-link muted" onClick={()=>setCap({enabled:true})}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M3 20h18L14 4l-4 8-3-3-4 11z"/></svg>
@@ -193,7 +190,7 @@ function ExamplePanel({ pt, samplePart, setSamplePart, types, condRules }){
 }
 
 /* ─── summary card (auto bullets) ─── */
-function SummaryCard({ types, ageRules, condRules }){
+function SummaryCard({ types, ageRules, condRules, ruleName, appliesTo }){
   const line = pt => {
     if(isNA(pt)) return 'Not accepted';
     const parts = pt.clauses.map(cl=>{
@@ -202,14 +199,15 @@ function SummaryCard({ types, ageRules, condRules }){
       if(m.kind==='dollar') return `$${cl.value} fixed`;
       return cl.method==='pctList' ? `${cl.value}% of list` : `+${cl.value}% markup`;
     });
-    let s = parts.join(pt.clauses.length>1 ? ` ${pt.join} ` : '');
+    let s = parts.join(pt.clauses.length>1 ? ' OR ' : '');
     if(pt.clauses.length>1) s += `, ${pt.resolver}`;
     if(pt.cap.enabled) s += ` · cap ${CAP_TYPES[pt.cap.type].chip.replace('#',pt.cap.value)}`;
     return s;
   };
   return (
     <div className="sum">
-      <div className="sum-t">Allianz — My Shop</div>
+      <div className="sum-eyebrow">Rule Summary</div>
+      <div className="sum-t">{ruleName}<span className="tag tag-custom">Custom</span><span className="tag tag-combo">Combination</span></div>
       {types.map(pt=>(
         <div className="sum-li" key={pt.id}><span className="bullet">•</span><span><b>{pt.name}:</b> {line(pt)}</span></div>
       ))}
@@ -245,9 +243,9 @@ function SummaryCard({ types, ageRules, condRules }){
         return <div className="sum-li" key={r.id}><span className="bullet">•</span><span><b>When</b> {cond}, <b>{nm(r.target)}</b> should {then}</span></div>;
       })}
       <div className="sum-debtors">
-        <div className="sum-dk">Mapped debtors (5)</div>
+        <div className="sum-dk">Mapped debtors ({appliesTo.length})</div>
         <div className="sum-chips">
-          {['Allianz','Club Marine','Hunter Premium','Territory Ins.','+1 more'].map(d=><span className="sum-chip" key={d}>{d}</span>)}
+          {appliesTo.map(d=><span className="sum-chip" key={d}>{d}</span>)}
         </div>
       </div>
     </div>
@@ -682,6 +680,10 @@ function Exceptions({ groups, setGroups, types }){
 }
 
 /* ═══════════════ RULE BUILDER PAGE ═══════════════ */
+/* insurers that already carry a different default rule — surfaces the "make this the default?"
+   conflict warning when added to Applies To, same as the production Edit Rule screen */
+const EXISTING_DEFAULT_RULES = { 'Club Marine':'Club Marine Baseline', 'Territory Ins.':'Territory Standard' };
+
 function RuleBuilder(){
   const [types, setTypes] = useState(getActiveTypes());
   const [focusId, setFocusId] = useState('oem');
@@ -690,8 +692,17 @@ function RuleBuilder(){
   const [ageRules, setAgeRules] = useState(getActiveAgeRules());
   const [condRules, setCondRules] = useState(getActiveCondRules());
   const [saved, setSaved] = useState(false);
+  const [ruleName, setRuleName] = useState('Allianz — My Shop');
+  const [ruleType, setRuleType] = useState('Insurer Rule');
+  const [active, setActive] = useState(true);
+  const [appliesTo, setAppliesTo] = useState(['Allianz','Club Marine','Hunter Premium','Territory Ins.']);
+  const [newInsurer, setNewInsurer] = useState('');
+  const [makeDefault, setMakeDefault] = useState({});
   const focusPt = types.find(t=>t.id===focusId) || types[0];
   const updateType = pt => setTypes(types.map(t=>t.id===pt.id?pt:t));
+  const addInsurer = () => { if(!newInsurer.trim()) return; setAppliesTo([...appliesTo, newInsurer.trim()]); setNewInsurer(''); };
+  const removeInsurer = name => setAppliesTo(appliesTo.filter(n=>n!==name));
+  const conflicts = appliesTo.filter(n=>EXISTING_DEFAULT_RULES[n]);
   const handleSave = () => {
     saveRuleConfig({ types, ageRules, condRules, exceptions });
     setSaved(true);
@@ -716,27 +727,79 @@ function RuleBuilder(){
         <div className="ph">
           <div>
             <div className="ph-eyebrow">Margin Rules</div>
-            <div className="ph-title">Edit rule — Allianz</div>
-            <div className="ph-sub">Set the pricing method per part type, then layer <b>conditional cross-type rules</b> on top — e.g. <b>when OEM and Parallel are both quoted, price OEM at Parallel's rate</b>. Reads as plain When → Then sentences.</div>
+            <div className="ph-title">Edit Rule</div>
+            <div className="ph-sub">Update the pricing rule details below</div>
           </div>
         </div>
 
-        <div className="rid">
-          <div className="rid-av">AL</div>
-          <div>
-            <div className="rid-name">Allianz — My Shop <span className="tag tag-custom">Custom</span> <span className="tag tag-combo">Combination</span></div>
-            <div className="rid-meta">Overrides the Allianz baseline · applies to Allianz &amp; sub-brands</div>
-          </div>
-          <div className="rid-status">
-            <label className="switch"><input type="checkbox" defaultChecked/><span className="switch-slider"/></label>Active
-          </div>
+        <div className="rule-warn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" style={{flexShrink:0,marginTop:1}}><circle cx="12" cy="12" r="10"/><path d="M12 8v5m0 3h.01"/></svg>
+          <span>Changes to this rule will <b>only apply to new quotes</b> going forward. Any existing quotes currently using this rule will not be affected.</span>
         </div>
 
         <div className="bl" style={{display:'grid',gridTemplateColumns:'1fr 320px',gap:18,alignItems:'start'}}>
           <div>
             <div className="sec">
+              <div className="sec-head"><div className="sec-title">Rule Details</div></div>
+              <div className="sec-body">
+                <div className="rd-grid">
+                  <div className="rd-field">
+                    <label className="rd-lbl">Rule Name</label>
+                    <input className="txt" value={ruleName} onChange={e=>setRuleName(e.target.value)}/>
+                  </div>
+                  <div className="rd-field">
+                    <label className="rd-lbl">Rule Type</label>
+                    <select className="sel" value={ruleType} onChange={e=>setRuleType(e.target.value)}>
+                      <option>Insurer Rule</option>
+                      <option>Shop Default</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="rd-field" style={{marginTop:16}}>
+                  <label className="rd-lbl">Applies To</label>
+                  <div className="rd-chips">
+                    {appliesTo.map(name=>(
+                      <span className="rd-chip" key={name}>{name}<span className="rm" onClick={()=>removeInsurer(name)}>×</span></span>
+                    ))}
+                  </div>
+                  <div className="rd-addrow">
+                    <input className="txt" placeholder="e.g. NRMA Insurance" value={newInsurer} onChange={e=>setNewInsurer(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addInsurer()}/>
+                    <button className="btn btn-green" onClick={addInsurer}>Add</button>
+                  </div>
+                </div>
+                {conflicts.length>0 && (
+                  <div className="rd-conflicts">
+                    {conflicts.map(n=>(
+                      <div className="rd-conflict" key={n}>
+                        <span>A rule for <b>{n}</b> already exists — make this the default?</span>
+                        <span className="rd-conflict-tog">
+                          <span>{makeDefault[n] ? 'Yes' : 'No'}</span>
+                          <label className="switch"><input type="checkbox" checked={!!makeDefault[n]} onChange={e=>setMakeDefault({...makeDefault,[n]:e.target.checked})}/><span className="switch-slider"/></label>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="sec">
+              <div className="sec-head"><div className="sec-title">Status</div></div>
+              <div className="sec-body">
+                <div className="stat-row">
+                  <label className="switch"><input type="checkbox" checked={active} onChange={e=>setActive(e.target.checked)}/><span className="switch-slider"/></label>
+                  <span className="stat-lbl">{active ? 'Active' : 'Inactive'}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="sec">
               <div className="sec-head"><div className="sec-title">Pricing Rules</div></div>
               <div className="sec-body">
+                <div className="cr-intro">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" style={{flexShrink:0,marginTop:1}}><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+                  <span>Set the pricing method per part type, then layer <b>conditional cross-type rules</b> on top below — e.g. <b>when OEM and Parallel are both quoted, price OEM at Parallel's rate</b>.</span>
+                </div>
                 <div className="pt-tablehead"><div>Part Type</div><div>Pricing Method</div><div>Value</div><div>Default Part Number</div></div>
                 {types.map(pt=>(
                   <PricingRow key={pt.id} pt={pt} onChange={updateType} focus={focusId===pt.id} onFocus={()=>setFocusId(pt.id)}/>
@@ -758,12 +821,10 @@ function RuleBuilder(){
 
           <div className="rail">
             <ExamplePanel pt={focusPt} samplePart={samplePart} setSamplePart={setSamplePart} types={types} condRules={condRules}/>
-            <SummaryCard types={types} ageRules={ageRules} condRules={condRules}/>
-            <div className="rail-actions" style={{flexDirection:'column',gap:8}}>
-              <div style={{display:'flex',gap:8,width:'100%'}}>
-                <button className="btn btn-ghost btn-lg" style={{justifyContent:'center',flex:1}} onClick={handleCancel}>Cancel</button>
-                <button className="btn btn-green btn-lg" style={{justifyContent:'center',flex:1}} onClick={handleSave}>{saved ? 'Saved ✓' : 'Save Changes'}</button>
-              </div>
+            <SummaryCard types={types} ageRules={ageRules} condRules={condRules} ruleName={ruleName} appliesTo={appliesTo}/>
+            <div className="rail-actions" style={{gap:8}}>
+              <button className="btn btn-ghost btn-lg" style={{justifyContent:'center',width:'100%'}} onClick={handleCancel}>Cancel</button>
+              <button className="btn btn-green btn-lg" style={{justifyContent:'center',width:'100%'}} onClick={handleSave}>{saved ? 'Saved ✓' : 'Save Changes'}</button>
               <div style={{fontSize:11.5,color:'var(--text-3)',textAlign:'center'}}>Saved rules apply immediately on Check Price.</div>
             </div>
           </div>
