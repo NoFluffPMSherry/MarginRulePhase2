@@ -201,7 +201,7 @@ function SummaryCard({ types, ageRules, condRules, ruleName, appliesTo }){
     });
     let s = parts.join(pt.clauses.length>1 ? ' OR ' : '');
     if(pt.clauses.length>1) s += `, ${pt.resolver}`;
-    if(pt.cap.enabled) s += ` · cap ${CAP_TYPES[pt.cap.type].chip.replace('#',pt.cap.value)}`;
+    if(pt.cap.enabled) s += ` · cap ${(CAP_TYPES[pt.cap.type] || CAP_TYPES.capAtList).chip.replace('#',pt.cap.value)}`;
     return s;
   };
   return (
@@ -237,7 +237,7 @@ function SummaryCard({ types, ageRules, condRules, ruleName, appliesTo }){
           then = oc.label.replace('{ref}', nm(r.outcome.ref));
         }
         if(r.outcome.cap && r.outcome.cap.enabled){
-          const c=COND_CAP_TYPES[r.outcome.cap.type];
+          const c = COND_CAP_TYPES[r.outcome.cap.type] || COND_CAP_TYPES.capAtList;
           then += ` (${c.chip.replace('#', r.outcome.cap.value)})`;
         }
         return <div className="sum-li" key={r.id}><span className="bullet">•</span><span><b>When</b> {cond}, <b>{nm(r.target)}</b> should {then}</span></div>;

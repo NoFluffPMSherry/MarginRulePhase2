@@ -272,7 +272,9 @@ const COND_SAMPLE = {
 /* ══════════════════ PERSISTENCE — bridges the Margin Rules screen and Check Price ══════════════════
    Static site, no backend: "Save Changes" writes here, Check Price reads it on load. Falls back to
    the INIT constants above whenever nothing has been saved yet (or storage is unavailable). */
-const STORAGE_KEY = 'mro_rule_config_v1';
+/* bumped whenever a saved shape (e.g. a CAP_TYPES key) changes, so browsers holding an
+   older config fall back to fresh defaults instead of crashing on a since-removed field */
+const STORAGE_KEY = 'mro_rule_config_v2';
 function loadRuleConfig(){
   try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : null; }
   catch(e){ return null; }
