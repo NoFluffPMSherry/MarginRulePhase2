@@ -2,7 +2,7 @@
 const { useState, useEffect } = React;
 const { METHODS, CAP_TYPES, resolveRule, resolveConditional, fmt, PT_NAME,
         PART_TYPES_INIT, VEHICLE_BRANDS, vehicleAge, ageRuleActive, ageAllowsType, matchingAgeRules,
-        getActiveTypes, getActiveAgeRules, getActiveCondRules,
+        getActiveTypes, getActiveAgeRules, getActiveCondRules, getActiveExceptions,
         getDemoModelYear, saveDemoModelYear, getDemoVehicleBrand, saveDemoVehicleBrand } = window.MRO;
 const { TopNav } = window.MROShared;
 
@@ -52,16 +52,32 @@ const lineOffers = part => {
   QSUP.forEach(s=>{ const o = part.s[s.key]; if(o && !offers[s.typeId]) offers[s.typeId] = { list:part.list, cost:o.cost }; });
   return offers;
 };
+/* which type ids a safety-exception part currently accepts, per the live Margin Rules config —
+   null means the part isn't (or is no longer) covered by any exception category, so nothing is
+   restricted. Matched by category name against whatever's saved, never the demo's own assumption. */
+const excAllowedTypes = (part, exceptions) => {
+  if(!part.exc) return null;
+  const g = (exceptions||[]).find(g=>g.category===part.exc.category);
+  return g ? (g.allowedTypes||[]) : null;
+};
+const excLabel = (part, exceptions, types) => {
+  const allowed = excAllowedTypes(part, exceptions);
+  if(allowed==null) return null;
+  const names = (types||PART_TYPES_INIT).filter(t=>allowed.includes(t.id)).map(t=>t.name);
+  return names.length===0 ? 'Not accepted' : names.join(' + ')+' only';
+};
 /* is this supplier offer acceptable given exceptions + vehicle-age gate + conditional rules? */
-const cellAllowed = (part, sup, ageBlocked, overrides) => {
-  if(part.exc && part.exc.mode==='oem' && sup.typeId!=='oem') return false;  // safety exception
+const cellAllowed = (part, sup, ageBlocked, overrides, exceptions) => {
+  const allowed = excAllowedTypes(part, exceptions);
+  if(allowed && !allowed.includes(sup.typeId)) return false;   // safety exception — type not on the category's allowed list
   if(ageBlocked(sup.typeId)) return false;                     // vehicle under age threshold, type not on the allowed list
   if(overrides && overrides[sup.typeId]===null) return false;  // a conditional rule blocks this type on this line
   return true;
 };
 /* why a cell is locked — safety exception takes precedence over age gate, then conditional rules */
-const lockKind = (part, sup, ageBlocked, overrides) => {
-  if(part.exc && part.exc.mode==='oem' && sup.typeId!=='oem') return 'safety';
+const lockKind = (part, sup, ageBlocked, overrides, exceptions) => {
+  const allowed = excAllowedTypes(part, exceptions);
+  if(allowed && !allowed.includes(sup.typeId)) return 'safety';
   if(ageBlocked(sup.typeId)) return 'age';
   if(overrides && overrides[sup.typeId]===null) return 'conditional';
   return null;
@@ -96,6 +112,7 @@ function QuoteGrid(){
   const [types] = useState(getActiveTypes());
   const ageRules = getActiveAgeRules();
   const condRules = getActiveCondRules();
+  const exceptions = getActiveExceptions();
   const age = vehicleAge(modelYear);
   const brandObj = VEHICLE_BRANDS.find(b=>b.id===vehicleBrand) || VEHICLE_BRANDS[1];
   const matchedAgeRules = matchingAgeRules(modelYear, vehicleBrand, ageRules);
@@ -121,7 +138,7 @@ function QuoteGrid(){
   useEffect(()=>{
     setSel(prev=>{
       const next={...prev}; let changed=false;
-      QPARTS.forEach(p=>{ const k=prev[p.id]; if(k){ const s=QSUP.find(x=>x.key===k); if(s && !cellAllowed(p,s,ageBlocked,condByPart[p.id])){ next[p.id]=null; changed=true; } } });
+      QPARTS.forEach(p=>{ const k=prev[p.id]; if(k){ const s=QSUP.find(x=>x.key===k); if(s && !cellAllowed(p,s,ageBlocked,condByPart[p.id],exceptions)){ next[p.id]=null; changed=true; } } });
       return changed?next:prev;
     });
   },[ageActive, modelYear, vehicleBrand]);
@@ -129,14 +146,14 @@ function QuoteGrid(){
   const toggle = (id, key) => {
     const part = QPARTS.find(p=>p.id===id);
     const sup = QSUP.find(s=>s.key===key);
-    if(part && sup && !cellAllowed(part, sup, ageBlocked, condByPart[id])) return;   // locked cells aren't selectable
+    if(part && sup && !cellAllowed(part, sup, ageBlocked, condByPart[id], exceptions)) return;   // locked cells aren't selectable
     setSel(prev => ({...prev, [id]: prev[id]===key ? null : key}));
   };
 
   const totals = {};
-  QSUP.forEach(s=>{ totals[s.key] = QPARTS.reduce((a,p)=>{ const c=qcell(p,s,types,condByPart[p.id]); return a+((c && cellAllowed(p,s,ageBlocked,condByPart[p.id]))?c.cost:0); },0); });
+  QSUP.forEach(s=>{ totals[s.key] = QPARTS.reduce((a,p)=>{ const c=qcell(p,s,types,condByPart[p.id]); return a+((c && cellAllowed(p,s,ageBlocked,condByPart[p.id],exceptions))?c.cost:0); },0); });
 
-  const selData = QPARTS.map(p=>{ const k=sel[p.id]; if(!k) return null; const s=QSUP.find(x=>x.key===k); return (s && cellAllowed(p,s,ageBlocked,condByPart[p.id])) ? qcell(p,s,types,condByPart[p.id]) : null; }).filter(Boolean);
+  const selData = QPARTS.map(p=>{ const k=sel[p.id]; if(!k) return null; const s=QSUP.find(x=>x.key===k); return (s && cellAllowed(p,s,ageBlocked,condByPart[p.id],exceptions)) ? qcell(p,s,types,condByPart[p.id]) : null; }).filter(Boolean);
   const cost = selData.reduce((a,c)=>a+c.cost,0);
   const sell = selData.reduce((a,c)=>a+c.res.sell,0);
   const profit = sell - cost;
@@ -239,7 +256,7 @@ function QuoteGrid(){
         {QPARTS.some(p=>p.exc) && (
           <div className="q1-exc">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" style={{flexShrink:0,marginTop:1}}><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/><path d="M9 12l2 2 4-4"/></svg>
-            <span><b>{QPARTS.filter(p=>p.exc).length} parts on this quote fall under Allianz exception rules.</b> Safety-critical categories are OEM-only — cheaper non-OEM offers are locked.</span>
+            <span><b>{QPARTS.filter(p=>p.exc).length} parts on this quote fall under Allianz exception rules.</b> Safety-critical categories restrict which part types are acceptable — offers outside the allowed type(s) are locked.</span>
           </div>
         )}
 
@@ -274,7 +291,7 @@ function QuoteGrid(){
                       <div className="qg-ps">Dealer: #{p.dealer}<br/>List: {fmt(p.list)} ea</div>
                       {p.exc && (
                         <span className="pn-exc oem">
-                          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg>OEM only
+                          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg>{excLabel(p, exceptions, types)}
                         </span>
                       )}
                     </div>
@@ -283,18 +300,19 @@ function QuoteGrid(){
                     const overrides = condByPart[p.id];
                     const c = qcell(p, s, types, overrides, condTraceByPart[p.id]);
                     if(!c) return <td key={s.key} className="gcell empty"><div className="gcell-in"/></td>;
-                    const kind = lockKind(p, s, ageBlocked, overrides);
+                    const kind = lockKind(p, s, ageBlocked, overrides, exceptions);
                     if(kind) return (
-                      <td key={s.key} className="gcell gcell-locked" title={kind==='age' ? `Not acceptable — blocked by a vehicle age rule (${ageAllowedNames} only)` : kind==='conditional' ? 'Not acceptable — blocked by a conditional rule on this line' : 'Not acceptable under Allianz OEM-only safety rule'}>
+                      <td key={s.key} className="gcell gcell-locked" title={kind==='age' ? `Not acceptable — blocked by a vehicle age rule (${ageAllowedNames} only)` : kind==='conditional' ? 'Not acceptable — blocked by a conditional rule on this line' : `Not acceptable under Allianz safety rule (${excLabel(p, exceptions, types)})`}>
                         <div className="gcell-in">
                           <div className="gtype gl-strike">{s.type}</div>
                           <div className="gl-price">{fmt(c.cost)}</div>
-                          <div className="gl-tag"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 018 0v3"/></svg>{kind==='age' ? 'age rule' : kind==='conditional' ? 'rule blocked' : 'OEM only'}</div>
+                          <div className="gl-tag"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 018 0v3"/></svg>{kind==='age' ? 'age rule' : kind==='conditional' ? 'rule blocked' : excLabel(p, exceptions, types)}</div>
                         </div>
                       </td>
                     );
                     const selected = sel[p.id]===s.key;
-                    const reassure = (p.exc && s.typeId==='oem') || (ageActive && !ageBlocked(s.typeId));
+                    const excAllowed = excAllowedTypes(p, exceptions);
+                    const reassure = (excAllowed && excAllowed.includes(s.typeId)) || (ageActive && !ageBlocked(s.typeId));
                     return (
                       <td key={s.key} className={"gcell "+(selected?'gcell-sel':'')+(reassure?' gcell-okexc':'')} onClick={()=>toggle(p.id, s.key)}>
                         <div className="gcell-in">
