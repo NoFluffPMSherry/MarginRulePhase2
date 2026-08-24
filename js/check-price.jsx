@@ -30,31 +30,33 @@ const QSUP = [
   { key:'sap', name:'Statewide Recon Parts',      type:'RECON',     typeId:'recon', responded:true },
   { key:'wgr', name:'Willawong Auto Recyclers',   type:'USED',      typeId:'recycled', responded:true },
   { key:'ajp', name:'All Jap Auto Parts',         type:'USED',      typeId:'recycled', responded:false },
+  { key:'ttp', name:'Trilogy Toyota Parts',       type:'OEM',       typeId:'oem', responded:true },
+  { key:'rec', name:'Reco Centre',                type:'RECON',     typeId:'recon', responded:true },
 ];
 const QPARTS = [
   { id:1, name:'FRONT BUMPER COVER', dealer:'DR6150031EBB', list:652.15,
-    s:{ jfa:{cost:255.00,etd:'2-3 Days',c:'Genuine OEM stock item, same-day pickup available.'}, acm:{cost:150.00,etd:'Same Day',match:true}, apg:{cost:190.00,etd:'1-2 Days'}, wgr:{cost:140.00,etd:'3-5 Days',etdWarn:true,donor:true} } },
+    s:{ jfa:{cost:255.00,etd:'2-3 Days',c:'Genuine OEM stock item, same-day pickup available.'}, acm:{cost:150.00,etd:'Same Day',match:true}, apg:{cost:190.00,etd:'1-2 Days'}, wgr:{cost:140.00,etd:'3-5 Days',etdWarn:true,donor:true}, ttp:{cost:262.00,etd:'3-4 Days'}, rec:{cost:175.00,etd:'Same Day'} } },
   { id:2, name:'FRT BUMPER ABSORBER', dealer:'D03P50111', list:147.06,
-    s:{ jfa:{cost:60.00,etd:'Same Day',c:'Boxed new, includes clips.'}, apg:{cost:48.00,etd:'1-2 Days'} } },
+    s:{ jfa:{cost:60.00,etd:'Same Day',c:'Boxed new, includes clips.'}, apg:{cost:48.00,etd:'1-2 Days'}, ttp:{cost:64.50,etd:'Same Day'} } },
   { id:3, name:'L/F GUARD BRACKET', dealer:'D652500U1C', list:105.81,
-    s:{ jfa:{cost:44.00,etd:'2-3 Days'}, acm:{cost:27.00,etd:'Same Day',match:true} } },
+    s:{ jfa:{cost:44.00,etd:'2-3 Days'}, acm:{cost:27.00,etd:'Same Day',match:true}, rec:{cost:41.50,etd:'1-2 Days'} } },
   { id:4, name:'FRT BUMPER SUPPORT', dealer:'DF7150070C', list:308.62,
-    s:{ jfa:{cost:140.00,etd:'2-3 Days'}, acm:{cost:85.00,etd:'Same Day'}, apg:{cost:146.16,etd:'1-2 Days',c:'Certified aftermarket.',match:true}, wgr:{cost:90.91,etd:'3-5 Days',etdWarn:true} } },
+    s:{ jfa:{cost:140.00,etd:'2-3 Days'}, acm:{cost:85.00,etd:'Same Day'}, apg:{cost:146.16,etd:'1-2 Days',c:'Certified aftermarket.',match:true}, wgr:{cost:90.91,etd:'3-5 Days',etdWarn:true}, ttp:{cost:148.00,etd:'2-3 Days'}, rec:{cost:131.50,etd:'2-3 Days'} } },
   { id:5, name:'FRT BUMPER GRILLE', dealer:'DR61501T1C', list:225.55,
-    s:{ jfa:{cost:85.00,etd:'2-3 Days'}, acm:{cost:52.00,etd:'Same Day',match:true} } },
+    s:{ jfa:{cost:85.00,etd:'2-3 Days'}, acm:{cost:52.00,etd:'Same Day',match:true}, ttp:{cost:91.00,etd:'3-4 Days'} } },
   { id:6, name:'L/F HEADLAMP ASSY', dealer:'DF89510L0F', list:722.45,
-    s:{ jfa:{cost:205.00,etd:'2-3 Days',img:PART_PHOTO}, acm:{cost:125.00,etd:'Same Day'}, apg:{cost:238.76,etd:'1-2 Days'}, wgr:{cost:118.18,etd:'2-3 Days',match:true} } },
+    s:{ jfa:{cost:205.00,etd:'2-3 Days',img:PART_PHOTO}, acm:{cost:125.00,etd:'Same Day'}, apg:{cost:238.76,etd:'1-2 Days'}, wgr:{cost:118.18,etd:'2-3 Days',match:true}, ttp:{cost:214.00,etd:'2-3 Days'}, rec:{cost:172.00,etd:'Same Day',img:PART_PHOTO} } },
   { id:7, name:'R/F GUARD BRACKET', dealer:'D652500U1D', list:98.40,
-    s:{ apg:{cost:68.00,etd:'1-2 Days',match:true}, sap:{cost:55.00,etd:'3-5 Days',etdWarn:true} } },
+    s:{ apg:{cost:68.00,etd:'1-2 Days',match:true}, sap:{cost:55.00,etd:'3-5 Days',etdWarn:true}, rec:{cost:57.50,etd:'2-3 Days'} } },
   { id:8, name:'FRT BUMPER MOULD RH', dealer:'DR61502T1C', list:189.30,
-    s:{ jfa:{cost:78.00,etd:'2-3 Days'}, sap:{cost:62.00,etd:'1-2 Days',match:true} } },
+    s:{ jfa:{cost:78.00,etd:'2-3 Days'}, sap:{cost:62.00,etd:'1-2 Days',match:true}, ttp:{cost:81.50,etd:'2-3 Days'} } },
   // ── Parts caught by Allianz exception rules ──
   { id:9, name:'DRIVER AIRBAG MODULE', dealer:'56900-YOUI', list:1420.00,
     exc:{ mode:'oem', category:'Airbag Systems' },
-    s:{ jfa:{cost:1150.00,etd:'3-5 Days',c:'Ex-stock, ships same day.',etdWarn:true}, acm:{cost:680.00,etd:'2-3 Days'}, apg:{cost:610.00,etd:'1-2 Days',c:'Certified aftermarket replacement, TÜV tested.'}, wgr:{cost:395.00,etd:'Same Day',match:true} } },
+    s:{ jfa:{cost:1150.00,etd:'3-5 Days',c:'Ex-stock, ships same day.',etdWarn:true}, acm:{cost:680.00,etd:'2-3 Days'}, apg:{cost:610.00,etd:'1-2 Days',c:'Certified aftermarket replacement, TÜV tested.'}, wgr:{cost:395.00,etd:'Same Day',match:true}, ttp:{cost:1180.00,etd:'2-3 Days',c:'OEM dealer stock, freight included.'} } },
   { id:10, name:'R/F ABS SPEED SENSOR', dealer:'95671-YOUI', list:205.00,
     exc:{ mode:'oem', category:'ABS / Braking Safety Systems' },
-    s:{ jfa:{cost:165.00,etd:'Same Day',c:'In stock, same-day dispatch.'}, apg:{cost:74.00,etd:'1-2 Days'}, wgr:{cost:50.00,etd:'2-3 Days',match:true} } },
+    s:{ jfa:{cost:165.00,etd:'Same Day',c:'In stock, same-day dispatch.'}, apg:{cost:74.00,etd:'1-2 Days'}, wgr:{cost:50.00,etd:'2-3 Days',match:true}, ttp:{cost:159.00,etd:'Same Day'} } },
 ];
 
 /* "L/F HEADLAMP ASSY" -> "L/F Headlamp Assy" — title-cases each word (and each side of a "/",
@@ -377,7 +379,7 @@ function QuoteGrid(){
                     <div className="qg-supbar" style={{background:colorFor(s.typeId)}}/>
                     <div className="qg-supinner">
                       <div className="qg-supav" style={{borderColor:colorFor(s.typeId),color:colorFor(s.typeId)}}><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0z"/></svg></div>
-                      <div className="qg-supname">{s.name}</div>
+                      <div className="qg-supname" title={s.name}>{s.name}</div>
                     </div>
                   </th>
                 ))}

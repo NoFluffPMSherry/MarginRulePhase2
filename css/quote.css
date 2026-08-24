@@ -11,9 +11,11 @@
 .qg-corner-sub{display:flex;gap:14px;padding:0 16px 12px;font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em}
 .qg-suph{width:122px;min-width:122px;text-align:center;padding:0;vertical-align:bottom;background:#fff}
 .qg-supbar{height:3px}
-.qg-supinner{padding:10px 6px 12px;display:flex;flex-direction:column;align-items:center;gap:6px}
-.qg-supav{width:28px;height:28px;border-radius:50%;border:1.5px solid;display:flex;align-items:center;justify-content:center}
-.qg-supname{font-size:11px;font-weight:700;color:var(--text-2)}
+.qg-supinner{padding:10px 6px 12px;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.qg-supav{width:28px;height:28px;border-radius:50%;border:1.5px solid;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+/* fixed-width supplier columns can't grow for a long trading name — truncate to one line so
+   every header sits at the same height, full name still available on hover via title */
+.qg-supname{font-size:11px;font-weight:700;color:var(--text-2);max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 .qg-partcell{position:sticky;left:0;z-index:2;background:#fff;border-right:1px solid var(--border);padding:12px 16px;display:flex;gap:8px;align-items:flex-start;width:232px;min-width:232px}
 .qg-linenum{font-family:var(--figure);font-size:10px;font-weight:700;color:var(--text-3);min-width:14px;flex-shrink:0;text-align:right;margin-top:2px}
