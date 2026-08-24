@@ -677,10 +677,6 @@ function Exceptions({ groups, setGroups, types }){
 }
 
 /* ═══════════════ RULE BUILDER PAGE ═══════════════ */
-/* insurers that already carry a different default rule — surfaces the "make this the default?"
-   conflict warning when added to Applies To, same as the production Edit Rule screen */
-const EXISTING_DEFAULT_RULES = { 'Club Marine':'Club Marine Baseline', 'Territory Ins.':'Territory Standard' };
-
 function RuleBuilder(){
   const [types, setTypes] = useState(getActiveTypes());
   const [focusId, setFocusId] = useState('oem');
@@ -693,12 +689,10 @@ function RuleBuilder(){
   const [ruleType, setRuleType] = useState('Insurer Rule');
   const [appliesTo, setAppliesTo] = useState(['Allianz','Club Marine','Hunter Premium','Territory Ins.']);
   const [newInsurer, setNewInsurer] = useState('');
-  const [makeDefault, setMakeDefault] = useState({});
   const focusPt = types.find(t=>t.id===focusId) || types[0];
   const updateType = pt => setTypes(types.map(t=>t.id===pt.id?pt:t));
   const addInsurer = () => { if(!newInsurer.trim()) return; setAppliesTo([...appliesTo, newInsurer.trim()]); setNewInsurer(''); };
   const removeInsurer = name => setAppliesTo(appliesTo.filter(n=>n!==name));
-  const conflicts = appliesTo.filter(n=>EXISTING_DEFAULT_RULES[n]);
   const handleSave = () => {
     saveRuleConfig({ types, ageRules, condRules, exceptions });
     setSaved(true);
@@ -763,23 +757,6 @@ function RuleBuilder(){
                     <button className="btn btn-green" onClick={addInsurer}>Add</button>
                   </div>
                 </div>
-                {conflicts.length>0 && (
-                  <div className="rd-conflicts">
-                    <div className="rd-conflicts-head">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><circle cx="12" cy="12" r="10"/><path d="M12 8v5m0 3h.01"/></svg>
-                      Rule Conflicts
-                    </div>
-                    {conflicts.map(n=>(
-                      <div className="rd-conflict" key={n}>
-                        <span>A rule for <b>{n}</b> already exists — make this the default?</span>
-                        <span className="rd-conflict-tog">
-                          <span>{makeDefault[n] ? 'Yes' : 'No'}</span>
-                          <label className="switch"><input type="checkbox" checked={!!makeDefault[n]} onChange={e=>setMakeDefault({...makeDefault,[n]:e.target.checked})}/><span className="switch-slider"/></label>
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
 

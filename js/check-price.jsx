@@ -142,6 +142,90 @@ const signalIcon = (def, size) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill={def.fill?'currentColor':'none'} stroke={def.fill?undefined:'currentColor'} strokeWidth={def.fill?undefined:def.strokeW}>{def.icon}</svg>
 );
 
+/* ═══ Margin rule picker — matches this quote's insurer against the shop's saved rule library.
+   Library + insurer matching are static demo data for this prototype: picking a different rule
+   here changes what's shown as "applied" but doesn't re-run the grid's price maths, which is
+   still driven by the per-type config from the Margin Rules screen (`types`). ═══ */
+const RULE_BADGE_TYPES = [
+  { id:'oem', label:'OEM' }, { id:'parallel', label:'Parallel' }, { id:'aftermarket', label:'Aftm' },
+  { id:'recon', label:'Reco' }, { id:'recycled', label:'Recycled' },
+];
+const MARGIN_RULES = [
+  { id:'allianz-standard', name:'Allianz Standard', matched:true, insurer:'Allianz Australia Insurance',
+    pct:{ oem:100, parallel:80, aftermarket:70, recon:85, recycled:85 } },
+  { id:'standard-baseline', name:'Standard Baseline', tags:['System','Default'],
+    pct:{ oem:100, parallel:80, aftermarket:75, recon:75, recycled:70 } },
+  { id:'auto-general', name:'Auto & General Insurance', tags:['System'],
+    pct:{ oem:100, parallel:80, aftermarket:75, recon:75, recycled:70 } },
+  { id:'nrma-standard', name:'NRMA Standard', pct:{ oem:100, parallel:80, aftermarket:75, recon:75, recycled:70 } },
+  { id:'aami-standard', name:'AAMI Standard', pct:{ oem:100, parallel:80, aftermarket:75, recon:75, recycled:70 } },
+  { id:'suncorp-standard', name:'Suncorp Standard', pct:{ oem:100, parallel:80, aftermarket:75, recon:75, recycled:70 } },
+  { id:'qbe-standard', name:'QBE Standard', pct:{ oem:100, parallel:80, aftermarket:75, recon:75, recycled:70 } },
+];
+
+function RuleCard({ rule, selected, onClick }){
+  return (
+    <div className={"q1-rc"+(selected?' sel':'')} onClick={onClick}>
+      <div className="q1-rc-head">
+        <span className={"q1-rc-radio"+(selected?' on':'')}>
+          {selected && <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><path d="M5 12l5 5L20 7"/></svg>}
+        </span>
+        <span className="q1-rc-name">{rule.name}</span>
+        {rule.insurer && <span className="q1-rc-tag insurer">{rule.insurer}</span>}
+        {(rule.tags||[]).map(t=><span key={t} className="q1-rc-tag sys">{t}</span>)}
+      </div>
+      <div className="q1-rc-badges">
+        {RULE_BADGE_TYPES.map(bt=>(
+          <div key={bt.id} className="q1-rc-badge">
+            <div className="q1-rc-badge-k">{bt.label}</div>
+            <div className="q1-rc-badge-v">{rule.pct[bt.id]}% of List</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function RuleDropdown({ open, setOpen, activeRuleId, matchedRule, otherRules, onSelect }){
+  const activeRule = (matchedRule && matchedRule.id===activeRuleId) ? matchedRule : otherRules.find(r=>r.id===activeRuleId) || matchedRule;
+  return (
+    <div className="q1-ruledd">
+      <button type="button" className="q1-ruledd-trigger" onClick={()=>setOpen(o=>!o)}>
+        {activeRule.name}
+        <svg width="8" height="5" viewBox="0 0 8 5" className={"q1-ruledd-caret"+(open?' up':'')}><path d="M0 0l4 5 4-5z" fill="currentColor"/></svg>
+      </button>
+      {open && (
+        <>
+          <div className="q1-ruledd-scrim" onClick={()=>setOpen(false)}/>
+          <div className="q1-ruledd-panel">
+            <div className="q1-ruledd-head">
+              <div className="q1-ruledd-title">Select Active Margin Rule</div>
+              <div className="q1-ruledd-editrow">
+                <span className="tag q1-ruledd-newtag">New</span>
+                <span>To edit rules, go to <a className="q1-ruledd-link" href="margin-rules.html">Settings</a></span>
+              </div>
+            </div>
+            <div className="q1-ruledd-body">
+              {matchedRule && (
+                <div className="q1-ruledd-sec">
+                  <div className="q1-ruledd-seclbl">Matched</div>
+                  <RuleCard rule={matchedRule} selected={matchedRule.id===activeRuleId} onClick={()=>onSelect(matchedRule.id)}/>
+                </div>
+              )}
+              <div className="q1-ruledd-sec">
+                <div className="q1-ruledd-seclbl">Other</div>
+                <div className="q1-ruledd-grid">
+                  {otherRules.map(r=><RuleCard key={r.id} rule={r} selected={r.id===activeRuleId} onClick={()=>onSelect(r.id)}/>)}
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function QuoteGrid(){
   const [sel, setSel] = useState({ 1:'jfa', 2:'jfa', 6:'apg', 8:'sap' });
   // per-line MODIFY overrides — key is `${partId}:${supKey}`, keeps this deliberately out of
@@ -151,6 +235,8 @@ function QuoteGrid(){
   const [activeFilter, setActiveFilter] = useState(null); // Show-filter lens: dims every cell not carrying this signal
   const [toast, setToast] = useState(null);
   const [lightbox, setLightbox] = useState(null); // { src, caption } while the full-image viewer is open
+  const [ruleOpen, setRuleOpen] = useState(false); // margin rule picker panel
+  const [activeRuleId, setActiveRuleId] = useState((MARGIN_RULES.find(r=>r.matched)||MARGIN_RULES[0]).id);
   // per-line Qty — display-only, same as the phase-1 reference: blank until a supplier is picked for
   // that line, defaults to 1 once selected, never factored into cost/sell/profit math
   const [qtyOv, setQtyOv] = useState({});
@@ -304,7 +390,9 @@ function QuoteGrid(){
           <div className="q1-rulebanner">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="q1-rulebanner-check"><path d="M5 12l5 5L20 7"/></svg>
             <span className="q1-rulebanner-lbl">Margin Rule Applied</span>
-            <select className="q1-rulebanner-select"><option>Allianz Standard</option><option>Allianz — My Shop</option><option>Allianz Baseline</option></select>
+            <RuleDropdown open={ruleOpen} setOpen={setRuleOpen} activeRuleId={activeRuleId}
+              matchedRule={MARGIN_RULES.find(r=>r.matched)} otherRules={MARGIN_RULES.filter(r=>!r.matched)}
+              onSelect={id=>{ setActiveRuleId(id); setRuleOpen(false); }}/>
             <div className="q1-legend">
               {types.map(pt=>(
                 <span key={pt.id} className="q1-legend-item">
