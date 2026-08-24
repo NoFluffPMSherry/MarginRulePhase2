@@ -33,9 +33,25 @@
 .gcondtag{font-size:9px;font-weight:700;color:var(--purple);background:var(--purple-lt);border-radius:var(--r-sm);padding:0 4px;margin-top:1px}
 .gcell.gcell-sel .gcell-in{background:var(--green-pale);box-shadow:inset 0 0 0 2px var(--green);padding-bottom:23px}
 .gcell.gcell-sel .gprice{color:var(--ink-2);font-weight:700}
-.gcorner{position:absolute;top:0;right:0;width:0;height:0;border-top:14px solid var(--green);border-left:14px solid transparent}
-.gcorner svg{position:absolute;top:-13px;right:0;color:#fff}
 .glinetag{font-size:9px;font-weight:700;color:var(--blue-d);background:var(--blue-lt);border-radius:var(--r-sm);padding:0 4px;margin-top:1px}
+
+/* signal chips — dealer part match / long ETD / comment / image / donor part.
+   Stacked top-right, never overlapping the centred cell text. */
+.qg-chips{position:absolute;top:3px;right:3px;display:flex;gap:2px}
+.qg-chip{width:14px;height:14px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+.qg-chip svg{width:9px;height:9px}
+.qg-chip.match{background:var(--green)}
+.qg-chip.etd{background:var(--amber)}
+.qg-chip.comment{background:var(--text-3)}
+.qg-chip.img{background:var(--blue)}
+.qg-chip.donor{background:var(--purple)}
+
+/* Show-filter lens: dims every cell that doesn't carry the active signal and
+   rings the ones that do, in the filter's own colour. Selection ring and the
+   Modify bar stay full-strength regardless — what's picked is never dimmed. */
+.gcell.dim:not(.gcell-sel) .gcell-in{opacity:.4}
+.gcell.dim:not(.gcell-sel) .qg-chips{filter:grayscale(1);opacity:.5}
+.gcell.hl .gcell-in{box-shadow:inset 0 0 0 2px var(--hl-c)}
 
 /* MODIFY affordance — only on the currently selected supplier cell for a
    line. Production's gridModify: a solid GREEN uppercase bar. */
@@ -51,24 +67,28 @@
 .qm-x{width:24px;height:24px;border-radius:50%;border:1px solid var(--border);background:#fff;color:var(--text-2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;flex-shrink:0}
 .qm-x:hover{background:var(--surface-2)}
 .qm-body{padding:16px}
-.qm-sect{margin-bottom:18px}
-.qm-sect:last-child{margin-bottom:0}
-.qm-sect-t{font-family:var(--figure);font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
 .qm-field{margin-bottom:12px}
 .qm-field:last-child{margin-bottom:0}
 .qm-lbl{display:block;font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:5px}
-.qm-rows{border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
-.qm-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border-lt);cursor:pointer;font-size:11px;color:var(--text)}
-.qm-row:last-child{border-bottom:none}
-.qm-row.active{background:var(--green-pale)}
+.qm-rows{display:flex;flex-direction:column;gap:4px}
+.qm-row{display:flex;align-items:center;gap:10px;padding:9px 10px;border:1px solid transparent;border-radius:var(--r);cursor:pointer;font-size:11px;color:var(--text)}
+.qm-row.active{background:var(--green-pale);border-color:var(--green)}
 .qm-row input[type=radio]{accent-color:var(--green);width:14px;height:14px;flex-shrink:0}
 .qm-row-lbl{flex:1}
 .qm-valbox{display:flex;align-items:center;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;background:#fff;flex-shrink:0}
-.qm-valbox input{border:none;outline:none;width:64px;padding:6px 8px;font-family:var(--figure);font-size:12px;font-weight:700;text-align:right;color:var(--ink);background:none}
+.qm-valbox input{border:none;outline:none;width:56px;padding:6px 8px;font-family:var(--figure);font-size:12px;font-weight:700;text-align:right;color:var(--ink);background:none}
 .qm-valbox input:disabled{color:var(--text-4);background:var(--surface-2)}
 .qm-pre,.qm-suf{padding:0 8px;font-size:11px;color:var(--text-3);font-weight:600;background:var(--surface-2);align-self:stretch;display:flex;align-items:center}
 .qm-pre{border-right:1px solid var(--border)}
 .qm-suf{border-left:1px solid var(--border)}
+.qm-stepper{display:flex;flex-direction:column;border-right:1px solid var(--border);align-self:stretch}
+.qm-stepper button{flex:1;width:18px;border:none;background:var(--surface-2);color:var(--text-3);font-size:7px;line-height:1;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center}
+.qm-stepper button:first-child{border-bottom:1px solid var(--border)}
+.qm-stepper button:hover{background:var(--green-lt);color:var(--green-d)}
+
+/* toast — brief confirmation after a MODIFY save/reset */
+.pc-toast{position:fixed;top:70px;right:24px;z-index:300;display:flex;align-items:center;gap:8px;background:var(--green);color:#fff;border-radius:var(--r);padding:10px 16px;font-family:var(--figure);font-size:12px;font-weight:700;box-shadow:var(--sh-md);animation:pc-toast-in .15s ease}
+@keyframes pc-toast-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
 .qm-hint{font-size:10.5px;color:var(--text-3);margin-top:10px;line-height:1.5}
 .qm-foot{display:flex;align-items:center;gap:10px;padding:12px 16px;border-top:1px solid var(--border);background:var(--surface-2)}
 
@@ -87,6 +107,12 @@
 .gpop-final .gpop-k{font-weight:700;color:var(--ink)}
 .gpop-final .gpop-v{font-family:var(--figure);font-weight:700;color:var(--green-d);font-size:13px}
 .gpop-title{text-align:center;font-family:var(--figure);font-size:11px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.04em;padding-bottom:8px;margin-bottom:5px;border-bottom:1px solid var(--border-lt)}
+.gpop-signals{display:flex;flex-direction:column;gap:6px;padding-bottom:8px;margin-bottom:5px;border-bottom:1px solid var(--border-lt)}
+.gpop-signal{display:flex;align-items:flex-start;gap:7px;font-size:11px;color:var(--text-2);line-height:1.4}
+.gpop-signal b{color:var(--ink)}
+.gpop-signal-ic{width:15px;height:15px;border-radius:var(--r-sm);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;color:#fff}
+.gpop-signal-ic svg{width:9px;height:9px}
+.gpop-foot{font-size:10.5px;color:var(--text-3);margin-top:6px;text-align:center}
 .gpop-r.warn .gpop-v{color:var(--amber)}
 .gpop-sub{padding:3px 0 3px 12px;display:flex;justify-content:space-between;align-items:center;font-size:11px;gap:8px}
 .gpop-sub .gpop-k{color:var(--text-3);font-weight:500}
@@ -115,38 +141,44 @@
 .q1-resp-lbl{font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;text-align:right}
 .q1-resp-dots{display:flex;gap:5px;justify-content:flex-end}
 .q1-chk{width:20px;height:20px;border-radius:50%;background:var(--green-lt);color:var(--green-d);display:flex;align-items:center;justify-content:center;font-size:11px;border:1px solid var(--border)}
+.q1-chk.warn{background:var(--amber-lt);color:var(--amber)}
 /* sticks the cost/sell/profit + active rule bar under the top nav while the grid scrolls beneath it */
 .q1-sticky{position:sticky;top:52px;z-index:40;background:var(--bg);padding-bottom:14px;border-bottom:1px solid var(--border-lt)}
-.q1-metrics{display:grid;grid-template-columns:repeat(3,1fr);background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:16px 22px;margin-bottom:14px}
-.q1-metric{padding-left:24px;border-left:1px solid var(--border-lt)}
-.q1-metric:first-child{padding-left:0;border-left:none}
-.q1-metric-k{font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em}
-.q1-metric-v{font-family:var(--figure);font-size:26px;font-weight:700;color:var(--ink);letter-spacing:0;margin-top:5px;line-height:1}
-.q1-metric-v.profit{color:var(--green-d)}
-.q1-metric-s{font-size:11px;color:var(--text-3);margin-top:6px}
-.q1-applied{display:flex;align-items:center;gap:8px;background:var(--green-lt);border:1px solid var(--border);border-left:3px solid var(--green-d);border-radius:var(--r);padding:9px 13px;font-size:12px;color:var(--green-d);margin-bottom:12px}
-.q1-applied .x{margin-left:auto;cursor:pointer;opacity:.55;font-size:15px}
-.q1-rulebar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:9px 14px;margin-bottom:14px}
-.q1-rulebar.applied{border-left:3px solid var(--green-d);background:var(--green-lt)}
-.q1-rulebar-main{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.q1-rulebar-lbl{font-family:var(--figure);font-size:12px;font-weight:700;color:var(--green-d);display:flex;align-items:center;gap:6px;white-space:nowrap}
-.q1-rule-select{border-color:var(--green);border-width:1px;font-weight:700;color:var(--ink);background-color:#fff}
-.q1-rulebar-div{width:1px;align-self:stretch;background:var(--border);margin:0 2px}
-.q1-pills{display:flex;gap:6px;flex-wrap:wrap}
-.q1-pill{font-family:var(--figure);font-size:10px;font-weight:700;padding:2px 9px;border-radius:var(--r-lg);border:1px solid;display:inline-flex;gap:5px;align-items:center;white-space:nowrap}
-.q1-pill.oem{color:var(--blue-d);border-color:var(--blue-bd);background:var(--blue-lt)}
-.q1-pill.parallel{color:var(--blue-d);border-color:var(--purple-bd);background:var(--purple-lt)}
-.q1-pill.aftermarket{color:var(--purple);border-color:var(--purple-bd);background:var(--purple-lt)}
-.q1-pill.recon{color:var(--recon);border-color:var(--recon-bd);background:var(--recon-lt)}
-.q1-pill.recycled{color:var(--green-d);border-color:var(--border);background:var(--green-lt)}
-.q1-rr{margin-left:auto;display:flex;align-items:center;gap:12px;font-size:11px;color:var(--text-2)}
-.q1-view{display:inline-flex;border:1px solid var(--border);border-radius:var(--r-sm);overflow:hidden}
+
+/* four metric cards — Cost / Sell / Profit / Insurer Saving. Only Profit
+   carries the green accent bar: it's the one number the rule bar exists to produce. */
+.q1-mcards{display:flex;gap:12px;margin-bottom:14px}
+.q1-mcard{flex:1;background:#fff;border:1px solid var(--border);border-radius:var(--r-xl);padding:14px 18px 16px;text-align:center;position:relative;overflow:hidden}
+.q1-mcard-k{font-size:10.5px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em}
+.q1-mcard-v{font-family:var(--figure);font-size:24px;font-weight:700;color:var(--ink);letter-spacing:0;margin-top:6px;line-height:1}
+.q1-mcard-v.profit{color:var(--green-d)}
+.q1-mcard-pct{font-size:13px;font-weight:700;color:var(--green-d);opacity:.85}
+.q1-mcard-s{font-size:10.5px;color:var(--text-3);margin-top:6px}
+.q1-mcard.profit::after{content:'';position:absolute;left:22%;right:22%;bottom:0;height:3px;background:var(--green);border-radius:2px 2px 0 0}
+
+/* active margin rule — one line: applied confirmation, rule picker, per-type legend */
+.q1-rulebanner{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;border:1.5px solid var(--green);border-radius:var(--r-xl);padding:10px 16px;margin-bottom:12px}
+.q1-rulebanner-check{color:var(--green-d);flex-shrink:0}
+.q1-rulebanner-lbl{font-family:var(--figure);font-size:11px;font-weight:700;color:var(--green-d);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.q1-rulebanner-select{appearance:none;border:none;background:none;font-family:var(--figure);font-size:13px;font-weight:700;color:var(--ink);cursor:pointer;outline:none;padding:0 16px 0 0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%236B7280'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right center}
+.q1-legend{display:flex;gap:14px;flex-wrap:wrap;margin-left:auto;font-size:11.5px;color:var(--text-2)}
+.q1-legend-item{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.q1-legend-item b{color:var(--ink);font-weight:700}
+.q1-legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* toolbar — quick select / show-filters / view toggle, one row under the rule banner */
+.q1-toolbar{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding-top:2px}
+.q1-toolbar-grp{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.q1-toolbar-lbl{font-size:11px;font-weight:700;color:var(--text-2);white-space:nowrap}
+.q1-showchip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--border);background:#fff;border-radius:var(--r-pill);padding:5px 10px;font-size:11px;font-weight:600;color:var(--text-2);cursor:pointer;transition:.12s}
+.q1-showchip svg{color:var(--chip-c)}
+.q1-showchip .ct{font-family:var(--figure);font-weight:700;color:var(--text-3);font-size:10px}
+.q1-showchip:hover{border-color:var(--border-2);background:var(--surface-2)}
+.q1-showchip.on{border-color:var(--chip-c);background:color-mix(in srgb, var(--chip-c) 12%, #fff)}
+.q1-showchip.on .ct{color:var(--chip-c)}
+.q1-view{margin-left:auto;display:inline-flex;border:1px solid var(--border);border-radius:var(--r-sm);overflow:hidden}
 .q1-view span{padding:6px 9px;cursor:pointer;color:var(--text-3);display:flex;align-items:center}
 .q1-view span.on{background:var(--green-lt);color:var(--green-d)}
-
-.qtool-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:#fff;border-radius:var(--r-sm);padding:7px 13px;font-family:var(--figure);font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;color:var(--text-2);cursor:pointer;transition:.12s}
-.qtool-btn:hover{border-color:var(--border-2);background:var(--surface-2)}
-.qtool-btn .pdf{color:var(--red)}
 
 .getd{font-size:10px;color:var(--text-3);margin-top:4px}
 .gprofit{font-size:10.5px;font-weight:700;color:var(--green-d);margin-top:3px}
@@ -173,6 +205,7 @@
 /* ── vehicle-age rule on the quote ── */
 .q1-vehctl{display:flex;align-items:center;gap:9px;margin-top:9px}
 .q1-vehctl-lbl{font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em}
+.q1-vehctl-val{font-family:var(--figure);font-size:11px;font-weight:700;color:var(--text-2);background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-sm);padding:5px 10px}
 .q1-agechip{display:inline-flex;align-items:center;gap:5px;font-family:var(--figure);font-size:10px;font-weight:700;padding:3px 10px;border-radius:var(--r-lg);letter-spacing:.02em}
 .q1-agechip.on{background:var(--amber-lt);color:var(--amber);border:1px solid var(--recon-bd)}
 .q1-agechip.off{background:var(--surface-2);color:var(--text-3);border:1px solid var(--border)}

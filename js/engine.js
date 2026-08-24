@@ -300,28 +300,7 @@ function getActiveExceptions(){
   return (saved && Array.isArray(saved.exceptions)) ? saved.exceptions : EXCEPTION_GROUPS;
 }
 
-/* demo vehicle year on Check Price — kept separate from the rule config above (it's per-quote
-   state, not a margin rule) but still persisted so it survives navigating to Margin Rules and back. */
-const DEMO_YEAR_KEY = 'mro_demo_model_year';
-function getDemoModelYear(){
-  try { const raw = localStorage.getItem(DEMO_YEAR_KEY); const y = raw ? parseInt(raw,10) : NaN; return isNaN(y) ? 2024 : y; }
-  catch(e){ return 2024; }
-}
-function saveDemoModelYear(year){
-  try { localStorage.setItem(DEMO_YEAR_KEY, String(year)); } catch(e){}
-}
-
-/* demo vehicle brand on Check Price — same rationale as the model year above */
-const DEMO_BRAND_KEY = 'mro_demo_vehicle_brand';
-function getDemoVehicleBrand(){
-  try { return localStorage.getItem(DEMO_BRAND_KEY) || 'hyundai'; } catch(e){ return 'hyundai'; }
-}
-function saveDemoVehicleBrand(brand){
-  try { localStorage.setItem(DEMO_BRAND_KEY, brand); } catch(e){}
-}
-
 window.MRO = { METHODS, CAP_TYPES, resolveRule, clauseValue, isNA, fmt, fmt0, PART_TYPES_INIT, SAMPLE_PARTS, EXCEPTION_GROUPS, PT_COLOR, PT_NAME, CURRENT_YEAR,
   VEHICLE_BRANDS, AGE_OPERATORS, VEHICLE_AGE_RULES_INIT, vehicleAge, ageRuleMatches, matchingAgeRules, ageRuleActive, ageAllowsType,
   COND_PREDICATES, COND_OUTCOMES, COND_CAP_TYPES, SUPPLIER_TYPES, resolveConditional, condMatches, typeAvailable, COND_RULES_INIT, COND_SAMPLE,
-  getDemoModelYear, saveDemoModelYear, getDemoVehicleBrand, saveDemoVehicleBrand,
   loadRuleConfig, saveRuleConfig, getActiveTypes, getActiveAgeRules, getActiveCondRules, getActiveExceptions };

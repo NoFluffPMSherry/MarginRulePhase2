@@ -1,9 +1,8 @@
 (function(){
-const { useState, useEffect } = React;
+const { useState, useEffect, useRef } = React;
 const { METHODS, CAP_TYPES, resolveRule, resolveConditional, clauseValue, fmt, PT_NAME,
         PART_TYPES_INIT, VEHICLE_BRANDS, vehicleAge, ageRuleActive, ageAllowsType, matchingAgeRules,
-        getActiveTypes, getActiveAgeRules, getActiveCondRules, getActiveExceptions,
-        getDemoModelYear, saveDemoModelYear, getDemoVehicleBrand, saveDemoVehicleBrand } = window.MRO;
+        getActiveTypes, getActiveAgeRules, getActiveCondRules, getActiveExceptions } = window.MRO;
 const { TopNav } = window.MROShared;
 
 /* ═══════════════ CHECK PRICE GRID (Phase-1 layout) ═══════════════
@@ -13,36 +12,37 @@ const { TopNav } = window.MROShared;
 /* one column per part type — each supplier's own colour/label is derived from its typeId
    so it always matches the dot colour configured for that type on the Margin Rules screen */
 const QSUP = [
-  { key:'jfa', name:'James Frizelles Automotive', type:'OEM',       typeId:'oem' },
-  { key:'acm', name:'ACM Parts (QLD)',            type:'AFTERMARKET', typeId:'aftermarket' },
-  { key:'apg', name:'Auto Parts Group (QLD)',     type:'CERT AFTM', typeId:'parallel' },
-  { key:'sap', name:'Statewide Recon Parts',      type:'RECON',     typeId:'recon' },
-  { key:'wgr', name:'Willawong Auto Recyclers',   type:'USED',      typeId:'recycled' },
+  { key:'jfa', name:'James Frizelles Automotive', type:'OEM',       typeId:'oem', responded:true },
+  { key:'acm', name:'ACM Parts (QLD)',            type:'AFTERMARKET', typeId:'aftermarket', responded:true },
+  { key:'apg', name:'Auto Parts Group (QLD)',     type:'CERT AFTM', typeId:'parallel', responded:true },
+  { key:'sap', name:'Statewide Recon Parts',      type:'RECON',     typeId:'recon', responded:true },
+  { key:'wgr', name:'Willawong Auto Recyclers',   type:'USED',      typeId:'recycled', responded:true },
+  { key:'ajp', name:'All Jap Auto Parts',         type:'USED',      typeId:'recycled', responded:false },
 ];
 const QPARTS = [
   { id:1, name:'FRONT BUMPER COVER', dealer:'DR6150031EBB', list:652.15,
-    s:{ jfa:{cost:255.00,etd:'2-3 Days',c:true}, acm:{cost:150.00,etd:'Same Day',flag:true}, apg:{cost:190.00,etd:'1-2 Days'}, wgr:{cost:140.00,etd:'3-5 Days'} } },
+    s:{ jfa:{cost:255.00,etd:'2-3 Days',c:'Genuine OEM stock item, same-day pickup available.'}, acm:{cost:150.00,etd:'Same Day',match:true}, apg:{cost:190.00,etd:'1-2 Days'}, wgr:{cost:140.00,etd:'3-5 Days',etdWarn:true,donor:true} } },
   { id:2, name:'FRT BUMPER ABSORBER', dealer:'D03P50111', list:147.06,
-    s:{ jfa:{cost:60.00,etd:'Same Day',c:true}, apg:{cost:48.00,etd:'1-2 Days'} } },
+    s:{ jfa:{cost:60.00,etd:'Same Day',c:'Boxed new, includes clips.'}, apg:{cost:48.00,etd:'1-2 Days'} } },
   { id:3, name:'L/F GUARD BRACKET', dealer:'D652500U1C', list:105.81,
-    s:{ jfa:{cost:44.00,etd:'2-3 Days'}, acm:{cost:27.00,etd:'Same Day',flag:true} } },
+    s:{ jfa:{cost:44.00,etd:'2-3 Days'}, acm:{cost:27.00,etd:'Same Day',match:true} } },
   { id:4, name:'FRT BUMPER SUPPORT', dealer:'DF7150070C', list:308.62,
-    s:{ jfa:{cost:140.00,etd:'2-3 Days'}, acm:{cost:85.00,etd:'Same Day'}, apg:{cost:146.16,etd:'1-2 Days',c:true,flag:true}, wgr:{cost:90.91,etd:'3-5 Days'} } },
+    s:{ jfa:{cost:140.00,etd:'2-3 Days'}, acm:{cost:85.00,etd:'Same Day'}, apg:{cost:146.16,etd:'1-2 Days',c:'Certified aftermarket.',match:true}, wgr:{cost:90.91,etd:'3-5 Days',etdWarn:true} } },
   { id:5, name:'FRT BUMPER GRILLE', dealer:'DR61501T1C', list:225.55,
-    s:{ jfa:{cost:85.00,etd:'2-3 Days'}, acm:{cost:52.00,etd:'Same Day',flag:true} } },
+    s:{ jfa:{cost:85.00,etd:'2-3 Days'}, acm:{cost:52.00,etd:'Same Day',match:true} } },
   { id:6, name:'L/F HEADLAMP ASSY', dealer:'DF89510L0F', list:722.45,
-    s:{ jfa:{cost:205.00,etd:'2-3 Days'}, acm:{cost:125.00,etd:'Same Day'}, apg:{cost:238.76,etd:'1-2 Days'}, wgr:{cost:118.18,etd:'2-3 Days',flag:true} } },
+    s:{ jfa:{cost:205.00,etd:'2-3 Days'}, acm:{cost:125.00,etd:'Same Day'}, apg:{cost:238.76,etd:'1-2 Days',img:true}, wgr:{cost:118.18,etd:'2-3 Days',match:true} } },
   { id:7, name:'R/F GUARD BRACKET', dealer:'D652500U1D', list:98.40,
-    s:{ apg:{cost:68.00,etd:'1-2 Days',flag:true}, sap:{cost:55.00,etd:'3-5 Days'} } },
+    s:{ apg:{cost:68.00,etd:'1-2 Days',match:true}, sap:{cost:55.00,etd:'3-5 Days',etdWarn:true} } },
   { id:8, name:'FRT BUMPER MOULD RH', dealer:'DR61502T1C', list:189.30,
-    s:{ jfa:{cost:78.00,etd:'2-3 Days'}, sap:{cost:62.00,etd:'1-2 Days',flag:true} } },
+    s:{ jfa:{cost:78.00,etd:'2-3 Days'}, sap:{cost:62.00,etd:'1-2 Days',match:true} } },
   // ── Parts caught by Allianz exception rules ──
   { id:9, name:'DRIVER AIRBAG MODULE', dealer:'56900-YOUI', list:1420.00,
     exc:{ mode:'oem', category:'Airbag Systems' },
-    s:{ jfa:{cost:1150.00,etd:'3-5 Days',c:true}, acm:{cost:680.00,etd:'2-3 Days'}, apg:{cost:610.00,etd:'1-2 Days',c:true}, wgr:{cost:395.00,etd:'Same Day',flag:true} } },
+    s:{ jfa:{cost:1150.00,etd:'3-5 Days',c:'Ex-stock, ships same day.',etdWarn:true}, acm:{cost:680.00,etd:'2-3 Days'}, apg:{cost:610.00,etd:'1-2 Days',c:'Certified aftermarket replacement, TÜV tested.'}, wgr:{cost:395.00,etd:'Same Day',match:true} } },
   { id:10, name:'R/F ABS SPEED SENSOR', dealer:'95671-YOUI', list:205.00,
     exc:{ mode:'oem', category:'ABS / Braking Safety Systems' },
-    s:{ jfa:{cost:165.00,etd:'Same Day',c:true}, apg:{cost:74.00,etd:'1-2 Days'}, wgr:{cost:50.00,etd:'2-3 Days',flag:true} } },
+    s:{ jfa:{cost:165.00,etd:'Same Day',c:'In stock, same-day dispatch.'}, apg:{cost:74.00,etd:'1-2 Days'}, wgr:{cost:50.00,etd:'2-3 Days',match:true} } },
 ];
 
 const ruleFor = (id, types) => (types||PART_TYPES_INIT).find(t=>t.id===id) || PART_TYPES_INIT.find(t=>t.id===id);
@@ -97,27 +97,50 @@ const qcell = (part, sup, types, overrides, condTrace, lineOv) => {
     const sell = clauseValue({ method:lineOv.method, value:lineOv.value }, { list:part.list, cost:o.cost });
     res = { ...res, sell, capped:false, lineOverridden:true, preLineOverride:res.sell, lineMethod:lineOv.method };
   }
-  return { cost:o.cost, etd:o.etd, comment:o.c, flag:o.flag, res, sup, modPartNo: lineOv && lineOv.partNo };
+  return { cost:o.cost, etd:o.etd, comment:o.c, match:o.match, etdWarn:o.etdWarn, img:o.img, donor:o.donor, res, sup, modPartNo: lineOv && lineOv.partNo };
 };
-const pillLabel = pt => {
-  const parts = pt.clauses.map(cl => cl.method==='pctList' ? `${cl.value}%` : cl.method==='markupCost' ? `+${cl.value}%` : METHODS[cl.method].short);
-  let s = parts.join(' / ');
-  if(pt.clauses.length>1) s += pt.resolver==='higher' ? ' ↑' : ' ↓';
-  return s;
+/* compact "X% of list" form for the single-line rule banner legend — drops combo/cap detail,
+   which stays available in the full pill on Margin Rules and in the cell popover */
+const legendLabel = pt => {
+  const cl = pt.clauses[0];
+  return cl.method==='pctList' ? `${cl.value}% of list` : cl.method==='markupCost' ? `+${cl.value}% of cost` : METHODS[cl.method].label;
 };
+
+/* single source for the five cell signals — the Show-filter toolbar, the grid's corner
+   chips and the cell popover all read from this instead of each hand-copying icon/colour. */
+const SIGNAL_DEFS = [
+  { id:'match',   cls:'match',   label:'Dealer Part Match', color:'var(--green)',  fill:false, strokeW:3,
+    icon:<path d="M5 12l5 5L20 7"/>, popLabel:'Same part #', popDesc:(c,part)=>`matches dealer #${part.dealer}` },
+  { id:'etdWarn', cls:'etd',     label:'ETD Alert',         color:'var(--amber)',  fill:false, strokeW:2.4,
+    icon:<><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></>, popLabel:'ETD', popDesc:c=>c.etd },
+  { id:'comment', cls:'comment', label:'Comments',          color:'var(--text-3)', fill:true,
+    icon:<path d="M21 6H3v12h4v3l3-3h11z"/>, popLabel:'Comment', popDesc:c=>`"${c.comment}"` },
+  { id:'img',     cls:'img',     label:'Images',            color:'var(--blue)',   fill:false, strokeW:2.4,
+    icon:<><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10.5" r="1.5"/><path d="M21 15l-5-5-4 4-3-3-6 6"/></>, popLabel:'Image', popDesc:()=>'reference photo attached' },
+  { id:'donor',   cls:'donor',   label:'Donor Part',        color:'var(--purple)', fill:true,
+    icon:<path d="M12 3l2.5 5 5.5.8-4 3.9.9 5.5L12 15.8 7.1 18.2l.9-5.5-4-3.9 5.5-.8z"/>, popLabel:'Donor part', popDesc:()=>'sourced from a written-off donor vehicle' },
+];
+const signalIcon = (def, size) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={def.fill?'currentColor':'none'} stroke={def.fill?undefined:'currentColor'} strokeWidth={def.fill?undefined:def.strokeW}>{def.icon}</svg>
+);
 
 function QuoteGrid(){
   const [sel, setSel] = useState({ 1:'jfa', 2:'jfa', 6:'apg', 8:'sap' });
-  const [applied, setApplied] = useState(true);
   // per-line MODIFY overrides — key is `${partId}:${supKey}`, keeps this deliberately out of
   // the persisted rule config: it's a one-off call on this quote, not a change to the margin rule itself
   const [lineOv, setLineOv] = useState({});
   const [editing, setEditing] = useState(null); // { partId, supKey } while the Edit Selected Item modal is open
-  // persisted so picking a model year / make to demo the age gate survives navigating to Margin Rules and back
-  const [modelYear, setModelYearState] = useState(()=>getDemoModelYear());
-  const setModelYear = y => { setModelYearState(y); saveDemoModelYear(y); };
-  const [vehicleBrand, setVehicleBrandState] = useState(()=>getDemoVehicleBrand());
-  const setVehicleBrand = b => { setVehicleBrandState(b); saveDemoVehicleBrand(b); };
+  const [activeFilter, setActiveFilter] = useState(null); // Show-filter lens: dims every cell not carrying this signal
+  const [toast, setToast] = useState(null);
+  const toastToken = useRef(0);
+  const showToast = msg => {
+    const token = ++toastToken.current;
+    setToast(msg);
+    setTimeout(()=>{ if(toastToken.current===token) setToast(null); }, 2200);
+  };
+  // make/model year come from the quoting package the RFQ was raised in — read-only here, never editable in PartsCheck
+  const modelYear = 2024;
+  const vehicleBrand = 'hyundai';
   // pricing rules + vehicle age rules + conditional rules — loaded from whatever was last saved on the Margin Rules screen
   const [types] = useState(getActiveTypes());
   const ageRules = getActiveAgeRules();
@@ -160,15 +183,47 @@ function QuoteGrid(){
     setSel(prev => ({...prev, [id]: prev[id]===key ? null : key}));
   };
 
+  /* Quick Select — picks the best allowed offer per line by profit or by cost, same eligibility rules as a manual click */
+  const quickSelect = mode => {
+    const next = {};
+    QPARTS.forEach(p=>{
+      let best = null;
+      QSUP.forEach(s=>{
+        const c = qcell(p, s, types, condByPart[p.id], condTraceByPart[p.id]);
+        if(!c || !cellAllowed(p, s, ageBlocked, condByPart[p.id], exceptions)) return;
+        const score = mode==='profit' ? (c.res.sell - c.cost) : -c.cost;
+        if(!best || score>best.score) best = { key:s.key, score };
+      });
+      if(best) next[p.id] = best.key;
+    });
+    setSel(next);
+  };
+
   const totals = {};
   QSUP.forEach(s=>{ totals[s.key] = QPARTS.reduce((a,p)=>{ const c=qcell(p,s,types,condByPart[p.id]); return a+((c && cellAllowed(p,s,ageBlocked,condByPart[p.id],exceptions))?c.cost:0); },0); });
 
-  const selData = QPARTS.map(p=>{ const k=sel[p.id]; if(!k) return null; const s=QSUP.find(x=>x.key===k); return (s && cellAllowed(p,s,ageBlocked,condByPart[p.id],exceptions)) ? qcell(p,s,types,condByPart[p.id],condTraceByPart[p.id],lineOv[p.id+':'+k]) : null; }).filter(Boolean);
+  // one pass per selected, currently-eligible line — cost/sell/profit AND the saving figure all
+  // derive from this same filtered set, so a selection a conditional rule later invalidates drops
+  // out of every metric together instead of lingering in just the list-price side of the maths
+  const selPairs = QPARTS.map(p=>{ const k=sel[p.id]; if(!k) return null; const s=QSUP.find(x=>x.key===k); if(!s || !cellAllowed(p,s,ageBlocked,condByPart[p.id],exceptions)) return null; return { part:p, cell:qcell(p,s,types,condByPart[p.id],condTraceByPart[p.id],lineOv[p.id+':'+k]) }; }).filter(Boolean);
+  const selData = selPairs.map(x=>x.cell);
   const cost = selData.reduce((a,c)=>a+c.cost,0);
   const sell = selData.reduce((a,c)=>a+c.res.sell,0);
   const profit = sell - cost;
   const margin = sell>0 ? profit/sell*100 : 0;
   const selCount = selData.length;
+  const listSelTotal = selPairs.reduce((a,x)=>a+x.part.list,0);
+  const saving = listSelTotal - sell;
+
+  // Show-filter chip counts — over every cell a repairer could actually see (allowed, has an offer)
+  const allCells = [];
+  QPARTS.forEach(p=>QSUP.forEach(s=>{
+    const c = qcell(p, s, types, condByPart[p.id]);
+    if(c && cellAllowed(p, s, ageBlocked, condByPart[p.id], exceptions)) allCells.push(c);
+  }));
+  const SHOW_FILTERS = SIGNAL_DEFS.map(d=>({ ...d, count: allCells.filter(c=>c[d.id]).length }));
+  const cellMatchesFilter = c => !activeFilter || !!c[activeFilter];
+  const activeFilterColor = activeFilter && (SHOW_FILTERS.find(f=>f.id===activeFilter)||{}).color;
 
   return (
     <>
@@ -186,14 +241,8 @@ function QuoteGrid(){
             <div className="q1-qno"><span>QUOTE:</span> 89734</div>
             <div className="q1-qsub">{brandObj.name} · ABC123 · Insurer: <b>Allianz</b></div>
             <div className="q1-vehctl">
-              <span className="q1-vehctl-lbl">Make</span>
-              <select className="sel sel-sm" value={vehicleBrand} onChange={e=>setVehicleBrand(e.target.value)}>
-                {VEHICLE_BRANDS.filter(b=>b.id!=='any').map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
-              </select>
               <span className="q1-vehctl-lbl">Model year</span>
-              <select className="sel sel-sm" value={modelYear} onChange={e=>setModelYear(+e.target.value)}>
-                {[2026,2025,2024,2023,2022,2021,2020,2019,2018].map(y=><option key={y} value={y}>{y}</option>)}
-              </select>
+              <span className="q1-vehctl-val" title="Set in the quoting package — not editable in PartsCheck">{modelYear}</span>
               <span className={"q1-agechip "+(ageActive?'on':'off')}>
                 {ageActive && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg>}
                 {age} yr{age===1?'':'s'} old{ageActive?` · ${ageAllowedNames} only`:''}
@@ -203,57 +252,69 @@ function QuoteGrid(){
           <div className="q1-head-r">
             <div>
               <div className="q1-resp-lbl">Supplier Responses</div>
-              <div className="q1-resp-dots">{[1,2,3,4,5].map(i=><span key={i} className="q1-chk"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12l5 5L20 7"/></svg></span>)}</div>
+              <div className="q1-resp-dots">
+                {QSUP.map(s=>(
+                  <span key={s.key} className={"q1-chk "+(s.responded?'':'warn')} title={s.name+' — '+(s.responded?'Received':'Not responded')}>
+                    {s.responded
+                      ? <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12l5 5L20 7"/></svg>
+                      : <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 8v5m0 3h.01"/><circle cx="12" cy="12" r="10"/></svg>}
+                  </span>
+                ))}
+              </div>
             </div>
-            <button className="btn btn-ghost btn-lg" onClick={()=>setSel({})}>Clear Selection</button>
+            <button className="btn btn-ghost btn-lg">Print ▾</button>
             <button className="btn btn-ghost btn-lg">Cancel Request</button>
             <button className="btn btn-green btn-lg">Save</button>
           </div>
         </div>
 
-        {/* Sticky header — stays in view while scrolling the grid: cost/sell/profit + active rule */}
+        {/* Sticky header — stays in view while scrolling the grid: cost/sell/profit/saving + active rule + toolbar */}
         <div className="q1-sticky">
-          <div className="q1-metrics">
-            <div className="q1-metric"><div className="q1-metric-k">Your Cost</div><div className="q1-metric-v">{fmt(cost)}</div><div className="q1-metric-s">{selCount} of {QPARTS.length} parts · paid to suppliers</div></div>
-            <div className="q1-metric"><div className="q1-metric-k">Your Sell</div><div className="q1-metric-v">{fmt(sell)}</div><div className="q1-metric-s">filed to Allianz under this rule</div></div>
-            <div className="q1-metric"><div className="q1-metric-k">Your Profit</div><div className="q1-metric-v profit">{fmt(profit)}</div><div className="q1-metric-s">{margin.toFixed(1)}% margin on selection</div></div>
+          <div className="q1-mcards">
+            <div className="q1-mcard"><div className="q1-mcard-k">Your Cost</div><div className="q1-mcard-v">{fmt(cost)}</div><div className="q1-mcard-s">{selCount} of {QPARTS.length} parts · paid to suppliers</div></div>
+            <div className="q1-mcard"><div className="q1-mcard-k">Your Sell</div><div className="q1-mcard-v">{fmt(sell)}</div><div className="q1-mcard-s">filed to Allianz under this rule</div></div>
+            <div className="q1-mcard profit"><div className="q1-mcard-k">Your Profit</div><div className="q1-mcard-v profit">{fmt(profit)} <span className="q1-mcard-pct">({margin.toFixed(0)}%)</span></div><div className="q1-mcard-s">margin on selection</div></div>
+            <div className="q1-mcard"><div className="q1-mcard-k">Insurer Saving</div><div className="q1-mcard-v">{fmt(saving)}</div><div className="q1-mcard-s">vs dealer list price</div></div>
           </div>
 
-          {/* Active margin rule bar — tinted + bordered so it reads as the control governing the grid below, not a toolbar item */}
-          <div className="q1-rulebar">
-            <div className="q1-rulebar-main">
-              <span className="q1-rulebar-lbl">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg>
-                Active Margin Rule:
-              </span>
-              <select className="sel sel-sm q1-rule-select" style={{minWidth:150}}><option>Allianz — My Shop</option><option>Allianz Baseline</option><option>Standard</option></select>
-              <div className="q1-pills">
-                {types.map(pt=>(
-                  <span key={pt.id} className={"q1-pill "+pt.id}>
-                    {pt.name} {pillLabel(pt)}
-                    {pt.clauses.length>1 && <span className="combo">◇</span>}
-                    {pt.cap.enabled && <span>⛰</span>}
-                  </span>
-                ))}
-              </div>
+          {/* Active margin rule — one line: applied confirmation + rule picker + per-type legend */}
+          <div className="q1-rulebanner">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="q1-rulebanner-check"><path d="M5 12l5 5L20 7"/></svg>
+            <span className="q1-rulebanner-lbl">Margin Rule Applied</span>
+            <select className="q1-rulebanner-select"><option>Allianz Standard</option><option>Allianz — My Shop</option><option>Allianz Baseline</option></select>
+            <div className="q1-legend">
+              {types.map(pt=>(
+                <span key={pt.id} className="q1-legend-item">
+                  <span className="q1-legend-dot" style={{background:pt.color}}/>
+                  <b>{pt.name}</b> {legendLabel(pt)}
+                </span>
+              ))}
             </div>
-            <div className="q1-rulebar-div"/>
-            <div className="q1-rr">
-              <span>Quick Select:</span>
-              <select className="sel sel-sm"><option>— None —</option><option>Max Profit</option><option>Min Cost</option><option>OEM Dealer</option></select>
-              <button className="qtool-btn"><span className="pdf">▤</span>Print</button>
-              <div className="q1-view"><span className="on"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span></div>
+          </div>
+
+          {/* Toolbar — quick select, signal filters, view toggle */}
+          <div className="q1-toolbar">
+            <div className="q1-toolbar-grp">
+              <span className="q1-toolbar-lbl">Quick Select:</span>
+              <button className="btn btn-ghost btn-sm" onClick={()=>quickSelect('profit')}>Best Profit</button>
+              <button className="btn btn-ghost btn-sm" onClick={()=>quickSelect('cost')}>Lowest Cost</button>
+              <button className="btn btn-ghost btn-sm" disabled={selCount===0} onClick={()=>setSel({})}>Clear Selections</button>
+            </div>
+            <div className="q1-toolbar-grp">
+              <span className="q1-toolbar-lbl">Show:</span>
+              {SHOW_FILTERS.map(f=>(
+                <button key={f.id} className={"q1-showchip "+(activeFilter===f.id?'on':'')} style={{'--chip-c':f.color}} onClick={()=>setActiveFilter(activeFilter===f.id?null:f.id)}>
+                  {signalIcon(f, 11)}
+                  {f.label}<span className="ct">{f.count}</span>
+                </button>
+              ))}
+            </div>
+            <div className="q1-view">
+              <span className="on"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></span>
+              <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span>
             </div>
           </div>
         </div>
-
-        {applied && (
-          <div className="q1-applied">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M5 12l5 5L20 7"/></svg>
-            <span><b>Allianz — My Shop</b> rule applied to this quote.</span>
-            <span className="x" onClick={()=>setApplied(false)}>×</span>
-          </div>
-        )}
 
         {ageActive && (
           <div className="q1-agebanner">
@@ -329,16 +390,24 @@ function QuoteGrid(){
                     const selected = sel[p.id]===s.key;
                     const excAllowed = excAllowedTypes(p, exceptions);
                     const reassure = (excAllowed && excAllowed.includes(s.typeId)) || (ageActive && !ageBlocked(s.typeId));
+                    const dim = !cellMatchesFilter(c);
+                    const hl = activeFilter && !dim && !selected;
                     return (
-                      <td key={s.key} className={"gcell "+(selected?'gcell-sel':'')+(reassure?' gcell-okexc':'')} onClick={()=>toggle(p.id, s.key)}>
+                      <td key={s.key} className={"gcell "+(selected?'gcell-sel':'')+(reassure?' gcell-okexc':'')+(dim?' dim':'')+(hl?' hl':'')} style={hl?{'--hl-c':activeFilterColor}:undefined} onClick={()=>toggle(p.id, s.key)}>
                         <div className="gcell-in">
-                          <div className="gtype" style={{color:colorFor(s.typeId)}}>{s.type}{c.comment && <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style={{opacity:.55}}><path d="M21 6H3v12h4v3l3-3h11z"/></svg>}</div>
+                          <div className="gtype" style={{color:colorFor(s.typeId)}}>{s.type}</div>
                           <div className="gprice">{fmt(c.cost)}</div>
                           <div className={"gprofit"+(c.res.sell - c.cost < 0 ? ' neg' : '')}>{c.res.sell - c.cost >= 0 ? '+' : ''}{fmt(c.res.sell - c.cost)}</div>
                           {c.res.lineOverridden ? <div className="glinetag">✎ overridden</div> : c.res.capped ? <div className="gcapd">⛰ capped</div> : c.res.overridden && <div className="gcondtag">⇄ rule-matched</div>}
                           <div className="getd">ETD {c.etd}</div>
                         </div>
-                        {c.flag && !selected && <div className="gcorner"/>}
+                        {SIGNAL_DEFS.some(d=>c[d.id]) && (
+                          <div className="qg-chips">
+                            {SIGNAL_DEFS.filter(d=>c[d.id]).map(d=>(
+                              <span key={d.id} className={"qg-chip "+d.cls} title={d.label}>{signalIcon(d)}</span>
+                            ))}
+                          </div>
+                        )}
                         {selected && <button className="gmodify" onClick={e=>{ e.stopPropagation(); setEditing({partId:p.id, supKey:s.key}); }}>✎ MODIFY</button>}
                         <CellPop part={p} c={c} types={types}/>
                       </td>
@@ -362,12 +431,16 @@ function QuoteGrid(){
         return (
           <EditItemModal
             part={part} sup={sup} current={lineOv[key]}
-            onSave={vals => setLineOv(prev=>({...prev, [key]: vals}))}
-            onReset={() => setLineOv(prev=>{ const next={...prev}; delete next[key]; return next; })}
+            onSave={vals => { setLineOv(prev=>({...prev, [key]: vals})); showToast('Pricing updated'); }}
+            onReset={() => { setLineOv(prev=>{ const next={...prev}; delete next[key]; return next; }); showToast('Override reset'); }}
             onClose={() => setEditing(null)}
           />
         );
       })()}
+
+      {toast && (
+        <div className="pc-toast"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12l5 5L20 7"/></svg>{toast}</div>
+      )}
     </>
   );
 }
@@ -400,39 +473,39 @@ function EditItemModal({ part, sup, current, onSave, onReset, onClose }){
           <button className="qm-x" onClick={onClose}>✕</button>
         </div>
         <div className="qm-body">
-          <div className="qm-sect">
-            <div className="qm-sect-t">Modify Part Number</div>
-            <div className="qm-field">
-              <label className="qm-lbl">Part Number Type</label>
-              <select className="sel" value={partNoType} onChange={e=>setPartNoType(e.target.value)}>
-                <option value="">Type or select...</option>
-                {PN_TYPES.map(t=><option key={t} value={t}>{t}</option>)}
-              </select>
-            </div>
-            <div className="qm-field">
-              <label className="qm-lbl">Part Number</label>
-              <input className="txt" type="text" placeholder="Enter or override part number" value={partNo} onChange={e=>setPartNo(e.target.value)}/>
-            </div>
+          <div className="qm-field">
+            <label className="qm-lbl">Display Format</label>
+            <select className="sel" value={partNoType} onChange={e=>setPartNoType(e.target.value)}>
+              <option value="">Type or select...</option>
+              {PN_TYPES.map(t=><option key={t} value={t}>{t}</option>)}
+            </select>
           </div>
-          <div className="qm-sect">
-            <div className="qm-sect-t">Pricing Method</div>
-            <div className="qm-rows">
-              {ROWS.map(r=>(
-                <label key={r.id} className={"qm-row "+(method===r.id?'active':'')}>
-                  <input type="radio" name="qm-pm" checked={method===r.id} onChange={()=>setMethod(r.id)}/>
-                  <span className="qm-row-lbl">{r.label}</span>
-                  {r.id!=='listPrice' && (
-                    <div className="qm-valbox">
-                      {r.pre && <span className="qm-pre">{r.pre}</span>}
-                      <input type="number" value={value} disabled={method!==r.id} onClick={e=>e.stopPropagation()} onChange={e=>setValue(parseFloat(e.target.value)||0)}/>
-                      {r.suf && <span className="qm-suf">{r.suf}</span>}
-                    </div>
-                  )}
-                </label>
-              ))}
-            </div>
-            <div className="qm-hint">This pricing method overrides this line item only.</div>
+          <div className="qm-field">
+            <label className="qm-lbl">Part Number</label>
+            <input className="txt" type="text" placeholder="Enter or override part number" value={partNo} onChange={e=>setPartNo(e.target.value)}/>
           </div>
+          <div className="qm-rows">
+            {ROWS.map(r=>(
+              <label key={r.id} className={"qm-row "+(method===r.id?'active':'')} onClick={()=>setMethod(r.id)}>
+                <input type="radio" name="qm-pm" checked={method===r.id} onChange={()=>setMethod(r.id)}/>
+                <span className="qm-row-lbl">{r.label}</span>
+                {r.id!=='listPrice' && (
+                  <div className="qm-valbox">
+                    {r.suf==='%' && (
+                      <div className="qm-stepper" onClick={e=>e.stopPropagation()}>
+                        <button type="button" tabIndex={-1} onClick={()=>{ setMethod(r.id); setValue(v=>v+1); }}>▲</button>
+                        <button type="button" tabIndex={-1} onClick={()=>{ setMethod(r.id); setValue(v=>Math.max(0,v-1)); }}>▼</button>
+                      </div>
+                    )}
+                    {r.pre && <span className="qm-pre">{r.pre}</span>}
+                    <input type="number" value={value} disabled={method!==r.id} onClick={e=>e.stopPropagation()} onChange={e=>setValue(parseFloat(e.target.value)||0)}/>
+                    {r.suf && <span className="qm-suf">{r.suf}</span>}
+                  </div>
+                )}
+              </label>
+            ))}
+          </div>
+          <div className="qm-hint">This pricing method overrides this line item only.</div>
         </div>
         <div className="qm-foot">
           <button className="btn btn-ghost" onClick={()=>{ onReset(); onClose(); }}>Reset</button>
@@ -452,12 +525,24 @@ function CellPop({ part, c, types }){
   const disc = part.list>0 ? (part.list-cost)/part.list*100 : 0;
   const applied = cl => cl.method==='pctList' ? `${cl.value}% list` : cl.method==='markupCost' ? `+${cl.value}% cost` : cl.method==='listPrice' ? 'dealer list' : `$${cl.value}`;
   const combo = res.steps.length>1;
+  const marginSell = res.sell>0 ? (res.sell-cost)/res.sell*100 : 0;
+  // signal chips explained, in the same order/colour/icon as the Show-filter row and the corner chips
+  const signals = SIGNAL_DEFS.filter(d=>c[d.id]);
   return (
     <div className="gpop">
-      <div className="gpop-title">{sup.name}</div>
+      <div className="gpop-title">{sup.name} · {sup.type}</div>
+      {signals.length>0 && (
+        <div className="gpop-signals">
+          {signals.map(sig=>(
+            <div className="gpop-signal" key={sig.id}>
+              <span className="gpop-signal-ic" style={{background:sig.color}}>{signalIcon(sig)}</span>
+              <span><b>{sig.popLabel}</b> · {sig.popDesc(c, part)}</span>
+            </div>
+          ))}
+        </div>
+      )}
       <div className="gpop-r"><span className="gpop-k">Supplier Part No.</span><span className="gpop-v">{part.dealer}</span></div>
       <div className="gpop-r"><span className="gpop-k">Modified Part No.</span><span className="gpop-v">{c.modPartNo || '—'}</span></div>
-      <div className="gpop-r"><span className="gpop-k">Part Type</span><span className="gpop-v">{sup.type}</span></div>
       <div className="gpop-r"><span className="gpop-k">Cost</span><span className="gpop-v">{fmt(cost)}</span></div>
       <div className="gpop-r warn"><span className="gpop-k">Supplier Discount</span><span className="gpop-v">⚠ {disc.toFixed(1)}%</span></div>
       <div className="gpop-r"><span className="gpop-k">Rule Applied</span><span className="gpop-v">{res.lineOverridden ? `✎ ${METHODS[res.lineMethod].label}` : res.overridden ? '⇄ Conditional rule' : (combo ? `${higher?'higher':'lower'} of ↓` : applied(res.steps[0].cl))}</span></div>
@@ -482,10 +567,10 @@ function CellPop({ part, c, types }){
           {res.capped && <div className="gpop-sub cap"><span className="gpop-k">⛰ {CAP_TYPES[pt.cap.type].chip.replace('#',pt.cap.value)}</span><span className="gpop-v">{fmt(res.sell)}</span></div>}
         </>
       )}
-      <div className="gpop-r"><span className="gpop-k">Mark Up</span><span className="gpop-v">{markup.toFixed(1)}%</span></div>
       <div className="gpop-r"><span className="gpop-k">List Price</span><span className="gpop-v">{fmt(part.list)}</span></div>
       <div className="gpop-final"><span className="gpop-k">Sell Price</span><span className="gpop-v">{fmt(res.sell)}</span></div>
       <div className="gpop-r" style={{borderBottom:'none'}}><span className="gpop-k">Profit</span><span className="gpop-v" style={{color: res.sell-cost < 0 ? 'var(--red)' : 'var(--green-d)'}}>{fmt(res.sell-cost)}</span></div>
+      <div className="gpop-foot">Margin on sell {marginSell.toFixed(1)}% · Markup on cost {markup.toFixed(1)}%</div>
     </div>
   );
 }
