@@ -9,6 +9,18 @@ const { TopNav } = window.MROShared;
    Supplier names, dealer part numbers and list prices below are modelled on a real
    PartsCheck quote (generic catalog data, not customer-identifying) so the numbers
    read as authentic in front of repairers/insurers rather than obviously round demo figures. */
+/* reference photo a supplier attaches to their offer — a flat studio-style illustration standing
+   in for a real upload, so the hover popover and full-image viewer have something to show */
+const PART_PHOTO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 260">
+  <defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#EEF0F2"/><stop offset="1" stop-color="#D7DADE"/></linearGradient></defs>
+  <rect width="400" height="260" fill="url(#bg)"/>
+  <ellipse cx="200" cy="215" rx="120" ry="14" fill="#00000014"/>
+  <rect x="90" y="70" width="220" height="120" rx="14" fill="#B9BEC5" stroke="#9AA0A8" stroke-width="2"/>
+  <ellipse cx="150" cy="130" rx="46" ry="34" fill="#FFF6D8" stroke="#E8D48A" stroke-width="2"/>
+  <path d="M210 100h80a10 10 0 0110 10v40a10 10 0 01-10 10h-80z" fill="#CBD0D6"/>
+</svg>`;
+const PART_PHOTO = 'data:image/svg+xml,' + encodeURIComponent(PART_PHOTO_SVG);
+
 /* one column per part type — each supplier's own colour/label is derived from its typeId
    so it always matches the dot colour configured for that type on the Margin Rules screen */
 const QSUP = [
@@ -31,7 +43,7 @@ const QPARTS = [
   { id:5, name:'FRT BUMPER GRILLE', dealer:'DR61501T1C', list:225.55,
     s:{ jfa:{cost:85.00,etd:'2-3 Days'}, acm:{cost:52.00,etd:'Same Day',match:true} } },
   { id:6, name:'L/F HEADLAMP ASSY', dealer:'DF89510L0F', list:722.45,
-    s:{ jfa:{cost:205.00,etd:'2-3 Days'}, acm:{cost:125.00,etd:'Same Day'}, apg:{cost:238.76,etd:'1-2 Days',img:true}, wgr:{cost:118.18,etd:'2-3 Days',match:true} } },
+    s:{ jfa:{cost:205.00,etd:'2-3 Days',img:PART_PHOTO}, acm:{cost:125.00,etd:'Same Day'}, apg:{cost:238.76,etd:'1-2 Days'}, wgr:{cost:118.18,etd:'2-3 Days',match:true} } },
   { id:7, name:'R/F GUARD BRACKET', dealer:'D652500U1D', list:98.40,
     s:{ apg:{cost:68.00,etd:'1-2 Days',match:true}, sap:{cost:55.00,etd:'3-5 Days',etdWarn:true} } },
   { id:8, name:'FRT BUMPER MOULD RH', dealer:'DR61502T1C', list:189.30,
@@ -44,6 +56,10 @@ const QPARTS = [
     exc:{ mode:'oem', category:'ABS / Braking Safety Systems' },
     s:{ jfa:{cost:165.00,etd:'Same Day',c:'In stock, same-day dispatch.'}, apg:{cost:74.00,etd:'1-2 Days'}, wgr:{cost:50.00,etd:'2-3 Days',match:true} } },
 ];
+
+/* "L/F HEADLAMP ASSY" -> "L/F Headlamp Assy" — title-cases each word (and each side of a "/",
+   so position abbreviations like L/F stay intact) for the photo-viewer caption */
+const titleCase = str => str.split(' ').map(w => w.split('/').map(seg => seg.charAt(0)+seg.slice(1).toLowerCase()).join('/')).join(' ');
 
 const ruleFor = (id, types) => (types||PART_TYPES_INIT).find(t=>t.id===id) || PART_TYPES_INIT.find(t=>t.id===id);
 /* one representative {list,cost} offer per part type on this line — feeds the conditional overlay */
@@ -132,6 +148,11 @@ function QuoteGrid(){
   const [editing, setEditing] = useState(null); // { partId, supKey } while the Edit Selected Item modal is open
   const [activeFilter, setActiveFilter] = useState(null); // Show-filter lens: dims every cell not carrying this signal
   const [toast, setToast] = useState(null);
+  const [lightbox, setLightbox] = useState(null); // { src, caption } while the full-image viewer is open
+  // per-line Qty — display-only, same as the phase-1 reference: blank until a supplier is picked for
+  // that line, defaults to 1 once selected, never factored into cost/sell/profit math
+  const [qtyOv, setQtyOv] = useState({});
+  const qtyFor = pid => sel[pid] ? (qtyOv[pid] != null ? qtyOv[pid] : '1') : '';
   const toastToken = useRef(0);
   const showToast = msg => {
     const token = ++toastToken.current;
@@ -228,7 +249,7 @@ function QuoteGrid(){
   return (
     <>
       <TopNav active="Check Price"/>
-      <div className="page" style={{maxWidth:1340}}>
+      <div className="page" style={{maxWidth:'none'}}>
         <div className="qptab">
           <div className="qptab-i on"><span className="ic"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span>CHECK PRICE</div>
           <div className="qptab-i"><span className="ic"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg></span>INFO</div>
@@ -340,11 +361,16 @@ function QuoteGrid(){
         {/* Grid */}
         <div className="qscroll">
           <table className="qg">
+            <colgroup>
+              <col style={{width:232,minWidth:232}}/>
+              {QSUP.map(s=><col key={s.key} style={{width:122,minWidth:122}}/>)}
+              <col style={{width:'auto'}}/>
+            </colgroup>
             <thead>
               <tr>
                 <th className="qg-corner">
                   <div className="qg-corner-top"><span className="qg-selcount">{selCount}/{QPARTS.length}</span><span className="qg-selword">Selected</span></div>
-                  <div className="qg-corner-sub"><span>Part Number &amp; Description</span></div>
+                  <div className="qg-corner-sub"><span className="qg-linenum">#</span><span className="qg-qty-hd">Qty</span><span>Part Number &amp; Description</span></div>
                 </th>
                 {QSUP.map(s=>(
                   <th key={s.key} className="qg-suph">
@@ -355,14 +381,17 @@ function QuoteGrid(){
                     </div>
                   </th>
                 ))}
+                <th className="qg-filler"/>
               </tr>
             </thead>
             <tbody>
-              {QPARTS.map(p=>{
+              {QPARTS.map((p,idx)=>{
                 return (
                 <tr key={p.id} className={p.exc?'qg-excrow':''}>
                   <td className="qg-partcell">
+                    <span className="qg-linenum">{idx+1}</span>
                     <div className="qg-cb" style={sel[p.id]?{background:'#16A34A',borderColor:'#15803D'}:{}}>{sel[p.id] && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" style={{margin:'1px'}}><path d="M5 12l5 5L20 7"/></svg>}</div>
+                    <input type="text" inputMode="numeric" className="qg-qty" value={qtyFor(p.id)} placeholder="" onClick={e=>e.stopPropagation()} onChange={e=>setQtyOv(prev=>({...prev,[p.id]:e.target.value}))}/>
                     <div>
                       <div className="qg-pn">{p.name}</div>
                       <div className="qg-ps">Dealer: #{p.dealer}<br/>List: {fmt(p.list)} ea</div>
@@ -404,20 +433,25 @@ function QuoteGrid(){
                         {SIGNAL_DEFS.some(d=>c[d.id]) && (
                           <div className="qg-chips">
                             {SIGNAL_DEFS.filter(d=>c[d.id]).map(d=>(
-                              <span key={d.id} className={"qg-chip "+d.cls} title={d.label}>{signalIcon(d)}</span>
+                              <span key={d.id} className={"qg-chip "+d.cls} title={d.id==='img' ? 'View photo' : d.label}
+                                onClick={d.id==='img' ? (e=>{ e.stopPropagation(); setLightbox({ src:c.img, caption:`${titleCase(p.name)} · ${s.name}` }); }) : undefined}>
+                                {signalIcon(d)}
+                              </span>
                             ))}
                           </div>
                         )}
                         {selected && <button className="gmodify" onClick={e=>{ e.stopPropagation(); setEditing({partId:p.id, supKey:s.key}); }}>✎ MODIFY</button>}
-                        <CellPop part={p} c={c} types={types}/>
+                        <CellPop part={p} c={c} types={types} onOpenImage={img=>setLightbox(img)}/>
                       </td>
                     );
                   })}
+                  <td className="qg-filler"/>
                 </tr>
               );})}
               <tr className="qg-totrow">
                 <td className="qg-partcell">Supplier Total (ex GST)</td>
                 {QSUP.map(s=><td key={s.key}>{totals[s.key]>0?fmt(totals[s.key]):'$ 0.00'}</td>)}
+                <td className="qg-filler"/>
               </tr>
             </tbody>
           </table>
@@ -440,6 +474,14 @@ function QuoteGrid(){
 
       {toast && (
         <div className="pc-toast"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12l5 5L20 7"/></svg>{toast}</div>
+      )}
+
+      {lightbox && (
+        <div className="qg-lightbox" onClick={()=>setLightbox(null)}>
+          <button className="qg-lightbox-x" onClick={()=>setLightbox(null)}>✕</button>
+          <img src={lightbox.src} alt={lightbox.caption} onClick={e=>e.stopPropagation()}/>
+          <div className="qg-lightbox-cap">{lightbox.caption}</div>
+        </div>
       )}
     </>
   );
@@ -517,7 +559,7 @@ function EditItemModal({ part, sup, current, onSave, onReset, onClose }){
 }
 
 /* price-cell hover popover — rich, Phase 2 aware */
-function CellPop({ part, c, types }){
+function CellPop({ part, c, types, onOpenImage }){
   const { res, cost, sup } = c;
   const pt = ruleFor(sup.typeId, types);
   const higher = pt.resolver==='higher';
@@ -526,11 +568,20 @@ function CellPop({ part, c, types }){
   const applied = cl => cl.method==='pctList' ? `${cl.value}% list` : cl.method==='markupCost' ? `+${cl.value}% cost` : cl.method==='listPrice' ? 'dealer list' : `$${cl.value}`;
   const combo = res.steps.length>1;
   const marginSell = res.sell>0 ? (res.sell-cost)/res.sell*100 : 0;
-  // signal chips explained, in the same order/colour/icon as the Show-filter row and the corner chips
-  const signals = SIGNAL_DEFS.filter(d=>c[d.id]);
+  const imgSignal = SIGNAL_DEFS.find(d=>d.id==='img');
+  const caption = `${titleCase(part.name)} · ${sup.name}`;
+  // signal chips explained, in the same order/colour/icon as the Show-filter row and the corner chips —
+  // the image signal gets its own photo block below instead of a plain-text line
+  const signals = SIGNAL_DEFS.filter(d=>c[d.id] && d.id!=='img');
   return (
     <div className="gpop">
       <div className="gpop-title">{sup.name} · {sup.type}</div>
+      {c.img && (
+        <div className="gpop-photo-block" onClick={e=>{ e.stopPropagation(); onOpenImage && onOpenImage({ src:c.img, caption }); }}>
+          <div className="gpop-photo-lbl"><span className="gpop-signal-ic" style={{background:imgSignal.color}}>{signalIcon(imgSignal)}</span><b>Image</b> · Photo attached</div>
+          <img className="gpop-photo" src={c.img} alt={caption}/>
+        </div>
+      )}
       {signals.length>0 && (
         <div className="gpop-signals">
           {signals.map(sig=>(

@@ -4,18 +4,25 @@
 .qptab-i .ic{width:22px;height:22px;border-radius:50%;background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center}
 .qptab-i.on .ic{background:#fff;color:var(--green-d);border-color:var(--green-d)}
 
-.qg-corner{background:#fff;position:sticky;left:0;z-index:3;border-right:1px solid var(--border);min-width:250px;text-align:left;padding:0}
+.qg-corner{background:#fff;position:sticky;left:0;z-index:3;border-right:1px solid var(--border);width:232px;min-width:232px;text-align:left;padding:0}
 .qg-corner-top{display:flex;align-items:center;gap:10px;padding:12px 16px 8px}
 .qg-selcount{font-family:var(--figure);font-size:17px;font-weight:700;color:var(--green-d)}
 .qg-selword{font-family:var(--figure);font-size:12px;font-weight:700;color:var(--green-d);text-transform:uppercase;letter-spacing:.03em}
 .qg-corner-sub{display:flex;gap:14px;padding:0 16px 12px;font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em}
-.qg-suph{min-width:120px;text-align:center;padding:0;vertical-align:bottom;background:#fff}
+.qg-suph{width:122px;min-width:122px;text-align:center;padding:0;vertical-align:bottom;background:#fff}
 .qg-supbar{height:3px}
 .qg-supinner{padding:10px 6px 12px;display:flex;flex-direction:column;align-items:center;gap:6px}
 .qg-supav{width:28px;height:28px;border-radius:50%;border:1.5px solid;display:flex;align-items:center;justify-content:center}
 .qg-supname{font-size:11px;font-weight:700;color:var(--text-2)}
 
-.qg-partcell{position:sticky;left:0;z-index:2;background:#fff;border-right:1px solid var(--border);padding:12px 16px;display:flex;gap:11px;align-items:flex-start;min-width:250px}
+.qg-partcell{position:sticky;left:0;z-index:2;background:#fff;border-right:1px solid var(--border);padding:12px 16px;display:flex;gap:8px;align-items:flex-start;width:232px;min-width:232px}
+.qg-linenum{font-family:var(--figure);font-size:10px;font-weight:700;color:var(--text-3);min-width:14px;flex-shrink:0;text-align:right;margin-top:2px}
+.qg-qty-hd{width:24px;text-align:center;flex-shrink:0}
+.qg-qty{width:24px;flex-shrink:0;border:1px solid var(--border-2);border-radius:var(--r-sm);padding:3px 4px;font-family:inherit;font-size:11px;text-align:center;color:var(--ink);margin-top:1px}
+/* trailing reserved column — keeps the fixed-width supplier columns pinned instead of stretching
+   to fill a wide viewport, matching the phase-1 grid's reserved-capacity slot */
+.qg-filler{background:#fff}
+.qg-totrow .qg-filler{background:#fff}
 .qg-cb{width:15px;height:15px;border:1px solid var(--border-2);border-radius:2px;flex-shrink:0;margin-top:2px;cursor:pointer;background:#fff}
 .qg-pn{font-family:var(--figure);font-size:12px;font-weight:700;color:var(--ink)}
 .qg-ps{font-size:11px;color:var(--text-3);margin-top:2px;line-height:1.5}
@@ -43,7 +50,7 @@
 .qg-chip.match{background:var(--green)}
 .qg-chip.etd{background:var(--amber)}
 .qg-chip.comment{background:var(--text-3)}
-.qg-chip.img{background:var(--blue)}
+.qg-chip.img{background:var(--blue);cursor:pointer}
 .qg-chip.donor{background:var(--purple)}
 
 /* Show-filter lens: dims every cell that doesn't carry the active signal and
@@ -113,6 +120,18 @@
 .gpop-signal-ic{width:15px;height:15px;border-radius:var(--r-sm);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;color:#fff}
 .gpop-signal-ic svg{width:9px;height:9px}
 .gpop-foot{font-size:10.5px;color:var(--text-3);margin-top:6px;text-align:center}
+/* photo block in the cell popover — thumbnail of the supplier's attached reference image,
+   click-through to the full viewer, same as the corner chip */
+.gpop-photo-block{padding-bottom:8px;margin-bottom:5px;border-bottom:1px solid var(--border-lt);cursor:zoom-in}
+.gpop-photo-lbl{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--text-2);margin-bottom:6px}
+.gpop-photo-lbl b{color:var(--ink)}
+.gpop-photo{width:100%;height:110px;object-fit:cover;border-radius:var(--r-sm);border:1px solid var(--border);display:block}
+/* full-image viewer — opened from a cell's image chip or its popover thumbnail */
+.qg-lightbox{position:fixed;inset:0;background:rgba(17,24,28,.86);z-index:400;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;cursor:zoom-out}
+.qg-lightbox img{max-width:min(720px,90vw);max-height:72vh;border-radius:var(--r);box-shadow:var(--sh-lg);cursor:default}
+.qg-lightbox-cap{color:#fff;font-size:13px;margin-top:14px;text-align:center}
+.qg-lightbox-x{position:absolute;top:20px;right:24px;width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.4);background:rgba(255,255,255,.08);color:#fff;font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.qg-lightbox-x:hover{background:rgba(255,255,255,.18)}
 .gpop-r.warn .gpop-v{color:var(--amber)}
 .gpop-sub{padding:3px 0 3px 12px;display:flex;justify-content:space-between;align-items:center;font-size:11px;gap:8px}
 .gpop-sub .gpop-k{color:var(--text-3);font-weight:500}
@@ -128,7 +147,7 @@
 
 .qwrap{display:grid;grid-template-columns:1fr;gap:16px;align-items:start}
 .qscroll{overflow-x:auto;border:1px solid var(--border);border-radius:var(--r);background:#fff}
-.qg{border-collapse:separate;border-spacing:0;width:100%;min-width:760px}
+.qg{border-collapse:separate;border-spacing:0;width:100%;min-width:964px;table-layout:fixed}
 .qg th,.qg td{border-bottom:1px solid var(--border-lt)}
 
 /* Check Price header / metrics / rule bar */
