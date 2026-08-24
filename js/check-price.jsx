@@ -167,12 +167,10 @@ function RuleCard({ rule, selected, onClick }){
   return (
     <div className={"q1-rc"+(selected?' sel':'')} onClick={onClick}>
       <div className="q1-rc-head">
-        <span className={"q1-rc-radio"+(selected?' on':'')}>
-          {selected && <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><path d="M5 12l5 5L20 7"/></svg>}
-        </span>
+        <span className={"q1-rc-radio"+(selected?' on':'')}/>
         <span className="q1-rc-name">{rule.name}</span>
+        {(rule.tags||[]).map(t=><span key={t} className={"q1-rc-tag "+t.toLowerCase()}>{t}</span>)}
         {rule.insurer && <span className="q1-rc-tag insurer">{rule.insurer}</span>}
-        {(rule.tags||[]).map(t=><span key={t} className="q1-rc-tag sys">{t}</span>)}
       </div>
       <div className="q1-rc-badges">
         {RULE_BADGE_TYPES.map(bt=>(
@@ -201,23 +199,21 @@ function RuleDropdown({ open, setOpen, activeRuleId, matchedRule, otherRules, on
             <div className="q1-ruledd-head">
               <div className="q1-ruledd-title">Select Active Margin Rule</div>
               <div className="q1-ruledd-editrow">
-                <span className="tag q1-ruledd-newtag">New</span>
+                <span className="q1-ruledd-newtag">New</span>
                 <span>To edit rules, go to <a className="q1-ruledd-link" href="margin-rules.html">Settings</a></span>
               </div>
             </div>
-            <div className="q1-ruledd-body">
-              {matchedRule && (
-                <div className="q1-ruledd-sec">
-                  <div className="q1-ruledd-seclbl">Matched</div>
+            {matchedRule && (
+              <>
+                <div className="q1-ruledd-seclbl matched">Matched</div>
+                <div className="q1-ruledd-grid matched">
                   <RuleCard rule={matchedRule} selected={matchedRule.id===activeRuleId} onClick={()=>onSelect(matchedRule.id)}/>
                 </div>
-              )}
-              <div className="q1-ruledd-sec">
-                <div className="q1-ruledd-seclbl">Other</div>
-                <div className="q1-ruledd-grid">
-                  {otherRules.map(r=><RuleCard key={r.id} rule={r} selected={r.id===activeRuleId} onClick={()=>onSelect(r.id)}/>)}
-                </div>
-              </div>
+                <div className="q1-ruledd-seclbl other">Other</div>
+              </>
+            )}
+            <div className="q1-ruledd-grid">
+              {otherRules.map(r=><RuleCard key={r.id} rule={r} selected={r.id===activeRuleId} onClick={()=>onSelect(r.id)}/>)}
             </div>
           </div>
         </>
