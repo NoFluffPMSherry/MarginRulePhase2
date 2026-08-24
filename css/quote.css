@@ -223,8 +223,8 @@
 .q1-rc-tag.insurer{background:var(--blue-lt);border:1px solid var(--blue-bd);color:var(--blue-d);font-weight:600;padding:1px 6px}
 .q1-rc-badges{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
 .q1-rc-badge{min-width:0;background:var(--surface-2);border:1px solid var(--border-lt);border-radius:var(--r);padding:4px 6px}
-.q1-rc-badge-k{font-family:var(--figure);font-size:9px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--text-4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.q1-rc-badge-v{font-size:10px;font-weight:600;color:var(--text);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.q1-rc-badge-k{font-family:var(--figure);font-size:9px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--text-4)}
+.q1-rc-badge-v{font-size:10px;font-weight:600;color:var(--text);margin-top:1px}
 
 /* toolbar — quick select / show-filters / view toggle, one row under the rule banner */
 .q1-toolbar{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding-top:2px}
