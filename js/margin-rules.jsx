@@ -48,10 +48,7 @@ function PricingRow({ pt, onChange, focus, onFocus }){
             <div className="sub-join">
               <div className="seg"><span className="seg-btn on" style={{cursor:'default'}}>OR</span></div>
               <span style={{fontSize:12,color:'var(--text-2)',fontWeight:600}}>use the</span>
-              <div className="seg">
-                <button className={"seg-btn "+(pt.resolver==='higher'?'on':'')} onClick={()=>onChange({...pt, resolver:'higher'})}>↑ higher</button>
-                <button className={"seg-btn "+(pt.resolver==='lower'?'on':'')} onClick={()=>onChange({...pt, resolver:'lower'})}>↓ lower</button>
-              </div>
+              <div className="seg"><span className="seg-btn on" style={{cursor:'default'}}>↑ higher</span></div>
             </div>
             <div/><div/>
           </div>
@@ -618,7 +615,7 @@ function ExcCard({ g, onChange, onDelete, types }){
             </button>
           )}
         </div>
-        <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',marginTop:13,paddingTop:12,borderTop:'1px solid #F1F2F5'}}>
+        <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',marginTop:13,paddingTop:12,borderTop:'1px solid #EEF0F2'}}>
           <span className="vage-eff-lbl" style={{marginRight:0}}>Allowance</span>
           {override.enabled ? (
             <>
@@ -694,7 +691,6 @@ function RuleBuilder(){
   const [saved, setSaved] = useState(false);
   const [ruleName, setRuleName] = useState('Allianz — My Shop');
   const [ruleType, setRuleType] = useState('Insurer Rule');
-  const [active, setActive] = useState(true);
   const [appliesTo, setAppliesTo] = useState(['Allianz','Club Marine','Hunter Premium','Territory Ins.']);
   const [newInsurer, setNewInsurer] = useState('');
   const [makeDefault, setMakeDefault] = useState({});
@@ -769,6 +765,10 @@ function RuleBuilder(){
                 </div>
                 {conflicts.length>0 && (
                   <div className="rd-conflicts">
+                    <div className="rd-conflicts-head">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><circle cx="12" cy="12" r="10"/><path d="M12 8v5m0 3h.01"/></svg>
+                      Rule Conflicts
+                    </div>
                     {conflicts.map(n=>(
                       <div className="rd-conflict" key={n}>
                         <span>A rule for <b>{n}</b> already exists — make this the default?</span>
@@ -780,16 +780,6 @@ function RuleBuilder(){
                     ))}
                   </div>
                 )}
-              </div>
-            </div>
-
-            <div className="sec">
-              <div className="sec-head"><div className="sec-title">Status</div></div>
-              <div className="sec-body">
-                <div className="stat-row">
-                  <label className="switch"><input type="checkbox" checked={active} onChange={e=>setActive(e.target.checked)}/><span className="switch-slider"/></label>
-                  <span className="stat-lbl">{active ? 'Active' : 'Inactive'}</span>
-                </div>
               </div>
             </div>
 

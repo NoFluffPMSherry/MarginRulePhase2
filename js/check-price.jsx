@@ -1,6 +1,6 @@
 (function(){
 const { useState, useEffect } = React;
-const { METHODS, CAP_TYPES, resolveRule, resolveConditional, fmt, PT_NAME,
+const { METHODS, CAP_TYPES, resolveRule, resolveConditional, clauseValue, fmt, PT_NAME,
         PART_TYPES_INIT, VEHICLE_BRANDS, vehicleAge, ageRuleActive, ageAllowsType, matchingAgeRules,
         getActiveTypes, getActiveAgeRules, getActiveCondRules, getActiveExceptions,
         getDemoModelYear, saveDemoModelYear, getDemoVehicleBrand, saveDemoVehicleBrand } = window.MRO;
@@ -82,16 +82,22 @@ const lockKind = (part, sup, ageBlocked, overrides, exceptions) => {
   if(overrides && overrides[sup.typeId]===null) return 'conditional';
   return null;
 };
-const qcell = (part, sup, types, overrides, condTrace) => {
+const qcell = (part, sup, types, overrides, condTrace, lineOv) => {
   const o = part.s[sup.key];
   if(!o) return null;
   const base = resolveRule(ruleFor(sup.typeId, types), { list:part.list, cost:o.cost });
   const ov = overrides && overrides[sup.typeId];
   const tr = condTrace && condTrace[sup.typeId];
-  const res = (ov!=null && ov!==base.sell)
+  let res = (ov!=null && ov!==base.sell)
     ? {...base, sell:ov, capped:false, overridden:true, preOverride:base.sell, condRef:tr && tr.ref, condCapped:tr && tr.capped}
     : base;
-  return { cost:o.cost, etd:o.etd, comment:o.c, flag:o.flag, res, sup };
+  // a repairer's per-line MODIFY override is the most specific price on the line — it wins over both
+  // the type rule and any conditional cross-type overlay, and only ever affects this one supplier cell
+  if(lineOv){
+    const sell = clauseValue({ method:lineOv.method, value:lineOv.value }, { list:part.list, cost:o.cost });
+    res = { ...res, sell, capped:false, lineOverridden:true, preLineOverride:res.sell, lineMethod:lineOv.method };
+  }
+  return { cost:o.cost, etd:o.etd, comment:o.c, flag:o.flag, res, sup, modPartNo: lineOv && lineOv.partNo };
 };
 const pillLabel = pt => {
   const parts = pt.clauses.map(cl => cl.method==='pctList' ? `${cl.value}%` : cl.method==='markupCost' ? `+${cl.value}%` : METHODS[cl.method].short);
@@ -103,6 +109,10 @@ const pillLabel = pt => {
 function QuoteGrid(){
   const [sel, setSel] = useState({ 1:'jfa', 2:'jfa', 6:'apg', 8:'sap' });
   const [applied, setApplied] = useState(true);
+  // per-line MODIFY overrides — key is `${partId}:${supKey}`, keeps this deliberately out of
+  // the persisted rule config: it's a one-off call on this quote, not a change to the margin rule itself
+  const [lineOv, setLineOv] = useState({});
+  const [editing, setEditing] = useState(null); // { partId, supKey } while the Edit Selected Item modal is open
   // persisted so picking a model year / make to demo the age gate survives navigating to Margin Rules and back
   const [modelYear, setModelYearState] = useState(()=>getDemoModelYear());
   const setModelYear = y => { setModelYearState(y); saveDemoModelYear(y); };
@@ -120,7 +130,7 @@ function QuoteGrid(){
   const ageBlocked = typeId => !ageAllowsType(typeId, modelYear, vehicleBrand, ageRules);
   const ageAllowedNames = types.filter(t=>!ageBlocked(t.id)).map(t=>t.name).join(' / ') || 'nothing';
   // colour comes from whatever's configured for this type on the Margin Rules screen — never hardcoded per supplier
-  const colorFor = typeId => (types.find(t=>t.id===typeId)||{}).color || '#98A2B3';
+  const colorFor = typeId => (types.find(t=>t.id===typeId)||{}).color || '#9CA3AF';
 
   // conditional cross-type overlay, resolved per line — {partId: {typeId: overriddenSellPrice}}
   // condTraceByPart mirrors it but keeps the full trace entry (which ref/rule actually fired) for the popover
@@ -153,7 +163,7 @@ function QuoteGrid(){
   const totals = {};
   QSUP.forEach(s=>{ totals[s.key] = QPARTS.reduce((a,p)=>{ const c=qcell(p,s,types,condByPart[p.id]); return a+((c && cellAllowed(p,s,ageBlocked,condByPart[p.id],exceptions))?c.cost:0); },0); });
 
-  const selData = QPARTS.map(p=>{ const k=sel[p.id]; if(!k) return null; const s=QSUP.find(x=>x.key===k); return (s && cellAllowed(p,s,ageBlocked,condByPart[p.id],exceptions)) ? qcell(p,s,types,condByPart[p.id]) : null; }).filter(Boolean);
+  const selData = QPARTS.map(p=>{ const k=sel[p.id]; if(!k) return null; const s=QSUP.find(x=>x.key===k); return (s && cellAllowed(p,s,ageBlocked,condByPart[p.id],exceptions)) ? qcell(p,s,types,condByPart[p.id],condTraceByPart[p.id],lineOv[p.id+':'+k]) : null; }).filter(Boolean);
   const cost = selData.reduce((a,c)=>a+c.cost,0);
   const sell = selData.reduce((a,c)=>a+c.res.sell,0);
   const profit = sell - cost;
@@ -209,19 +219,25 @@ function QuoteGrid(){
             <div className="q1-metric"><div className="q1-metric-k">Your Profit</div><div className="q1-metric-v profit">{fmt(profit)}</div><div className="q1-metric-s">{margin.toFixed(1)}% margin on selection</div></div>
           </div>
 
-          {/* Active margin rule bar */}
+          {/* Active margin rule bar — tinted + bordered so it reads as the control governing the grid below, not a toolbar item */}
           <div className="q1-rulebar">
-            <span className="q1-rulebar-lbl">Active Margin Rule:</span>
-            <select className="sel sel-sm" style={{minWidth:130}}><option>Allianz — My Shop</option><option>Allianz Baseline</option><option>Standard</option></select>
-            <div className="q1-pills">
-              {types.map(pt=>(
-                <span key={pt.id} className={"q1-pill "+pt.id}>
-                  {pt.name} {pillLabel(pt)}
-                  {pt.clauses.length>1 && <span className="combo">◇</span>}
-                  {pt.cap.enabled && <span>⛰</span>}
-                </span>
-              ))}
+            <div className="q1-rulebar-main">
+              <span className="q1-rulebar-lbl">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg>
+                Active Margin Rule:
+              </span>
+              <select className="sel sel-sm q1-rule-select" style={{minWidth:150}}><option>Allianz — My Shop</option><option>Allianz Baseline</option><option>Standard</option></select>
+              <div className="q1-pills">
+                {types.map(pt=>(
+                  <span key={pt.id} className={"q1-pill "+pt.id}>
+                    {pt.name} {pillLabel(pt)}
+                    {pt.clauses.length>1 && <span className="combo">◇</span>}
+                    {pt.cap.enabled && <span>⛰</span>}
+                  </span>
+                ))}
+              </div>
             </div>
+            <div className="q1-rulebar-div"/>
             <div className="q1-rr">
               <span>Quick Select:</span>
               <select className="sel sel-sm"><option>— None —</option><option>Max Profit</option><option>Min Cost</option><option>OEM Dealer</option></select>
@@ -247,9 +263,9 @@ function QuoteGrid(){
         )}
 
         {condHitCount>0 && (
-          <div className="q1-exc" style={{background:'#F4EEFF',border:'1px solid #E4D9FB',color:'#7A5AF8'}}>
+          <div className="q1-exc" style={{background:'#F7EEFB',border:'1px solid #DCC3EA',color:'#7B2E8E'}}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" style={{flexShrink:0,marginTop:1}}><path d="M4 7h16M4 12h16M4 17h10"/></svg>
-            <span><b style={{color:'#5A3FD1'}}>{condHitCount} part{condHitCount===1?'':'s'} affected by conditional cross-type rules</b> — set on the Margin Rules screen. Prices recalculated based on other part types quoted on the same line.</span>
+            <span><b style={{color:'#5B1F6E'}}>{condHitCount} part{condHitCount===1?'':'s'} affected by conditional cross-type rules</b> — set on the Margin Rules screen. Prices recalculated based on other part types quoted on the same line.</span>
           </div>
         )}
 
@@ -285,7 +301,7 @@ function QuoteGrid(){
                 return (
                 <tr key={p.id} className={p.exc?'qg-excrow':''}>
                   <td className="qg-partcell">
-                    <div className="qg-cb" style={sel[p.id]?{background:'#1D6FE0',borderColor:'#1D6FE0'}:{}}>{sel[p.id] && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" style={{margin:'1px'}}><path d="M5 12l5 5L20 7"/></svg>}</div>
+                    <div className="qg-cb" style={sel[p.id]?{background:'#16A34A',borderColor:'#15803D'}:{}}>{sel[p.id] && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" style={{margin:'1px'}}><path d="M5 12l5 5L20 7"/></svg>}</div>
                     <div>
                       <div className="qg-pn">{p.name}</div>
                       <div className="qg-ps">Dealer: #{p.dealer}<br/>List: {fmt(p.list)} ea</div>
@@ -298,7 +314,7 @@ function QuoteGrid(){
                   </td>
                   {QSUP.map(s=>{
                     const overrides = condByPart[p.id];
-                    const c = qcell(p, s, types, overrides, condTraceByPart[p.id]);
+                    const c = qcell(p, s, types, overrides, condTraceByPart[p.id], lineOv[p.id+':'+s.key]);
                     if(!c) return <td key={s.key} className="gcell empty"><div className="gcell-in"/></td>;
                     const kind = lockKind(p, s, ageBlocked, overrides, exceptions);
                     if(kind) return (
@@ -319,11 +335,11 @@ function QuoteGrid(){
                           <div className="gtype" style={{color:colorFor(s.typeId)}}>{s.type}{c.comment && <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style={{opacity:.55}}><path d="M21 6H3v12h4v3l3-3h11z"/></svg>}</div>
                           <div className="gprice">{fmt(c.cost)}</div>
                           <div className={"gprofit"+(c.res.sell - c.cost < 0 ? ' neg' : '')}>{c.res.sell - c.cost >= 0 ? '+' : ''}{fmt(c.res.sell - c.cost)}</div>
-                          {c.res.capped && <div className="gcapd">⛰ capped</div>}
-                          {c.res.overridden && !c.res.capped && <div className="gcondtag">⇄ rule-matched</div>}
+                          {c.res.lineOverridden ? <div className="glinetag">✎ overridden</div> : c.res.capped ? <div className="gcapd">⛰ capped</div> : c.res.overridden && <div className="gcondtag">⇄ rule-matched</div>}
                           <div className="getd">ETD {c.etd}</div>
                         </div>
                         {c.flag && !selected && <div className="gcorner"/>}
+                        {selected && <button className="gmodify" onClick={e=>{ e.stopPropagation(); setEditing({partId:p.id, supKey:s.key}); }}>✎ MODIFY</button>}
                         <CellPop part={p} c={c} types={types}/>
                       </td>
                     );
@@ -338,7 +354,92 @@ function QuoteGrid(){
           </table>
         </div>
       </div>
+
+      {editing && (()=>{
+        const part = QPARTS.find(p=>p.id===editing.partId);
+        const sup = QSUP.find(s=>s.key===editing.supKey);
+        const key = editing.partId+':'+editing.supKey;
+        return (
+          <EditItemModal
+            part={part} sup={sup} current={lineOv[key]}
+            onSave={vals => setLineOv(prev=>({...prev, [key]: vals}))}
+            onReset={() => setLineOv(prev=>{ const next={...prev}; delete next[key]; return next; })}
+            onClose={() => setEditing(null)}
+          />
+        );
+      })()}
     </>
+  );
+}
+
+/* fixed vocabulary of part-number types a repairer can tag a MODIFY override with —
+   mirrors what suppliers themselves can choose when quoting, so the two stay in sync */
+const PN_TYPES = ['OEM Part Number','OEM Number + Special','OEM Number + Parallel','OEM Number + NDS',
+  'Supplier Provided Part Number','Used','Parallel','Reconditioned','Genuine','Exchange','Second Hand'];
+
+/* ═══ Edit Selected Item — per-line MODIFY override (part number + pricing method) ═══ */
+function EditItemModal({ part, sup, current, onSave, onReset, onClose }){
+  const [method, setMethod] = useState(current ? current.method : 'pctList');
+  const [value, setValue] = useState(current ? current.value : 100);
+  const [partNoType, setPartNoType] = useState(current ? current.partNoType || '' : '');
+  const [partNo, setPartNo] = useState(current ? current.partNo || '' : '');
+
+  const ROWS = [
+    { id:'pctList',    label:'Charge % of dealer list price', suf:'%' },
+    { id:'markupCost', label:'Add % markup to cost',           suf:'%' },
+    { id:'showMarkup', label:'Add % show markup to cost',      suf:'%' },
+    { id:'listPrice',  label:'Use dealer list and part number' },
+    { id:'manual',     label:'Manually enter sell price',      pre:'$' },
+  ];
+
+  return (
+    <div className="qm-overlay" onClick={e=>{ if(e.target===e.currentTarget) onClose(); }}>
+      <div className="qm-panel">
+        <div className="qm-head">
+          <div><div className="qm-title">Edit Selected Item</div><div className="qm-sub">{part.name} — {sup.name}</div></div>
+          <button className="qm-x" onClick={onClose}>✕</button>
+        </div>
+        <div className="qm-body">
+          <div className="qm-sect">
+            <div className="qm-sect-t">Modify Part Number</div>
+            <div className="qm-field">
+              <label className="qm-lbl">Part Number Type</label>
+              <select className="sel" value={partNoType} onChange={e=>setPartNoType(e.target.value)}>
+                <option value="">Type or select...</option>
+                {PN_TYPES.map(t=><option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div className="qm-field">
+              <label className="qm-lbl">Part Number</label>
+              <input className="txt" type="text" placeholder="Enter or override part number" value={partNo} onChange={e=>setPartNo(e.target.value)}/>
+            </div>
+          </div>
+          <div className="qm-sect">
+            <div className="qm-sect-t">Pricing Method</div>
+            <div className="qm-rows">
+              {ROWS.map(r=>(
+                <label key={r.id} className={"qm-row "+(method===r.id?'active':'')}>
+                  <input type="radio" name="qm-pm" checked={method===r.id} onChange={()=>setMethod(r.id)}/>
+                  <span className="qm-row-lbl">{r.label}</span>
+                  {r.id!=='listPrice' && (
+                    <div className="qm-valbox">
+                      {r.pre && <span className="qm-pre">{r.pre}</span>}
+                      <input type="number" value={value} disabled={method!==r.id} onClick={e=>e.stopPropagation()} onChange={e=>setValue(parseFloat(e.target.value)||0)}/>
+                      {r.suf && <span className="qm-suf">{r.suf}</span>}
+                    </div>
+                  )}
+                </label>
+              ))}
+            </div>
+            <div className="qm-hint">This pricing method overrides this line item only.</div>
+          </div>
+        </div>
+        <div className="qm-foot">
+          <button className="btn btn-ghost" onClick={()=>{ onReset(); onClose(); }}>Reset</button>
+          <button className="btn btn-green" style={{marginLeft:'auto'}} onClick={()=>{ onSave({method, value, partNoType, partNo}); onClose(); }}>Save Changes</button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -355,12 +456,14 @@ function CellPop({ part, c, types }){
     <div className="gpop">
       <div className="gpop-title">{sup.name}</div>
       <div className="gpop-r"><span className="gpop-k">Supplier Part No.</span><span className="gpop-v">{part.dealer}</span></div>
-      <div className="gpop-r"><span className="gpop-k">Modified Part No.</span><span className="gpop-v">—</span></div>
+      <div className="gpop-r"><span className="gpop-k">Modified Part No.</span><span className="gpop-v">{c.modPartNo || '—'}</span></div>
       <div className="gpop-r"><span className="gpop-k">Part Type</span><span className="gpop-v">{sup.type}</span></div>
       <div className="gpop-r"><span className="gpop-k">Cost</span><span className="gpop-v">{fmt(cost)}</span></div>
       <div className="gpop-r warn"><span className="gpop-k">Supplier Discount</span><span className="gpop-v">⚠ {disc.toFixed(1)}%</span></div>
-      <div className="gpop-r"><span className="gpop-k">Rule Applied</span><span className="gpop-v">{res.overridden ? '⇄ Conditional rule' : (combo ? `${higher?'higher':'lower'} of ↓` : applied(res.steps[0].cl))}</span></div>
-      {res.overridden ? (
+      <div className="gpop-r"><span className="gpop-k">Rule Applied</span><span className="gpop-v">{res.lineOverridden ? `✎ ${METHODS[res.lineMethod].label}` : res.overridden ? '⇄ Conditional rule' : (combo ? `${higher?'higher':'lower'} of ↓` : applied(res.steps[0].cl))}</span></div>
+      {res.lineOverridden ? (
+        <div className="gpop-sub match"><span className="gpop-k">✎ Manually overridden for this line</span><span className="gpop-v">{fmt(res.sell)}</span></div>
+      ) : res.overridden ? (
         <>
           <div className="gpop-sub match"><span className="gpop-k">⇄ Matched to {res.condRef ? PT_NAME(res.condRef) : 'other type'}'s rate{res.condCapped ? ' · capped' : ''}</span><span className="gpop-v">{fmt(res.sell)}</span></div>
           <div className="gpop-sub loser"><span className="gpop-k">{pt.name} type rule ({combo ? `${higher?'higher':'lower'} of ${res.steps.map(s=>applied(s.cl)).join(' / ')}` : applied(res.steps[0].cl)}) — superseded</span><span className="gpop-v">{fmt(res.preOverride)}</span></div>

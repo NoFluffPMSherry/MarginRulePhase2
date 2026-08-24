@@ -56,20 +56,20 @@ const fmt0 = n => '$'+Math.round(n).toLocaleString('en-AU');
 
 /* ══════════════════ DATA — production part types ══════════════════ */
 const PART_TYPES_INIT = [
-  { id:'oem', name:'OEM', color:'#1D6FE0',
+  { id:'oem', name:'OEM', color:'#2563EB',
     clauses:[{method:'pctList',value:90},{method:'markupCost',value:20}],
     resolver:'higher',
     cap:{enabled:true, type:'capAtList', value:0} },
-  { id:'aftermarket', name:'Aftermarket', color:'#DB6D00',
+  { id:'aftermarket', name:'Aftermarket', color:'#A855F7',
     clauses:[{method:'pctList',value:75}], resolver:'higher',
     cap:{enabled:false, type:'capAtList', value:0} },
-  { id:'recon', name:'Reconditioned', color:'#7A5AF8',
+  { id:'recon', name:'Reconditioned', color:'#F59E0B',
     clauses:[{method:'pctList',value:75}], resolver:'higher',
     cap:{enabled:false, type:'capAtList', value:0} },
-  { id:'parallel', name:'Parallel', color:'#0BA5A5',
+  { id:'parallel', name:'Parallel', color:'#6B7280',
     clauses:[{method:'pctList',value:80}], resolver:'higher',
     cap:{enabled:false, type:'capAtList', value:0} },
-  { id:'recycled', name:'Recycled', color:'#12B76A',
+  { id:'recycled', name:'Recycled', color:'#84CC16',
     clauses:[{method:'markupCost',value:20}], resolver:'higher',
     cap:{enabled:true, type:'pctListCeiling', value:70} },
 ];
@@ -138,7 +138,7 @@ const ageRuleActive = (year, brand, ageRules) => matchingAgeRules(year, brand, a
 const ageAllowsType = (typeId, year, brand, ageRules) =>
   !matchingAgeRules(year, brand, ageRules).some(r=>!(r.allowedTypes||[]).includes(typeId));
 
-const PT_COLOR = id => (PART_TYPES_INIT.find(p=>p.id===id)||{}).color || '#98A2B3';
+const PT_COLOR = id => (PART_TYPES_INIT.find(p=>p.id===id)||{}).color || '#9CA3AF';
 const PT_NAME  = id => (PART_TYPES_INIT.find(p=>p.id===id)||{}).name || id;
 
 /* ══════════════════ CONDITIONAL (CROSS-TYPE) RULES ══════════════════ */
@@ -158,11 +158,11 @@ const COND_PREDICATES = {
 /* Supplier type — who's actually fulfilling the offer, independent of the part's own brand
    category (e.g. a recycler can supply a genuine OEM take-off part). 'any' = no filter. */
 const SUPPLIER_TYPES = [
-  { id:'any',         name:'Any supplier', color:'#98A2B3' },
-  { id:'oem',         name:'OEM',          color:'#1D6FE0' },
-  { id:'aftermarket', name:'Aftermarket',  color:'#DB6D00' },
-  { id:'recycled',    name:'Recycled',     color:'#12B76A' },
-  { id:'used',        name:'Used',         color:'#667085' },
+  { id:'any',         name:'Any supplier', color:'#9CA3AF' },
+  { id:'oem',         name:'OEM',          color:'#2563EB' },
+  { id:'aftermarket', name:'Aftermarket',  color:'#A855F7' },
+  { id:'recycled',    name:'Recycled',     color:'#84CC16' },
+  { id:'used',        name:'Used',         color:'#6B7280' },
 ];
 
 /* Outcome kinds. `method` sets an explicit pricing formula on the target;

@@ -18,7 +18,7 @@ function TopNav({ active }){
       <div style={{display:'flex',gap:2,flex:1,justifyContent:'center'}}>
         {NAV.map(([label,d,href])=>{
           const on = label===active;
-          const style = {display:'flex',flexDirection:'column',alignItems:'center',gap:3,padding:'6px 13px',borderRadius:8,cursor:href?'pointer':'default',color:on?'var(--green-d)':'var(--text-3)',textDecoration:'none'};
+          const style = {display:'flex',flexDirection:'column',alignItems:'center',gap:3,padding:'6px 13px',borderRadius:3,cursor:href?'pointer':'default',color:on?'#fff':'rgba(255,255,255,.65)',background:on?'rgba(255,255,255,.14)':'transparent',textDecoration:'none'};
           const content = (
             <>
               <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={d}/></svg>
