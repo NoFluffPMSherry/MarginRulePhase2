@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PAR-1334 — Filtered Export Design</title>
+<meta name="viewport" content="width=1440, initial-scale=1">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#1A9E3F;--green-d:#147830;--green-lt:#E9F7EE;
+  --ink:#1A2332;--text:#2B3543;--text-2:#667085;--text-3:#98A2B3;
+  --blue:#1D6FE0;--blue-lt:#EAF2FD;
+  --amber:#B54708;--amber-lt:#FFFAEB;
+  --page-bg:#F5F5F6;
+  --panel-bg:#E4E4E5;
+  --card-border:#D6D6D8;
+  --field-border:#CCCCCE;
+  --r-sm:6px;--r:10px;--r-lg:14px;
+  --sh-sm:0 1px 3px rgba(16,24,40,.08);
+  --sh-md:0 6px 20px rgba(16,24,40,.08);
+}
+html,body{background:var(--page-bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:13px;line-height:1.5}
+button,input,select{font-family:inherit}
+
+/* ── page chrome (this file is a design doc, not the app) ── */
+.wrap{max-width:1180px;margin:0 auto;padding:36px 24px 90px}
+.doc-head{margin-bottom:28px}
+.doc-eyebrow{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--green-d);margin-bottom:6px}
+.doc-title{font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-.3px}
+.doc-sub{color:var(--text-2);margin-top:6px;max-width:760px}
+.doc-sub a{color:var(--blue)}
+.section-lbl{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);margin:34px 0 12px}
+
+/* ── mock app frame ── */
+.frame{background:#fff;border:1px solid var(--card-border);border-radius:var(--r-sm);box-shadow:var(--sh-md);overflow:hidden}
+
+.main{flex:1;padding:24px 26px}
+.ph-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.ph-title{font-size:22px;font-weight:800;color:var(--ink)}
+
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:6px;font-size:13px;font-weight:700;border:1.5px solid transparent;cursor:pointer;transition:.14s}
+.btn-green{background:var(--green);color:#fff}
+.btn-green:hover{background:var(--green-d)}
+.btn-outline{background:#fff;border-color:#B9BABD;color:#2B3543;font-weight:600}
+.btn-outline:hover{border-color:var(--green);color:var(--green-d)}
+.btn-blue{background:var(--blue);color:#fff;font-weight:600}
+.btn-blue:hover{background:#1657B3}
+.btn-blue .export-count{background:rgba(255,255,255,.28);color:#fff}
+
+/* tabs — light gray bar, active tab = white box, inactive = blue link text */
+.tabs{display:flex;background:#EDEDEE;border:1px solid var(--card-border);border-bottom:none;border-radius:var(--r-sm) var(--r-sm) 0 0;overflow:hidden}
+.tab{flex:1;text-align:center;padding:13px 10px;font-size:13px;font-weight:600;color:var(--blue);cursor:default;border-right:1px solid var(--card-border)}
+.tab:last-child{border-right:none}
+.tab.on{background:#fff;color:var(--text);font-weight:700}
+
+/* filter panel */
+.panel{background:var(--panel-bg);border:1px solid var(--card-border);border-top:none;padding:20px 22px;display:flex;gap:26px}
+.map-box{flex-shrink:0;width:220px;display:flex;align-items:center;justify-content:center;padding-top:22px}
+.filters{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:16px 24px;align-content:start}
+.f-field label{display:block;font-size:12.5px;font-weight:700;color:var(--text);margin-bottom:6px}
+.f-field .fake-input,.f-field select,.f-field input{width:100%;border:1px solid var(--field-border);border-radius:4px;padding:9px 11px;font-size:12.5px;color:#9096A0;background:#fff;outline:none}
+.f-field select{appearance:none;color:var(--text);background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2398A2B3'/%3E%3C/svg%3E") no-repeat right 11px center}
+.f-field input:focus,.f-field select:focus{border-color:var(--green);box-shadow:0 0 0 3px var(--green-lt)}
+.f-active{border-color:var(--green)!important;box-shadow:0 0 0 3px var(--green-lt)}
+.chipbox{min-height:37px;border:1px solid var(--field-border);border-radius:4px;background:#fff;padding:5px 6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.state-chip{display:inline-flex;align-items:center;gap:6px;background:#F1F2F3;border:1px solid #DADBDD;border-radius:4px;padding:3px 6px 3px 9px;font-size:12px;font-weight:600;color:var(--text)}
+.state-chip .x{cursor:pointer;color:var(--text-3);font-weight:700}
+.state-chip .x:hover{color:var(--text)}
+
+.action-row{display:flex;align-items:center;justify-content:flex-end;gap:16px;margin-top:18px}
+.reset-link{font-size:12.5px;color:var(--text);cursor:pointer;background:none;border:none;font-weight:600}
+.reset-link:hover{text-decoration:underline}
+.export-count{background:var(--green-lt);color:var(--green-d);border-radius:20px;padding:1px 7px;font-size:11px;font-weight:800;margin-left:2px}
+
+/* results header (outside the gray panel) */
+.results-band{background:#EDEDEE;border:1px solid var(--card-border);border-top:none;padding:14px 22px;display:flex;align-items:center;justify-content:space-between}
+.results-count{font-size:14px;font-weight:800;color:var(--ink)}
+
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:11px;font-weight:700;color:var(--text-2);padding:11px 22px;border-bottom:1px solid var(--card-border);background:#fff}
+td{padding:12px 22px;font-size:12.5px;color:var(--text);border-bottom:1px solid #EFEFEF}
+tr.row-hidden{display:none}
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700}
+.badge-active{background:var(--green-lt);color:var(--green-d)}
+.badge-locked{background:var(--amber-lt);color:var(--amber)}
+
+.pager{display:flex;justify-content:flex-end;gap:6px;padding:14px 22px;border:1px solid var(--card-border);border-top:none}
+.pg{padding:5px 11px;border:1px solid var(--card-border);border-radius:4px;font-size:12px;color:var(--text-2);background:#fff}
+.pg.on{background:var(--green);border-color:var(--green);color:#fff;font-weight:700}
+
+/* toast */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 18px;border-radius:10px;font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:10px;box-shadow:var(--sh-md);opacity:0;pointer-events:none;transition:.22s}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast svg{flex-shrink:0}
+
+/* annotation callouts */
+.note{display:flex;gap:10px;background:var(--blue-lt);border:1px solid #cfe1fb;border-radius:var(--r);padding:12px 14px;font-size:12.5px;color:var(--text);margin-top:14px}
+.note svg{flex-shrink:0;margin-top:1px;color:var(--blue)}
+.note b{color:var(--ink)}
+
+/* static second mock — Margin Rules list */
+.mr-table{width:100%;border-collapse:collapse;margin-top:16px}
+.mr-table th{text-align:left;font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-3);padding:9px 4px;border-bottom:1px solid var(--card-border)}
+.mr-table td{padding:12px 4px;font-size:12.5px;border-bottom:1px solid #F0F1F4}
+.rule-name{font-weight:700;color:var(--ink)}
+.chip{display:inline-block;background:var(--blue-lt);color:var(--blue);font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:6px;margin-right:3px}
+
+/* map svg */
+.aus-map path{fill:#C7C8CB;stroke:#fff;stroke-width:1.5;cursor:pointer;transition:.12s}
+.aus-map path:hover{fill:#AEB0B4}
+.aus-map path.sel{fill:var(--green)}
+.aus-map path.sel:hover{fill:var(--green-d)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="doc-head">
+    <div class="doc-eyebrow">Design concept · PAR-1334</div>
+    <div class="doc-title">Filtered export — Supplier Management &amp; Margin Rules</div>
+    <div class="doc-sub">Requested by Jamie Mills (MotorOne): export the data shown on these screens, with whatever filters are currently applied respected in the exported file. Restyled to match the real Supplier Management screen (colours, map, chip filter, plain-text fields) — click a state on the map or type a keyword and watch the Export button + table update together, then click Export.</div>
+  </div>
+
+  <div class="section-lbl">1 · Supplier Management (interactive)</div>
+  <div class="frame">
+    <div class="main">
+      <div class="ph-row">
+        <div class="ph-title">Supplier Management</div>
+        <button class="btn btn-green">Wizard ✎</button>
+      </div>
+
+      <div class="tabs">
+        <div class="tab on">Repairer</div>
+        <div class="tab">Supplier</div>
+        <div class="tab">VehicleMake</div>
+      </div>
+
+      <div class="panel">
+        <div class="map-box">
+          <svg class="aus-map" id="aus-map" viewBox="0 0 260 250" width="210" height="200">
+            <path data-state="WA" d="M40,55 L108,48 L118,150 L95,225 L55,232 L18,175 L14,95 Z"/>
+            <path data-state="NT" d="M108,48 L150,42 L156,120 L118,150 Z"/>
+            <path data-state="SA" d="M118,150 L156,120 L178,152 L168,215 L95,225 Z"/>
+            <path data-state="QLD" d="M150,42 L163,18 L176,8 L188,14 L182,40 L204,68 L214,140 L178,152 L156,120 Z"/>
+            <path data-state="NSW" d="M214,140 L236,150 L230,192 L202,206 L178,152 Z"/>
+            <path data-state="VIC" d="M202,206 L230,192 L240,216 L207,227 Z"/>
+            <path data-state="TAS" d="M216,236 L230,233 L233,247 L219,250 Z"/>
+          </svg>
+        </div>
+        <div class="filters">
+          <div class="f-field">
+            <label>Select States</label>
+            <div class="chipbox" id="state-chipbox"></div>
+          </div>
+          <div class="f-field"><label>Vehicle Makes</label><div class="fake-input">All Vehicle Makes</div></div>
+          <div class="f-field"><label>Contains Keyword</label><input id="f-kw" placeholder=""></div>
+
+          <div class="f-field"><label>Suppliers</label><div class="fake-input">All Suppliers</div></div>
+          <div class="f-field"><label>Supplier Types</label><div class="fake-input">All Types</div></div>
+          <div class="f-field"><label>Tier:</label>
+            <select id="f-tier">
+              <option value="">All Tiers</option><option>Tier 1</option><option>Tier 2</option><option>Tier 3</option>
+            </select>
+          </div>
+
+          <div class="f-field"><label>Repairers</label><div class="fake-input">All Repairers</div></div>
+          <div class="f-field"><label>Status:</label>
+            <select id="f-status">
+              <option value="">All</option><option>Active</option><option>Locked</option>
+            </select>
+          </div>
+          <div class="f-field"><label>Filter:</label><select><option>None</option></select></div>
+        </div>
+      </div>
+      <div class="panel" style="border-top:none;padding-top:0;padding-bottom:16px;justify-content:flex-end">
+        <div class="action-row" style="margin-top:0;flex:1">
+          <button class="btn btn-blue" onclick="doExport()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg>
+            Export <span class="export-count" id="export-count">24</span>
+          </button>
+          <button class="reset-link" onclick="resetFilters()">Reset All Filters</button>
+        </div>
+      </div>
+
+      <div class="results-band">
+        <div class="results-count">Showing <span id="shown-range">1-5</span> of <span id="shown-total">24</span></div>
+      </div>
+
+      <table>
+        <thead><tr><th>Supplier</th><th>State</th><th>Type</th><th>Tier</th><th>Status</th></tr></thead>
+        <tbody id="supplier-rows">
+          <tr data-state="QLD" data-status="Active" data-tier="Tier 1" data-name="Westpoint Autos"><td>Westpoint Autos</td><td>QLD</td><td>OEM Dealer</td><td>Tier 1</td><td><span class="badge badge-active">Active</span></td></tr>
+          <tr data-state="NSW" data-status="Active" data-tier="Tier 2" data-name="Sydney Salvage"><td>Sydney Salvage</td><td>NSW</td><td>Recycler</td><td>Tier 2</td><td><span class="badge badge-active">Active</span></td></tr>
+          <tr data-state="VIC" data-status="Locked" data-tier="Tier 1" data-name="Melbourne Parts Co"><td>Melbourne Parts Co</td><td>VIC</td><td>Aftermarket</td><td>Tier 1</td><td><span class="badge badge-locked">Locked</span></td></tr>
+          <tr data-state="QLD" data-status="Active" data-tier="Tier 3" data-name="Brisbane Dismantlers"><td>Brisbane Dismantlers</td><td>QLD</td><td>Recycler</td><td>Tier 3</td><td><span class="badge badge-active">Active</span></td></tr>
+          <tr data-state="WA" data-status="Active" data-tier="Tier 2" data-name="Perth OEM Direct"><td>Perth OEM Direct</td><td>WA</td><td>OEM Dealer</td><td>Tier 2</td><td><span class="badge badge-active">Active</span></td></tr>
+        </tbody>
+      </table>
+      <div class="pager"><span class="pg">Previous</span><span class="pg on">1</span><span class="pg">2</span><span class="pg">3</span><span class="pg">Next</span></div>
+    </div>
+  </div>
+
+  <div class="note">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>
+    <span><b>Placement:</b> Export sits in the filter panel's action row, directly left of "Reset All Filters" — the exact spot you marked up. The count badge doubles as confirmation before clicking that filters are being respected. Click a state on the map (try QLD) or type a keyword — the chip, table, and Export count all update together. Same pattern applies to the Supplier tab.</span>
+  </div>
+
+  <div class="section-lbl">2 · Margin Rules — Your Rules (static)</div>
+  <div class="frame">
+    <div class="main">
+      <div class="ph-row">
+        <div class="ph-title" style="font-size:18px">Your Rules <span style="font-weight:500;color:var(--text-3);font-size:13px">5 rules</span></div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-outline">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg>
+            Export <span class="export-count">5</span>
+          </button>
+          <button class="btn btn-green">+ Add rule</button>
+        </div>
+      </div>
+      <table class="mr-table">
+        <thead><tr><th></th><th>Rule Name</th><th>Applies To</th><th>OEM</th><th>AFTM</th><th>Reco</th></tr></thead>
+        <tbody>
+          <tr><td>●</td><td class="rule-name">NRMA Standard</td><td><span class="chip">NRMA Insurance</span><span class="chip">RACV Insurance</span> +4 more</td><td>100% of List</td><td>70% of List</td><td>20% Markup</td></tr>
+          <tr><td>○</td><td class="rule-name">AAMI Standard</td><td><span class="chip">AAI Limited</span><span class="chip">AAMI</span> +3 more</td><td>100% of List</td><td>68% of List</td><td>22% Markup</td></tr>
+          <tr><td>○</td><td class="rule-name">Allianz Standard</td><td><span class="chip">Allianz Australia</span></td><td>100% of List</td><td>72% of List</td><td>25% Markup</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="note">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>
+    <span><b>Margin Rules has no filter bar today</b> — it's a short, unfiltered list (5 rules for this shop), so "respects applied filters" doesn't really apply here yet. Export just dumps the current rule set. Worth confirming with Jamie whether the ask for this screen is really about exporting rules, or about exporting the <b>Purchaser Modified report</b> she was just looking at (that one already has a full filter panel — same button/placement as item 1 would apply there directly).</span>
+  </div>
+
+</div>
+
+<div class="toast" id="toast">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>
+  <span id="toast-msg">Exported 24 filtered suppliers to CSV</span>
+</div>
+
+<script>
+const rows = Array.from(document.querySelectorAll('#supplier-rows tr'));
+const tierSel = document.getElementById('f-tier');
+const statusSel = document.getElementById('f-status');
+const kwInput = document.getElementById('f-kw');
+const exportCount = document.getElementById('export-count');
+const shownRange = document.getElementById('shown-range');
+const shownTotal = document.getElementById('shown-total');
+const chipbox = document.getElementById('state-chipbox');
+const mapPaths = Array.from(document.querySelectorAll('#aus-map path'));
+
+let selectedStates = new Set(['QLD']);
+
+function renderChips(){
+  chipbox.innerHTML = '';
+  selectedStates.forEach(s=>{
+    const chip = document.createElement('span');
+    chip.className = 'state-chip';
+    chip.innerHTML = s + ' <span class="x" data-s="'+s+'">×</span>';
+    chipbox.appendChild(chip);
+  });
+  chipbox.querySelectorAll('.x').forEach(x=>x.addEventListener('click', e=>{
+    selectedStates.delete(e.target.dataset.s);
+    syncMap(); renderChips(); applyFilters();
+  }));
+  mapPaths.forEach(p=>p.classList.toggle('sel', selectedStates.has(p.dataset.state)));
+}
+function syncMap(){ mapPaths.forEach(p=>p.classList.toggle('sel', selectedStates.has(p.dataset.state))); }
+
+mapPaths.forEach(p=>p.addEventListener('click', ()=>{
+  const s = p.dataset.state;
+  selectedStates.has(s) ? selectedStates.delete(s) : selectedStates.add(s);
+  renderChips(); applyFilters();
+}));
+
+function applyFilters(){
+  const tier = tierSel.value, status = statusSel.value, kw = kwInput.value.trim().toLowerCase();
+  let visible = 0;
+  rows.forEach(r=>{
+    const match = (selectedStates.size===0 || selectedStates.has(r.dataset.state)) &&
+                  (!tier || r.dataset.tier===tier) &&
+                  (!status || r.dataset.status===status) &&
+                  (!kw || r.dataset.name.toLowerCase().includes(kw));
+    r.classList.toggle('row-hidden', !match);
+    if(match) visible++;
+  });
+  const anyFilter = selectedStates.size>0 || tier || status || kw;
+  const total = anyFilter ? visible : 24;
+  exportCount.textContent = total;
+  shownTotal.textContent = total;
+  shownRange.textContent = total===0 ? '0' : `1-${Math.min(visible,5)}`;
+  [tierSel, statusSel, kwInput].forEach(el=>el.classList.toggle('f-active', !!el.value));
+}
+[tierSel, statusSel].forEach(el=>el.addEventListener('change', applyFilters));
+kwInput.addEventListener('input', applyFilters);
+
+function resetFilters(){
+  selectedStates.clear(); tierSel.value=''; statusSel.value=''; kwInput.value='';
+  renderChips(); applyFilters();
+}
+
+function doExport(){
+  const n = exportCount.textContent;
+  document.getElementById('toast-msg').textContent = `Exported ${n} filtered supplier${n==1?'':'s'} to CSV`;
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(()=>t.classList.remove('show'), 2600);
+}
+
+renderChips();
+applyFilters();
+</script>
+</body>
+</html>
