@@ -345,6 +345,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-siz
 .new-pt td.new-empty-cell{background:#eceef0}.new-pt td.new-empty-slot{background:#fff;border-left:1px solid #d1d5db}
 .new-price-cell.npc-dim,.new-pt td.new-empty-cell.npc-dim{opacity:.18}
 .new-price-cell.npc-hit{box-shadow:inset 0 0 0 2px var(--hit,#d97706)}
+.new-price-cell.npc-locked{cursor:not-allowed;background:#eceef0}
+.new-price-cell.npc-locked:hover{background:#eceef0}
 .new-totals-row td{background:#eceef0;padding:8px 10px;font-weight:700;font-size:12px;border-top:2px solid #d1d5db}
 .new-totals-label{text-align:left;color:#1f2937}
 .new-totals-val{text-align:center;color:#1f2937}
@@ -390,6 +392,8 @@ table.lv{background:#fff;width:100%;min-width:780px;border-collapse:collapse;fon
 .lv-info-note{font-size:10px;color:#6b7280;font-style:italic;margin-top:7px;line-height:1.5;border-top:1px solid #f3f4f6;padding-top:6px}
 .lv-row:hover{background:#f9f9f9}
 .lv-row.lv-sel{background:#f0fff4}
+.lv-row.lv-locked{background:#f9fafb;cursor:default}
+.lv-row.lv-locked:hover{background:#f9fafb}
 /* Green stroke on the selected row. Uses inset box-shadow rather than borders:
    the table is border-collapse:collapse, so real borders would shift the layout by 2px. */
 .lv-row.lv-sel td{box-shadow:inset 0 2px 0 #16a34a,inset 0 -2px 0 #16a34a}
@@ -2379,8 +2383,422 @@ input[type=number]{-moz-appearance:textfield}
 </div>
 </div>
 <div id="price-screen" style="display:block;background:#f4f5f7">
-  <div id="checkprice-react-root"></div>
+  <div class="qh">
+    <div>
+      <div style="font-size:14px;font-weight:800;color:#111827;margin-bottom:4px">QUOTE: <span style="color:#16a34a">89734</span></div>
+      <p style="font-size:12px;color:#6b7280;margin:0"><strong style="color:#374151">Hyundai Tucson</strong>, 2023 &middot; ABC123 &middot; Insurer: <strong style="color:#374151">Allianz</strong></p>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:10px;color:#6b7280;margin-bottom:4px">Supplier Responses</div>
+        <div class="dots">
+          <div class="dot dg resp-dot" style="position:relative">&#10003;
+            <div class="resp-tip">
+              <div class="resp-tip-hd" style="color:#2563eb">OEM - RECEIVED</div>
+              <div class="resp-tip-row"><span>Supplier</span><span>OEM Direct</span></div>
+              <div class="resp-tip-row"><span>Phone</span><span>07 3008 6411</span></div>
+              <div class="resp-tip-row"><span>Parts Priced</span><span>8 of 8</span></div>
+              <div class="resp-tip-row"><span>Quote Ref</span><span>OEM-884421</span></div>
+            </div>
+          </div>
+          <div class="dot dg resp-dot" style="position:relative">&#10003;
+            <div class="resp-tip">
+              <div class="resp-tip-hd" style="color:#a855f7">AFTERMARKET - RECEIVED</div>
+              <div class="resp-tip-row"><span>Supplier</span><span>Parts Network</span></div>
+              <div class="resp-tip-row"><span>Phone</span><span>07 3123 4567</span></div>
+              <div class="resp-tip-row"><span>Parts Priced</span><span>7 of 8</span></div>
+              <div class="resp-tip-row"><span>Quote Ref</span><span>PN-220931</span></div>
+            </div>
+          </div>
+          <div class="dot dg resp-dot" style="position:relative">&#10003;
+            <div class="resp-tip">
+              <div class="resp-tip-hd" style="color:#a855f7">OEM - RECEIVED</div>
+              <div class="resp-tip-row"><span>Supplier</span><span>ATS Parts</span></div>
+              <div class="resp-tip-row"><span>Phone</span><span>07 3987 6543</span></div>
+              <div class="resp-tip-row"><span>Parts Priced</span><span>8 of 8</span></div>
+              <div class="resp-tip-row"><span>Quote Ref</span><span>ATS-119043</span></div>
+            </div>
+          </div>
+          <div class="dot dg resp-dot" style="position:relative">&#10003;
+            <div class="resp-tip">
+              <div class="resp-tip-hd" style="color:#84cc16">RECYCLED - RECEIVED</div>
+              <div class="resp-tip-row"><span>Supplier</span><span>Eco Parts</span></div>
+              <div class="resp-tip-row"><span>Phone</span><span>07 3456 7890</span></div>
+              <div class="resp-tip-row"><span>Parts Priced</span><span>5 of 8</span></div>
+              <div class="resp-tip-row"><span>Quote Ref</span><span>ECO-554312</span></div>
+            </div>
+          </div>
+          <div class="dot dg resp-dot" style="position:relative">&#10003;
+            <div class="resp-tip">
+              <div class="resp-tip-hd" style="color:#f59e0b">RECONDITIONED - RECEIVED</div>
+              <div class="resp-tip-row"><span>Supplier</span><span>Reco Centre</span></div>
+              <div class="resp-tip-row"><span>Phone</span><span>07 3765 4321</span></div>
+              <div class="resp-tip-row"><span>Parts Priced</span><span>6 of 8</span></div>
+              <div class="resp-tip-row"><span>Quote Ref</span><span>RC-330187</span></div>
+            </div>
+          </div>
+          <div class="dot da resp-dot" style="position:relative">&#10003;
+            <div class="resp-tip">
+              <div class="resp-tip-hd" style="color:#d97706">USED - AUTOMATIC CUT OFF</div>
+              <div class="resp-tip-row"><span>Supplier</span><span>Salvage Direct</span></div>
+              <div class="resp-tip-row"><span>Phone</span><span>03 8123 4477</span></div>
+              <div class="resp-tip-row"><span>Parts Priced</span><span>0 of 8</span></div>
+              <div class="resp-tip-row"><span>Status</span><span>Automatic cut off</span></div>
+            </div>
+          </div>
+          <div class="dot dg resp-dot" style="position:relative">&#10003;
+            <div class="resp-tip">
+              <div class="resp-tip-hd" style="color:#84cc16">USED - RECEIVED</div>
+              <div class="resp-tip-row"><span>Supplier</span><span>Wreckers Direct</span></div>
+              <div class="resp-tip-row"><span>Phone</span><span>07 3222 1144</span></div>
+              <div class="resp-tip-row"><span>Parts Priced</span><span>6 of 8</span></div>
+              <div class="resp-tip-row"><span>Quote Ref</span><span>WD-89734</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="acts">
+        <div style="position:relative;display:inline-block" id="print-wrap">
+          <button class="bsec" onclick="togglePrintMenu()" style="display:inline-flex;align-items:center;gap:6px">
+            Print
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div id="print-menu" style="display:none;position:absolute;right:0;top:calc(100% + 4px);background:#fff;border:1px solid #d1d5db;border-radius:3px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:400;width:270px;overflow:hidden">
+            <div style="padding:8px 12px;font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #f3f4f6">Print Options</div>
+            <div class="pmenu-item" onclick="closePrintMenu()"><div style="font-size:12px;font-weight:600;color:#111827">Print Available Prices</div></div>
+            <div class="pmenu-item" onclick="closePrintMenu()"><div style="font-size:12px;font-weight:600;color:#111827">List Price Report</div></div>
+            <div class="pmenu-item" onclick="closePrintMenu()"><div style="font-size:12px;font-weight:600;color:#111827">Unavailable Part List</div></div>
+            <div id="print-cost" class="pmenu-item"><div style="font-size:12px;font-weight:600;color:#111827">Cost Price Report</div></div>
+            <div id="print-po" class="pmenu-item"><div style="font-size:12px;font-weight:600;color:#111827">Purchase Order Summary</div></div>
+          </div>
+        </div>
+        <button class="btn">Cancel Request</button>
+        <button class="btn btng">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sb">
+    <div id="summary-new" style="display:flex;flex-wrap:wrap;align-items:stretch;gap:12px;width:100%;background:transparent">
+    <div class="si">
+      <div class="sihov">
+        <div class="slbl">Your Cost</div>
+        <div class="sv" id="s-cost">$0.00</div>
+        <div class="sitip" id="tip-cost">
+          <div class="sitip-row"><span class="sitip-l">What this is</span><span class="sitip-v">What you pay suppliers for your selected parts.</span></div>
+          <div class="sitip-row"><span class="sitip-l">Dealer Total</span><span class="sitip-v" id="tip-cost-list">-</span></div>
+          <div class="sitip-row"><span class="sitip-l">vs Dealer</span><span class="sitip-v" id="tip-cost-vs">-</span></div>
+          <div class="sitip-note">The buy price if every part came from the dealer.</div>
+        </div>
+      </div>
+    </div>
+    <div class="si">
+      <div class="sihov">
+        <div class="slbl">Your Sell</div>
+        <div class="sv" id="s-sell">$0.00</div>
+        <div class="sitip">
+          <div class="sitip-row"><span class="sitip-l">What this is</span><span class="sitip-v" id="tip-sell-what">What you charge the insurer. Each part sells at its margin rule - a % of its list price, shown on every card.</span></div>
+          <div class="sitip-row"><span class="sitip-l">List Total</span><span class="sitip-v" id="tip-sell-list">-</span></div>
+          <div class="sitip-row"><span class="sitip-l">vs List</span><span class="sitip-v" id="tip-sell-vs">-</span></div>
+          <div class="sitip-note">Your sell price vs total dealer list. Margins are applied per part type based on the active rule.</div>
+        </div>
+      </div>
+    </div>
+    <div class="si">
+      <div class="sihov">
+        <div class="slbl">Your Profit</div>
+        <div class="sv grn" id="s-profit-wrap" style="display:flex;align-items:baseline;justify-content:center;gap:6px"><span id="s-profit">$0.00</span><span id="s-profit-margin" style="font-size:16px;font-weight:400">(0%)</span></div>
+        <div class="sitip">
+          <div class="sitip-row"><span class="sitip-l">What this is</span><span class="sitip-v">Your sell price minus your cost</span></div>
+          <div class="sitip-row"><span class="sitip-l">Profit if all dealer</span><span class="sitip-v" id="tip-profit-dealer-abs">-</span></div>
+          <div class="sitip-row"><span class="sitip-l">vs Dealer Total</span><span class="sitip-v" id="tip-profit-dealer">-</span></div>
+          <div class="sitip-row"><span class="sitip-l">Margin on Sell</span><span class="sitip-v" id="tip-profit-margin-calc">-</span></div>
+          <div class="sitip-row"><span class="sitip-l">Markup on Cost</span><span class="sitip-v" id="tip-profit-markup-calc">-</span></div>
+          <div class="sitip-note">Amber means another pick makes more - it is not a loss.</div>
+        </div>
+      </div>
+    </div>
+    <div class="si">
+      <div class="sihov">
+        <div class="slbl">Customer Saving</div>
+        <div class="sv" id="s-jobsaving">$0.00</div>
+        <div class="sitip">
+          <div class="sitip-row"><span class="sitip-l">What this is</span><span class="sitip-v">Full list total vs your sell total</span></div>
+          <div class="sitip-row"><span class="sitip-l">List Total</span><span class="sitip-v" id="tip-jobsaving-list">-</span></div>
+          <div class="sitip-row"><span class="sitip-l">Your Sell Total</span><span class="sitip-v" id="tip-jobsaving-sell">-</span></div>
+          <div class="sitip-row"><span class="sitip-l">Saves</span><span class="sitip-v" id="tip-jobsaving-saves">-</span></div>
+          <div class="sitip-note">Allianz pays full list when every part is dealer - anything you charge under list is their saving.</div>
+        </div>
+      </div>
+    </div>
+    </div>
+    <div id="summary-classic" style="display:none;flex-wrap:wrap;align-items:stretch;gap:12px;width:100%;background:transparent">
+      <div class="si">
+        <div class="sihov">
+          <div class="slbl">Dealer-Only Profit</div>
+          <div class="sv grn" style="display:flex;align-items:baseline;gap:6px"><span id="cc-dealer-profit">$0.00</span><span id="cc-dealer-markup" style="font-size:16px;font-weight:400">(0%)</span></div>
+          <div id="cc-dealer-text" style="margin-top:6px;font-size:11px;color:#6b7280;line-height:1.6"></div>
+          <div class="sitip">
+            <div class="sitip-row"><span class="sitip-l">What this is</span><span class="sitip-v">What you'd make selecting all OEM dealer options</span></div>
+            <div class="sitip-row"><span class="sitip-l">Dealer Sell Price</span><span class="sitip-v" id="cc-dealer-sell">$0.00</span></div>
+            <div class="sitip-row"><span class="sitip-l">Markup on Cost %</span><span class="sitip-v" id="cc-dealer-markup-tip">-</span></div>
+            <div class="sitip-row"><span class="sitip-l">Margin on Sell %</span><span class="sitip-v" id="cc-dealer-pct-tip">-</span></div>
+            <div class="sitip-note">Dealer sell price minus dealer cost, across your currently selected parts.</div>
+          </div>
+        </div>
+      </div>
+      <div class="si">
+        <div class="sihov">
+          <div class="slbl">Selected Profit</div>
+          <div class="sv grn" style="display:flex;align-items:baseline;gap:6px"><span id="cc-selected-profit">$0.00</span><span id="cc-selected-markup" style="font-size:16px;font-weight:400">(0%)</span></div>
+          <div id="cc-selected-text" style="margin-top:6px;font-size:11px;color:#6b7280;line-height:1.6"></div>
+          <div class="sitip">
+            <div class="sitip-row"><span class="sitip-l">What this is</span><span class="sitip-v">Your sell price minus your cost, for what you've actually selected</span></div>
+            <div class="sitip-row"><span class="sitip-l">Sell Price</span><span class="sitip-v" id="cc-selected-sell">$0.00</span></div>
+            <div class="sitip-row"><span class="sitip-l">Markup on Cost %</span><span class="sitip-v" id="cc-selected-markup-tip">-</span></div>
+            <div class="sitip-row"><span class="sitip-l">Margin on Sell %</span><span class="sitip-v" id="cc-selected-pct-tip">-</span></div>
+            <div class="sitip-note">Compares directly against Dealer-Only Profit above.</div>
+          </div>
+        </div>
+      </div>
+      <div class="si">
+        <div class="sihov">
+          <div class="slbl">Job Saving</div>
+          <div class="sv gry" id="cc-jobsaving">$0.00</div>
+          <div id="cc-jobsaving-text" style="margin-top:6px;font-size:11px;color:#6b7280"></div>
+          <div class="sitip">
+            <div class="sitip-row"><span class="sitip-l">What this is</span><span class="sitip-v">Full list price vs selected sell price</span></div>
+            <div class="sitip-row"><span class="sitip-l">List Total</span><span class="sitip-v" id="cc-jobsaving-dealer">-</span></div>
+            <div class="sitip-row"><span class="sitip-l">Selected Sell</span><span class="sitip-v" id="cc-jobsaving-selected">-</span></div>
+            <div class="sitip-note">Allianz pays full list when every part is dealer - anything you charge under list is their saving.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- rule banner retired: now delivered via showToast() -->
+
+
+
+  <div style="background:#fff;margin:0 24px 10px;padding:10px 12px;box-sizing:border-box;border:1px solid #4ade80">
+    <div style="background:transparent;display:flex;align-items:center;gap:12px">
+      <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;flex-wrap:wrap">
+        <div style="position:relative;flex-shrink:0" id="rule-dropdown-wrap">
+          <button onclick="toggleRuleDropdown()" id="active-rule-btn" class="rule-tag-btn">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" style="flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>
+            <span class="rule-tag-lbl">Margin Rule Applied</span>
+            <span class="rule-tag-sep"></span>
+            <span id="active-rule-name">Allianz</span>
+            <svg id="active-rule-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transition:transform .2s;flex-shrink:0"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div id="rule-dropdown" style="display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:500;background:#fff;border:1px solid #d1d5db;border-radius:3px;box-shadow:0 12px 36px rgba(0,0,0,.15);width:680px;padding:16px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <span style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px">Select Active Margin Rule</span>
+              <span style="font-size:11px;color:#6b7280;display:flex;align-items:center;gap:6px"><span style="font-size:9px;font-weight:800;background:#16a34a;color:#fff;border-radius:3px;padding:1px 6px;letter-spacing:.3px">NEW</span> To edit rules, go to <a onclick="closeRuleDropdown();switchTab('rules',true,'margin');" style="color:#16a34a;font-weight:700;text-decoration:underline;cursor:pointer">Settings</a></span>
+            </div>
+            <div id="rule-dropdown-body" style="display:flex;flex-direction:column;gap:0"></div>
+          </div>
+        </div>
+        <div id="rule-pills" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"></div>
+      </div>
+    </div>
+    <!-- Exceptions notice strip - sits under the active rule; only shown when the active rule has exceptions -->
+    <div id="exc-notice">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2.5" style="flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span style="font-weight:700;white-space:nowrap">Exceptions:</span>
+      <div id="exc-pills-bar" style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;flex:1"></div>
+    </div>
+  </div>
+  <div class="tbar" style="justify-content:space-between">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;min-width:0">
+      <div style="display:flex;align-items:center;gap:6px">
+        <span class="ctl-lbl">Quick Select:</span>
+        <button class="qsel-btn" id="qs-profit" onclick="toggleQuickSelect('profit')">Best Profit</button>
+        <button class="qsel-btn" id="qs-cost" onclick="toggleQuickSelect('cost')">Lowest Cost</button>
+      </div>
+      <span class="tbar-sep"></span>
+      <button class="btn" id="btn-clear-sel" onclick="clearAll()" style="color:#111827" disabled>Clear Selections</button>
+      <span class="tbar-sep"></span>
+      <div class="lgnd-wrap">
+        <span class="ctl-lbl">Show:</span>
+        <span class="lgnd-pill lp-green" id="lgp-best" onclick="setChipFilter('best')"><span class="ttf-icon ttf-green"><i class="fa fa-fire" style="font-size:8px;color:#fff"></i></span>Dealer Part Match<span class="lgnd-n" id="lgn-best">0</span></span>
+        <span class="lgnd-pill lp-amber" id="lgp-eta" onclick="setChipFilter('eta')"><span class="ttf-icon ttf-amber"><i class="fa fa-clock-o" style="font-size:8px;color:#fff"></i></span>ETD Alert<span class="lgnd-n" id="lgn-eta">0</span></span>
+        <span class="lgnd-pill lp-grey" id="lgp-cmt" onclick="setChipFilter('cmt')"><span class="ttf-icon ttf-info"><i class="fa fa-comment" style="font-size:7px;color:#4b5563"></i></span>Comments<span class="lgnd-n" id="lgn-cmt">0</span></span>
+        <span class="lgnd-pill lp-cyan" id="lgp-photo" onclick="setChipFilter('photo')"><span class="ttf-icon ttf-cyan"><i class="fa fa-camera" style="font-size:7px;color:#fff"></i></span>Images<span class="lgnd-n" id="lgn-photo">0</span></span>
+        <span class="lgnd-pill lp-blue" id="lgp-donor" onclick="setChipFilter('donor')"><span class="ttf-icon ttf-blue" style="font-size:9px;color:#fff">&#9733;</span>Donor Part<span class="lgnd-n" id="lgn-donor">0</span></span>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+      <div style="display:flex;align-items:center;gap:6px">
+        <span class="ctl-lbl">View:</span>
+        <div style="display:flex;align-items:center;height:30px;box-sizing:border-box;border:1px solid #d1d5db;border-radius:3px;overflow:hidden">
+          <button id="btn-grid-view" onclick="setView('grid')" title="Grid View" style="display:inline-flex;align-items:center;justify-content:center;height:100%;padding:0 10px;border:none;background:#f0fdf4;cursor:pointer;border-right:1px solid #d1d5db">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="#16a34a"><path d="M3 3h7v7H3zm11 0h7v7h-7zM3 14h7v7H3zm11 0h7v7h-7z"/></svg>
+          </button>
+          <button id="btn-list-view" onclick="setView('list')" title="List View" style="display:inline-flex;align-items:center;justify-content:center;height:100%;padding:0 10px;border:none;background:#fff;cursor:pointer">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="#9ca3af"><path d="M3 5h18v2H3zm0 6h18v2H3zm0 6h18v2H3z"/></svg>
+          </button>
+        </div>
+        <button id="btn-list-settings" onclick="openListSettings()" title="List Settings" style="display:none;align-items:center;justify-content:center;height:30px;padding:0 10px;box-sizing:border-box;border:1px solid #d1d5db;border-radius:3px;background:#fff;cursor:pointer;gap:5px;font-size:11px;font-weight:600;color:#374151">
+          List Settings
+        </button>
+      </div>
+    </div>
+  </div>
+  <div id="grid-view-wrap" class="tw" style="padding:0 24px">
+    <table class="new-pt" id="partsTable">
+      <colgroup><col style="width:232px;min-width:232px"><col style="width:122px;min-width:122px"><col style="width:122px;min-width:122px"><col style="width:122px;min-width:122px"><col style="width:122px;min-width:122px"><col style="width:122px;min-width:122px"><col style="width:122px;min-width:122px"><col style="width:122px;min-width:122px"><col style="width:auto;min-width:80px"></colgroup>
+      <thead>
+        <tr>
+          <td style="background:#1a1a2e;height:5px;padding:0;border:none;border-left:1px solid #d1d5db;border-right:1px solid #d1d5db;z-index:295"></td>
+          <td style="background:#2563eb;height:5px;padding:0;border:none;border-right:1px solid #d1d5db;z-index:295"></td>
+          <td style="background:#a855f7;height:5px;padding:0;border:none;border-right:1px solid #d1d5db;z-index:295"></td>
+          <td style="background:#a855f7;height:5px;padding:0;border:none;border-right:1px solid #d1d5db;z-index:295"></td>
+          <td style="background:#84cc16;height:5px;padding:0;border:none;border-right:1px solid #d1d5db;z-index:295"></td>
+          <td style="background:#84cc16;height:5px;padding:0;border:none;border-right:1px solid #d1d5db;z-index:295"></td>
+          <td style="background:#84cc16;height:5px;padding:0;border:none;border-right:1px solid #d1d5db;z-index:295"></td>
+          <td style="background:#f59e0b;height:5px;padding:0;border:none;border-right:1px solid #d1d5db;z-index:295"></td>
+          <td colspan="5" style="background:#9ca3af;height:5px;padding:0;border:none;border-left:1px solid #d1d5db;border-right:1px solid #d1d5db;z-index:295"></td>
+        </tr>
+        <tr>
+          <th class="sel-hd">
+            <div style="display:flex;align-items:baseline;gap:3px;white-space:nowrap;line-height:1;margin-bottom:7px">
+              <span class="sel-hd-count" id="sel-count">0</span><span class="sel-hd-count">/10</span><span style="font-size:13px;font-weight:700;color:#16a34a;line-height:1">&nbsp;Selected</span>
+            </div>
+            <div class="part-chk-row" style="align-items:flex-end">
+              <div style="display:flex;align-items:flex-end;gap:4px;flex-shrink:0">
+                <span class="sel-col-hd" style="min-width:16px">#</span>
+                <span class="sel-col-hd" style="width:24px;text-align:center">Qty</span>
+              </div>
+              <div class="sel-col-hd" style="white-space:nowrap">Part Number &amp; Description</div>
+            </div>
+          </th>
+          <th class="sup-th-new">
+            <div class="sup-th-wrap" onmouseover="showSupTip('s2',this)" onmouseout="hideSupTip()" onclick="selectColumn('s2')" style="cursor:pointer">
+            <div class="sup-circle-new" style="border-color:#2563eb;margin:0 auto 4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="#2563eb"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div>
+            <div class="sup-label-new">OEM Direct</div>
+            </div>
+          </th>
+          <th class="sup-th-new">
+            <div class="sup-th-wrap" onmouseover="showSupTip('s1',this)" onmouseout="hideSupTip()" onclick="selectColumn('s1')" style="cursor:pointer">
+            <div class="sup-circle-new" style="border-color:#a855f7;margin:0 auto 4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="#a855f7"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div>
+            <div class="sup-label-new">Parts Network</div>
+            </div>
+          </th>
+          <th class="sup-th-new">
+            <div class="sup-th-wrap" onmouseover="showSupTip('s3',this)" onmouseout="hideSupTip()" onclick="selectColumn('s3')" style="cursor:pointer">
+            <div class="sup-circle-new" style="border-color:#a855f7;margin:0 auto 4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="#a855f7"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div>
+            <div class="sup-label-new">ATS Parts</div>
+            </div>
+          </th>
+          <th class="sup-th-new">
+            <div class="sup-th-wrap" onmouseover="showSupTip('s4',this)" onmouseout="hideSupTip()" onclick="selectColumn('s4')" style="cursor:pointer">
+            <div class="sup-circle-new" style="border-color:#84cc16;margin:0 auto 4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="#84cc16"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div>
+            <div class="sup-label-new">Eco Parts</div>
+            </div>
+          </th>
+          <th class="sup-th-new">
+            <div class="sup-th-wrap" onmouseover="showSupTip('s6',this)" onmouseout="hideSupTip()" onclick="selectColumn('s6')" style="cursor:pointer">
+            <div class="sup-circle-new" style="border-color:#84cc16;margin:0 auto 4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="#84cc16"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div>
+            <div class="sup-label-new">Wreckers Direct</div>
+            </div>
+          </th>
+          <th class="sup-th-new">
+            <div class="sup-th-wrap" onmouseover="showSupTip('s8',this)" onmouseout="hideSupTip()" onclick="selectColumn('s8')" style="cursor:pointer">
+            <div class="sup-circle-new" style="border-color:#84cc16;margin:0 auto 4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="#84cc16"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div>
+            <div class="sup-label-new">Salvage Direct</div>
+            </div>
+          </th>
+          <th class="sup-th-new">
+            <div class="sup-th-wrap" onmouseover="showSupTip('s5',this)" onmouseout="hideSupTip()" onclick="selectColumn('s5')" style="cursor:pointer">
+            <div class="sup-circle-new" style="border-color:#f59e0b;margin:0 auto 4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="#f59e0b"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div>
+            <div class="sup-label-new">Reco Centre</div>
+            </div>
+          </th>
+          <th colspan="5" style="background:#fff;vertical-align:middle;border-bottom:1px solid #d1d5db;border-top:none;border-left:1px solid #d1d5db;border-right:1px solid #d1d5db"></th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <!-- List View -->
+  <div id="list-view" style="display:none;overflow-x:auto;padding:0 24px" class="tw">
+    <div id="list-body"></div>
+  </div>
 </div>
+
+<!-- ════ LIST SETTINGS MODAL ════ -->
+<div class="mo" id="listSettingsModal">
+  <div class="md" style="width:420px">
+    <div class="mhd" style="background:#f8fafc;padding:14px 20px">
+      <div class="mht" style="color:#111827;font-size:13px;font-weight:700">List Settings</div>
+      <button class="mhx" onclick="closeListSettings()" style="color:#9ca3af;font-size:18px">&#10005;</button>
+    </div>
+    <div style="padding:0 20px 20px">
+      <table style="width:100%;border-collapse:collapse;margin-top:16px">
+        <thead>
+          <tr style="border-bottom:2px solid #e5e7eb">
+            <td style="font-size:12px;font-weight:600;color:#374151;padding-bottom:8px;width:50%">Column</td>
+            <td style="font-size:12px;font-weight:600;color:#374151;padding-bottom:8px;text-align:center">Show/Hide</td>
+            <td style="font-size:12px;font-weight:600;color:#374151;padding-bottom:8px;text-align:center">Sorting by</td>
+          </tr>
+        </thead>
+        <tbody id="list-settings-rows"></tbody>
+      </table>
+    </div>
+    <div class="emf">
+      <button class="embn" onclick="closeListSettings()">Cancel</button>
+      <button class="embn embp" onclick="applyListSettings()">Apply</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ EDIT MODAL ════ -->
+<div class="mo" id="editModal">
+  <div class="md">
+    <div class="mhd">
+      <div><div class="mht">Edit Selected Item</div><div class="mhs" id="modal-sub">Part - Supplier</div></div>
+      <button class="mhx" onclick="closeModal()">&#10005;</button>
+    </div>
+    <div class="emb">
+      <div class="ems">
+
+        <div class="efg"><label class="efl">Display Format</label>
+          <div style="position:relative">
+            <input class="efin" id="modal-pntype" placeholder="Type or select..." autocomplete="off"
+              oninput="filterPNCombo(this.value)" onfocus="showPNCombo()" onblur="setTimeout(hidePNCombo,150)">
+            <svg class="efin-caret" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            <div id="pntype-dropdown" style="display:none;position:absolute;top:calc(100% + 2px);left:0;right:0;background:#fff;border:1px solid #d1d5db;border-radius:3px;box-shadow:0 4px 12px rgba(0,0,0,0.1);z-index:500;max-height:180px;overflow-y:auto"></div>
+          </div>
+        </div>
+        <div class="efg"><label class="efl">Part Number</label>
+          <input class="efin" id="modal-partno" type="text" placeholder="Enter or override part number">
+        </div>
+      </div>
+      <div class="ems">
+
+        <div class="erg">
+          <label class="err active" id="rr0"><input type="radio" name="pm" checked><span class="erl">Charge % of dealer list price</span><div class="erpw"><span class="erpstep"><button type="button" id="rpi0-up" onclick="event.stopPropagation();stepPct('rpi0',10)" title="+10%"><svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4"><polyline points="18 15 12 9 6 15"/></svg></button><button type="button" id="rpi0-dn" onclick="event.stopPropagation();stepPct('rpi0',-10)" title="-10%"><svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4"><polyline points="6 9 12 15 18 9"/></svg></button></span><input class="erpi" id="rpi0" type="number" step="10" value="100" min="0" max="200" onclick="event.stopPropagation()"></div></label>
+          <label class="err" id="rr1"><input type="radio" name="pm"><span class="erl">Add % mark up to cost</span><div class="erpw"><span class="erpstep"><button type="button" id="rpi1-up" onclick="event.stopPropagation();stepPct('rpi1',10)" title="+10%"><svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4"><polyline points="18 15 12 9 6 15"/></svg></button><button type="button" id="rpi1-dn" onclick="event.stopPropagation();stepPct('rpi1',-10)" title="-10%"><svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4"><polyline points="6 9 12 15 18 9"/></svg></button></span><input class="erpi" id="rpi1" type="number" step="10" value="30" disabled onclick="event.stopPropagation()"></div></label>
+          <label class="err" id="rr2"><input type="radio" name="pm"><span class="erl">Add % show mark up to cost</span><div class="erpw"><span class="erpstep"><button type="button" id="rpi2-up" onclick="event.stopPropagation();stepPct('rpi2',10)" title="+10%"><svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4"><polyline points="18 15 12 9 6 15"/></svg></button><button type="button" id="rpi2-dn" onclick="event.stopPropagation();stepPct('rpi2',-10)" title="-10%"><svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4"><polyline points="6 9 12 15 18 9"/></svg></button></span><input class="erpi" id="rpi2" type="number" step="10" value="30" disabled onclick="event.stopPropagation()"></div></label>
+          <label class="err" id="rr4"><input type="radio" name="pm"><span class="erl">Manually enter sell price</span> <div class="erpw"><span style="font-size:12px">$</span><input class="erpi" id="rpi4" type="number" value="" disabled placeholder="0.00" onclick="event.stopPropagation()" style="width:62px"></div> </label>
+            <label class="err" id="rr3"><input type="radio" name="pm"><span class="erl">Use dealer list and part number</span> <div class="erpw"><span style="font-size:12px">$</span><input class="erpi" id="rpi3" type="number" value="" readonly title="Dealer list price for this part" onclick="event.stopPropagation()" style="width:62px"></div> </label>
+        </div>
+
+      </div>
+    </div>
+    <div class="emf">
+      <button class="embn" onclick="resetModal()">Reset</button>
+      <button class="embn embp" onclick="saveModal()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- Supplier header tooltip -->
+<div class="tt" id="sup-hd-tip" style="width:230px" onmouseover="clearSupTipHide()" onmouseout="hideSupTip()"></div>
 
 <!-- ════ INFO SCREEN ════ -->
 <div id="info-screen" style="display:none;background:#f4f5f7;min-height:400px;padding:0 0 24px">
@@ -3122,773 +3540,1525 @@ window.MRO = { METHODS, CAP_TYPES, resolveRule, clauseValue, isNA, fmt, fmt0, PA
   loadRuleConfig, saveRuleConfig, getActiveTypes, getActiveAgeRules, getActiveCondRules, getActiveExceptions };
 </script>
 
-<script type="text/babel" data-presets="react">
-(function(){
-const { useState, useEffect, useRef, useMemo } = React;
-const { METHODS, CAP_TYPES, resolveRule, resolveConditional, clauseValue, fmt, PT_NAME,
-        PART_TYPES_INIT, VEHICLE_AGE_RULES_INIT, COND_RULES_INIT, EXCEPTION_GROUPS,
-        VEHICLE_BRANDS, vehicleAge, ageRuleActive, ageAllowsType, matchingAgeRules,
-        getActiveTypes, getActiveAgeRules, getActiveCondRules, getActiveExceptions } = window.MRO;
+<script>
+/* ══════════════════ CHECK PRICE — Phase 1's vanilla grid, Phase 2's rule engine ══════════════════
+   Restored verbatim from Phase 1 (margin-rules-phz-1-current.html, "VANILLA JS - CHECK PRICE LOGIC"
+   banner) per Shereen's review: the React QuoteGrid that previously lived here reproduced Phase 1's
+   layout but not its actual cell styling/chips/modal, so it is gone. This is Matt's real markup +
+   script, cells/chips/MODIFY modal/tooltips intact.
 
-/* ═══════════════ CHECK PRICE GRID (Phase-1 layout, Phase-2 pricing engine) ═══════════════
-   Ported from MarginRulePhase2/js/check-price.jsx. Two things changed from that standalone
-   version, per the Phase 1 + Phase 2 merge:
-     1. The dataset below (QSUP/QPARTS) is Phase 1's real 6-supplier / 8-part demo data,
-        converted into Phase 2's data shape, plus Phase 2's 2 safety-exception rows re-keyed
-        onto the same supplier roster (Phase 1's own PARTS never had an airbag/ABS line).
-     2. The margin-rule picker reads live from window.ALL_RULES (populated by Settings'
-        Dashboard via window.syncRulesFromSettings) instead of a hardcoded demo array, and a
-        rule's margins are the REAL per-ruleId MRO config, not a static % map — see the
-        window.ALL_RULES bridge below. TopNav/qptab chrome is stripped: Phase 1's own nav
-        (kept verbatim elsewhere in this document) already renders that chrome. */
+   The ONE thing that changed from Phase 1's original: sell price and the rule-trace shown in the
+   hover tooltip are no longer read from a hardcoded opt.sell/opt.rule per offer - they are computed
+   live by calling into window.MRO (the ported Phase 2 rule engine, defined earlier in this document)
+   against whichever named margin rule is active. See resolveCell() below - it is the single place
+   Phase 1's old sellPrice()/getEffectiveRule() used to hardcode a % of list, now replaced with a
+   real resolveRule()/resolveConditional() call plus vehicle-age and safety-exception lockout checks.
 
-const PART_PHOTO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 260">
-  <defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#EEF0F2"/><stop offset="1" stop-color="#D7DADE"/></linearGradient></defs>
-  <rect width="400" height="260" fill="url(#bg)"/>
-  <ellipse cx="200" cy="215" rx="120" ry="14" fill="#00000014"/>
-  <rect x="90" y="70" width="220" height="120" rx="14" fill="#B9BEC5" stroke="#9AA0A8" stroke-width="2"/>
-  <ellipse cx="150" cy="130" rx="46" ry="34" fill="#FFF6D8" stroke="#E8D48A" stroke-width="2"/>
-  <path d="M210 100h80a10 10 0 0110 10v40a10 10 0 01-10 10h-80z" fill="#CBD0D6"/>
-</svg>`;
-const PART_PHOTO = 'data:image/svg+xml,' + encodeURIComponent(PART_PHOTO_SVG);
+   Toast, the shared lightbox, the role switcher and switchTab()/showPriceSubTab() are Phase 1
+   verbatim too, but are NOT redeclared here - they already live in the nav-chrome script block above
+   (kept there through the Phase 1 + Phase 2 merge so Get Price could keep using them independently
+   of Check Price). Redeclaring them here would just be dead duplication. */
 
-/* This quote's insurer — Phase 1's Allianz demo quote (#89734), matched against saved rules'
-   debtor lists the same way Phase 1's original renderRuleDropdown() computed "Matched". */
-const QUOTE_INSURER = 'Allianz Australia Insurance';
-
-/* Phase 1's 6 real suppliers (from PARTS[].opts[].supplier), one column per supplier. ATS
-   Parts is mapped to typeId 'parallel' rather than 'oem': Phase 1's own pricing logic
-   (getEffectiveRule) only ever treated OEM Direct (sid s2) as true dealer OEM pricing and
-   priced every other OEM-labelled supplier — including ATS Parts — as a parallel importer.
-   This reproduces that existing behaviour rather than ATS's on-screen "OEM" label. */
-const QSUP = [
-  { key:'s2', name:'OEM Direct',       type:'OEM',        typeId:'oem',         responded:true },
-  { key:'s3', name:'ATS Parts',        type:'OEM',        typeId:'parallel',    responded:true },
-  { key:'s1', name:'Parts Network',    type:'AFTERMARKET', typeId:'aftermarket', responded:true },
-  { key:'s4', name:'Eco Parts',        type:'USED',       typeId:'recycled',    responded:true },
-  { key:'s6', name:'Wreckers Direct',  type:'USED',       typeId:'recycled',    responded:true },
-  { key:'s5', name:'Reco Centre',      type:'RECON',      typeId:'recon',       responded:true },
+// Supplier-side ETD options, in order. A "long" ETD is anything at or beyond the
+// configured threshold, so this must stay in the same order as the supplier list.
+var ETD_SCALE=['Same Day','1-2 Days','2-3 Days','4-5 Days','1 Week','2-3 Weeks','4-6 Weeks','6 Weeks+','NLA'];
+// ETD alerts are always on; the threshold is fixed rather than configurable.
+var ETD_THRESHOLD='1 Week';
+function etdRank(v){var i=ETD_SCALE.indexOf(v);return i<0?-1:i;}
+function isLongETD(opt){
+  var r=etdRank(opt.eta);
+  if(r<0)return !!opt.deliveryAlert;   // unknown ETD - fall back to the supplier's flag
+  return r>=etdRank(ETD_THRESHOLD);
+}
+var QUOTE_INSURER="Allianz Australia Insurance"; // global - used by onclick attributes
+// This demo quote is a 2023 Hyundai Tucson (see the QUOTE/Vehicle Info banner above and the
+// Info sub-tab) - the vehicle-age gate below is evaluated against this same vehicle.
+var VEHICLE_MODEL_YEAR=2023, VEHICLE_BRAND='hyundai';
+var PARTS=[
+  {id:'p1',name:'FRONT BUMPER',num:'#86510-G3700',list:659.80,autoSel:'s3',opts:[
+    {sid:'s2',type:'OEM',label:'OEM',supplier:'OEM Direct',  cost:560.83,inScope:true, best:false,eta:'2-3 Weeks',pno:'86510-G3700',mno:'--',cmt:'Supplied in black only, unpainted.',discPct:15,deliveryAlert:true,deliveryNote:'2-3 weeks ex Japan'},
+    {sid:'s3',type:'OEM',label:'OEM',supplier:'ATS Parts',   cost:470.00,inScope:true, best:true, eta:'Same Day', pno:'86510-G3700',mno:'--',cmt:'Genuine OEM stock item, same-day pickup available.'},
+    {sid:'s1',type:'AftM',label:'Cert AftM',supplier:'Parts Network',cost:299.00,inScope:true,best:false,eta:'1-2 Days',pno:'PN-FB-G3700',mno:'86510-G3700',cmt:'Certified aftermarket.'},
+    {sid:'s5',type:'Reco',label:'Recon',supplier:'Reco Centre',cost:290.00,inScope:false,best:false,eta:'4-5 Days',pno:'86510-G3700',mno:'--',cmt:''}
+  ]},
+  {id:'p2',name:'LOWER BUMPER COVER',num:'#86512-G3700',list:261.26,autoSel:'s2',opts:[
+    {sid:'s2',type:'OEM',label:'OEM',supplier:'OEM Direct',  cost:209.01,inScope:true, best:false,eta:'Same Day', pno:'86512-G3700',mno:'--',cmt:''},
+    {sid:'s3',type:'OEM',label:'OEM',supplier:'ATS Parts',   cost:132.30,inScope:true, best:false,eta:'2-3 Days',pno:'86512-G3700',mno:'--',cmt:'ATS parallel import.'},
+    {sid:'s1',type:'AftM',label:'Cert AftM',supplier:'Parts Network',cost:110.00,inScope:true,best:true,eta:'1-2 Days',pno:'PN-LBC-G3700',mno:'86512-G3700',cmt:''},
+    {sid:'s4',type:'Used',label:'Used',supplier:'Eco Parts', cost:122.43,inScope:true, best:false,eta:'4-5 Days',pno:'86512-G3700',mno:'--',cmt:''},
+    {sid:'s6',type:'Used',label:'Used',supplier:'Wreckers Direct',cost:105.00,inScope:true,best:false,eta:'2-3 Days',pno:'86512-G3700',mno:'--',cmt:''},
+  ]},
+  {id:'p3',name:'R/F OUT BUMPER BRKT',num:'#86514-G3000',list:41.16,autoSel:'s4',opts:[
+    {sid:'s2',type:'OEM',label:'OEM',supplier:'OEM Direct',  cost:35.81,inScope:true, best:false,eta:'2-3 Days',pno:'86514-G3000',mno:'--',cmt:''},
+    {sid:'s4',type:'Used',label:'Used',supplier:'Eco Parts', cost:15.09,inScope:true, best:false, eta:'2-3 Weeks', pno:'86514-G3000',mno:'--',cmt:'',deliveryAlert:true,deliveryNote:'Backordered - 10-14 days'},
+    {sid:'s6',type:'Used',label:'Used',supplier:'Wreckers Direct',cost:13.88,inScope:true,best:false,eta:'2-3 Days',pno:'86514-G3000',mno:'--',cmt:''},
+  ]},
+  {id:'p4',name:'RIGHT HEADLAMP ASSY',num:'#92102-G3115',list:2259.56,autoSel:'s1',opts:[
+    {sid:'s2',type:'OEM',label:'OEM',supplier:'OEM Direct',  cost:1807.65,inScope:true, best:false,eta:'4-5 Days',pno:'92102-G3115',mno:'--',cmt:''},
+    {sid:'s1',type:'OEM',label:'OEM',supplier:'Parts Network',cost:1095.00,inScope:true,best:true, eta:'Same Day', pno:'92102-G3115',mno:'--',cmt:'Confirmed genuine OEM stock, boxed and ready.'},
+    {sid:'s4',type:'Used',label:'Used',supplier:'Eco Parts', cost:1180.00,inScope:true, best:false,eta:'2-3 Days',pno:'92102-G3115',mno:'--',cmt:'Grade A used.'},
+    {sid:'s6',type:'Used',label:'Used',supplier:'Wreckers Direct',cost:1050.00,inScope:true,best:false,eta:'2-3 Days',pno:'92102-G3115',mno:'--',cmt:''},
+    {sid:'s5',type:'Reco',label:'Recon',supplier:'Reco Centre',cost:1402.00,inScope:false,best:false,eta:'1-2 Days',pno:'92102-G3115',mno:'--',cmt:'',photo:true}
+  ]},
+  {id:'p5',name:'R/BADGE "N-LINE"',num:'#86312-G4700',list:70.14,autoSel:'s4',opts:[
+    {sid:'s2',type:'OEM',label:'OEM',supplier:'OEM Direct',  cost:61.22,inScope:true, best:false,eta:'2-3 Days',pno:'86312-G4700',mno:'--',cmt:''},
+    {sid:'s4',type:'Used',label:'Used',supplier:'Eco Parts', cost:19.80, inScope:true, best:false, eta:'Same Day', pno:'86312-G4700',mno:'--',cmt:''},
+    {sid:'s6',type:'Used',label:'Used',supplier:'Wreckers Direct',cost:22.80,inScope:true,best:false,eta:'2-3 Days',pno:'86312-G4700',mno:'--',cmt:''},
+  ]},
+  {id:'p6',name:'R/H SILL PANEL MOULD',num:'#9124106',list:965.50,autoSel:'s2',opts:[
+    {sid:'s2',type:'OEM',label:'OEM',supplier:'OEM Direct',  cost:772.40,inScope:true, best:false,eta:'4-5 Days',pno:'9124106',   mno:'--',cmt:''},
+    {sid:'s1',type:'AftM',label:'Cert AftM',supplier:'Parts Network',cost:520.00,inScope:true, best:true, eta:'1-2 Days',pno:'PN-SILL-9124',mno:'9124106',cmt:'Certified aftermarket, confirmed fitment.'},
+    {sid:'s3',type:'OEM',label:'OEM',supplier:'ATS Parts',   cost:340.00,inScope:true, best:false,eta:'4-6 Weeks',pno:'9124106',   mno:'--',cmt:'',deliveryAlert:true,deliveryNote:'3-4 weeks ex UK'},
+    {sid:'s4',type:'Used',label:'Used',supplier:'Eco Parts', cost:308.00,inScope:true, best:false,eta:'Same Day', pno:'9124106',   mno:'--',cmt:'Grade A, low km vehicle.'},
+    {sid:'s6',type:'Used',label:'Used',supplier:'Wreckers Direct',cost:268.90,inScope:true,best:false,eta:'2-3 Days',pno:'9124106',mno:'--',cmt:''},
+  ]},
+  {id:'p7',name:'R/H SILL PANEL ASSY',num:'#5450241',list:315.23,autoSel:'s1',opts:[
+    {sid:'s2',type:'OEM',label:'OEM',supplier:'OEM Direct',  cost:269.95,inScope:true, best:false,eta:'2-3 Days',pno:'5450241',   mno:'--',cmt:''},
+    {sid:'s1',type:'AftM',label:'Cert AftM',supplier:'Parts Network',cost:105.00,inScope:true, best:true, eta:'Same Day', pno:'PN-SILL-5450',mno:'5450241',cmt:''},
+    {sid:'s4',type:'Used',label:'Used',supplier:'Eco Parts', cost:95.00, inScope:true, best:false,eta:'1-2 Days',pno:'5450241',   mno:'--',cmt:''},
+    {sid:'s6',type:'Used',label:'Used',supplier:'Wreckers Direct',cost:91.20,inScope:true,best:false,eta:'2-3 Days',pno:'5450241',mno:'--',cmt:''},
+    {sid:'s5',type:'Reco',label:'Recon',supplier:'Reco Centre',cost:198.00,inScope:true,best:false,eta:'4-5 Days',pno:'5450241',  mno:'--',cmt:'Fully reconditioned, 12 month warranty.',mandate:true,mandateInsurer:'Allianz'}
+  ]},
+  {id:'p8',name:'R/H HEADLAMP ASSY',num:'#92102-G3115',list:3200.00,autoSel:'s2',opts:[
+    {sid:'s2',type:'OEM',label:'OEM',supplier:'OEM Direct',  cost:2560.00,inScope:true,best:false,eta:'4-5 Days',pno:'92102-G3115',   mno:'--',          cmt:'Genuine OEM. Includes DRL and auto-levelling.'},
+    {sid:'s1',type:'AftM',label:'Cert AftM',supplier:'Parts Network',cost:890.00,inScope:true,best:true,eta:'1-2 Days', pno:'PN-HL-G3115', mno:'92102-G3115',cmt:'Certified replacement. Confirmed fitment.'},
+    {sid:'s3',type:'OEM',label:'OEM',supplier:'ATS Parts',   cost:940.00,inScope:true,best:false,eta:'2-3 Days',pno:'92102-G3115',   mno:'--',          cmt:''},
+  ]},
+  // ── Safety-exception demo parts, carried over from the earlier Phase 2 QuoteGrid dataset
+  // (cost/eta/comment/best/deliveryAlert values are its exact originals - see this file's
+  // git history) so Exceptions has something to demonstrate against; Phase 1's own PARTS
+  // never had an airbag/ABS-style line. Re-keyed onto Phase 1's real supplier roster above
+  // rather than Phase 2's invented supplier names. pno/mno are new (Phase 2's shape had none;
+  // Phase 1's MODIFY modal and tooltips need them) and simply mirror the pattern already used
+  // for every other part in this array.
+  {id:'p9',name:'DRIVER AIRBAG MODULE',num:'#56900-YOUI',list:1420.00,autoSel:'s6',exc:{category:'Airbag Systems'},opts:[
+    {sid:'s2',type:'OEM',label:'OEM',supplier:'OEM Direct',  cost:1150.00,inScope:true,best:false,eta:'3-5 Days',pno:'56900-YOUI',mno:'--',cmt:'Ex-stock, ships same day.',deliveryAlert:true},
+    {sid:'s1',type:'AftM',label:'Cert AftM',supplier:'Parts Network',cost:680.00,inScope:true,best:false,eta:'2-3 Days',pno:'PN-AB-56900',mno:'56900-YOUI',cmt:''},
+    {sid:'s3',type:'OEM',label:'OEM',supplier:'ATS Parts',   cost:610.00,inScope:true,best:false,eta:'1-2 Days',pno:'56900-YOUI',mno:'--',cmt:'Certified aftermarket replacement, T\u00DCV tested.'},
+    {sid:'s6',type:'Used',label:'Used',supplier:'Wreckers Direct',cost:395.00,inScope:true,best:true,eta:'Same Day',pno:'56900-YOUI',mno:'--',cmt:''},
+    {sid:'s5',type:'Reco',label:'Recon',supplier:'Reco Centre',cost:1180.00,inScope:true,best:false,eta:'2-3 Days',pno:'56900-YOUI',mno:'--',cmt:'OEM-equivalent dealer stock, freight included.'}
+  ]},
+  {id:'p10',name:'R/F ABS SPEED SENSOR',num:'#95671-YOUI',list:205.00,autoSel:'s6',exc:{category:'ABS / Braking Safety Systems'},opts:[
+    {sid:'s2',type:'OEM',label:'OEM',supplier:'OEM Direct',  cost:165.00,inScope:true,best:false,eta:'Same Day',pno:'95671-YOUI',mno:'--',cmt:'In stock, same-day dispatch.'},
+    {sid:'s3',type:'OEM',label:'OEM',supplier:'ATS Parts',   cost:74.00,inScope:true,best:false,eta:'1-2 Days',pno:'95671-YOUI',mno:'--',cmt:''},
+    {sid:'s6',type:'Used',label:'Used',supplier:'Wreckers Direct',cost:50.00,inScope:true,best:true,eta:'2-3 Days',pno:'95671-YOUI',mno:'--',cmt:''},
+    {sid:'s1',type:'AftM',label:'Cert AftM',supplier:'Parts Network',cost:159.00,inScope:true,best:false,eta:'Same Day',pno:'PN-AB-95671',mno:'95671-YOUI',cmt:''}
+  ]}
 ];
-
-/* Phase 1's 8 real parts, converted into Phase 2's {id,name,dealer,list,s:{...}} shape.
-   opt.sell/opt.rule are dropped — sell price is always computed live via MRO.resolveRule now,
-   never carried as static data. opt.cost->cost, opt.eta->etd, opt.cmt->c, opt.best->match,
-   opt.deliveryAlert->etdWarn, opt.mandate->donor, opt.photo->img (Phase 2's placeholder photo,
-   since Phase 1 never stored a real image for this line, just a boolean flag). */
-const QPARTS = [
-  { id:1, name:'FRONT BUMPER', dealer:'86510-G3700', list:659.80,
-    s:{ s2:{cost:560.83,etd:'2-3 Weeks',etdWarn:true,c:'Supplied in black only, unpainted.'},
-        s3:{cost:470.00,etd:'Same Day',match:true,c:'Genuine OEM stock item, same-day pickup available.'},
-        s1:{cost:299.00,etd:'1-2 Days',c:'Certified aftermarket.'},
-        s5:{cost:290.00,etd:'4-5 Days'} } },
-  { id:2, name:'LOWER BUMPER COVER', dealer:'86512-G3700', list:261.26,
-    s:{ s2:{cost:209.01,etd:'Same Day'},
-        s3:{cost:132.30,etd:'2-3 Days',c:'ATS parallel import.'},
-        s1:{cost:110.00,etd:'1-2 Days',match:true},
-        s4:{cost:122.43,etd:'4-5 Days'},
-        s6:{cost:105.00,etd:'2-3 Days'} } },
-  { id:3, name:'R/F OUT BUMPER BRKT', dealer:'86514-G3000', list:41.16,
-    s:{ s2:{cost:35.81,etd:'2-3 Days'},
-        s4:{cost:15.09,etd:'2-3 Weeks',etdWarn:true},
-        s6:{cost:13.88,etd:'2-3 Days'} } },
-  { id:4, name:'RIGHT HEADLAMP ASSY', dealer:'92102-G3115', list:2259.56,
-    s:{ s2:{cost:1807.65,etd:'4-5 Days'},
-        s1:{cost:1095.00,etd:'Same Day',match:true,c:'Confirmed genuine OEM stock, boxed and ready.'},
-        s4:{cost:1180.00,etd:'2-3 Days',c:'Grade A used.'},
-        s6:{cost:1050.00,etd:'2-3 Days'},
-        s5:{cost:1402.00,etd:'1-2 Days',img:PART_PHOTO} } },
-  { id:5, name:'R/BADGE "N-LINE"', dealer:'86312-G4700', list:70.14,
-    s:{ s2:{cost:61.22,etd:'2-3 Days'},
-        s4:{cost:19.80,etd:'Same Day'},
-        s6:{cost:22.80,etd:'2-3 Days'} } },
-  { id:6, name:'R/H SILL PANEL MOULD', dealer:'9124106', list:965.50,
-    s:{ s2:{cost:772.40,etd:'4-5 Days'},
-        s1:{cost:520.00,etd:'1-2 Days',match:true,c:'Certified aftermarket, confirmed fitment.'},
-        s3:{cost:340.00,etd:'4-6 Weeks',etdWarn:true},
-        s4:{cost:308.00,etd:'Same Day',c:'Grade A, low km vehicle.'},
-        s6:{cost:268.90,etd:'2-3 Days'} } },
-  { id:7, name:'R/H SILL PANEL ASSY', dealer:'5450241', list:315.23,
-    s:{ s2:{cost:269.95,etd:'2-3 Days'},
-        s1:{cost:105.00,etd:'Same Day',match:true},
-        s4:{cost:95.00,etd:'1-2 Days'},
-        s6:{cost:91.20,etd:'2-3 Days'},
-        s5:{cost:198.00,etd:'4-5 Days',c:'Fully reconditioned, 12 month warranty.',donor:true} } },
-  { id:8, name:'R/H HEADLAMP ASSY', dealer:'92102-G3115', list:3200.00,
-    s:{ s2:{cost:2560.00,etd:'4-5 Days',c:'Genuine OEM. Includes DRL and auto-levelling.'},
-        s1:{cost:890.00,etd:'1-2 Days',match:true,c:'Certified replacement. Confirmed fitment.'},
-        s3:{cost:940.00,etd:'2-3 Days'} } },
-  // ── Phase 2's safety-exception demo rows — Phase 1's own PARTS has no airbag/ABS-style
-  // line, so these are kept (re-keyed onto the Phase-1 supplier roster above) to give the
-  // Exceptions feature something to demonstrate against.
-  { id:9, name:'DRIVER AIRBAG MODULE', dealer:'56900-YOUI', list:1420.00,
-    exc:{ mode:'oem', category:'Airbag Systems' },
-    s:{ s2:{cost:1150.00,etd:'3-5 Days',etdWarn:true,c:'Ex-stock, ships same day.'},
-        s1:{cost:680.00,etd:'2-3 Days'},
-        s3:{cost:610.00,etd:'1-2 Days',c:'Certified aftermarket replacement, TÜV tested.'},
-        s6:{cost:395.00,etd:'Same Day',match:true},
-        s5:{cost:1180.00,etd:'2-3 Days',c:'OEM-equivalent dealer stock, freight included.'} } },
-  { id:10, name:'R/F ABS SPEED SENSOR', dealer:'95671-YOUI', list:205.00,
-    exc:{ mode:'oem', category:'ABS / Braking Safety Systems' },
-    s:{ s2:{cost:165.00,etd:'Same Day',c:'In stock, same-day dispatch.'},
-        s3:{cost:74.00,etd:'1-2 Days'},
-        s6:{cost:50.00,etd:'2-3 Days',match:true},
-        s1:{cost:159.00,etd:'Same Day'} } },
-];
-
-const titleCase = str => str.split(' ').map(w => w.split('/').map(seg => seg.charAt(0)+seg.slice(1).toLowerCase()).join('/')).join(' ');
-
-const ruleFor = (id, types) => (types||PART_TYPES_INIT).find(t=>t.id===id) || PART_TYPES_INIT.find(t=>t.id===id);
-const lineOffers = part => {
-  const offers = {};
-  QSUP.forEach(s=>{ const o = part.s[s.key]; if(o && !offers[s.typeId]) offers[s.typeId] = { list:part.list, cost:o.cost }; });
-  return offers;
-};
-const excAllowedTypes = (part, exceptions) => {
-  if(!part.exc) return null;
-  const g = (exceptions||[]).find(g=>g.category===part.exc.category);
-  return g ? (g.allowedTypes||[]) : null;
-};
-const excLabel = (part, exceptions, types) => {
-  const allowed = excAllowedTypes(part, exceptions);
-  if(allowed==null) return null;
-  const names = (types||PART_TYPES_INIT).filter(t=>allowed.includes(t.id)).map(t=>t.name);
-  return names.length===0 ? 'Not accepted' : names.join(' + ')+' only';
-};
-const cellAllowed = (part, sup, ageBlocked, overrides, exceptions) => {
-  const allowed = excAllowedTypes(part, exceptions);
-  if(allowed && !allowed.includes(sup.typeId)) return false;
-  if(ageBlocked(sup.typeId)) return false;
-  if(overrides && overrides[sup.typeId]===null) return false;
-  return true;
-};
-const lockKind = (part, sup, ageBlocked, overrides, exceptions) => {
-  const allowed = excAllowedTypes(part, exceptions);
-  if(allowed && !allowed.includes(sup.typeId)) return 'safety';
-  if(ageBlocked(sup.typeId)) return 'age';
-  if(overrides && overrides[sup.typeId]===null) return 'conditional';
-  return null;
-};
-const qcell = (part, sup, types, overrides, condTrace, lineOv) => {
-  const o = part.s[sup.key];
-  if(!o) return null;
-  const base = resolveRule(ruleFor(sup.typeId, types), { list:part.list, cost:o.cost });
-  const ov = overrides && overrides[sup.typeId];
-  const tr = condTrace && condTrace[sup.typeId];
-  let res = (ov!=null && ov!==base.sell)
-    ? {...base, sell:ov, capped:false, overridden:true, preOverride:base.sell, condRef:tr && tr.ref, condCapped:tr && tr.capped}
-    : base;
-  if(lineOv){
-    const sell = clauseValue({ method:lineOv.method, value:lineOv.value }, { list:part.list, cost:o.cost });
-    res = { ...res, sell, capped:false, lineOverridden:true, preLineOverride:res.sell, lineMethod:lineOv.method };
+var SEL={},QTY={},COLS=['s2','s1','s3','s4','s6','s8','s5'];
+for(var z=0;z<PARTS.length;z++){SEL[PARTS[z].id]=null;QTY[PARTS[z].id]='';}
+// Settlement discount is money off the cost price, so every cost figure and
+// every profit calculation on screen uses the NET cost.
+// Deliberate exception: Target Discount measures the buy against list using the
+// QUOTED cost, so it keeps using opt.cost directly.
+// Settlement discount is OFF by default. When off, nothing is calculated and every
+// reference to Invoice Cost / Settlement Discount is hidden - Your Cost is simply
+// the invoiced figure. SETTLEMENT_SHOW_DEALER controls whether a dealer viewing
+// the quote sees the breakdown or just the invoice cost.
+var SETTLEMENT_ON=false;
+var SETTLEMENT_SHOW_DEALER=false;
+var DEALER_VIEW=false;   // true when a dealer is viewing competitor pricing
+function settlementPct(o){
+  if(!SETTLEMENT_ON)return 0;
+  if(DEALER_VIEW&&!SETTLEMENT_SHOW_DEALER)return 0;
+  return (typeof SUP_INFO!=='undefined'&&SUP_INFO[o.sid])?(parseFloat(SUP_INFO[o.sid].disc)||0):0;
+}
+function netCost(o){return o.cost*(1-settlementPct(o)/100);}
+function _escAttr(v){return String(v==null?'':v).replace(/'/g,"\\'").replace(/"/g,'&quot;');}
+// fmt() is NOT redeclared here - window.MRO's engine script (loaded just above this one)
+// already declares a top-level `const fmt` for the same purpose ($ + thousands separators).
+// Redeclaring it here would be the exact duplicate-top-level-identifier crash this file hit
+// once before (see the METHODS fix) - Phase 1's own fmt() and the engine's produce the same
+// output for every value this grid ever shows, so reusing the engine's is safe.
+// Up/down caret for the Your Profit tooltip delta.
+// Green + up = your pick earns more than dealer; amber + down = another pick earns more.
+// Matches the Your Profit card, which uses grn/amb rather than red.
+function _profitCaret(diff){
+  if(diff===0) return '<b style="color:#6b7280">- '+fmt(0)+'</b>';
+  var col=diff>0?'#16a34a':'#d97706';
+  var arr=diff>0?'&#9650;':'&#9660;';
+  return '<b style="color:'+col+'">'+arr+' '+fmt(Math.abs(diff))+'</b>';
+}
+var TYPE_COLOR={OEM:'#2563eb',AftM:'#a855f7',Used:'#84cc16',Reco:'#f59e0b',Parallel:'#6b7280'};
+/* ---- chip legend filter ---- */
+var CHIP_FILTER=null;
+var CHIP_KEYS=['best','eta','cmt','photo','donor'];
+var CHIP_COLOR={best:'#16a34a',eta:'#d97706',cmt:'#4b5563',photo:'#0891b2',donor:'#1d4ed8'};
+function chipHas(opt,f){
+  if(!opt)return false;
+  if(f==='best')return !!opt.best;
+  if(f==='eta')return isLongETD(opt);
+  if(f==='cmt')return !!opt.cmt;
+  if(f==='photo')return !!opt.photo;
+  if(f==='donor')return !!opt.mandate;
+  return false;
+}
+function chipCount(f){
+  var n=0;
+  for(var i=0;i<PARTS.length;i++){
+    var os=PARTS[i].opts||[];
+    for(var j=0;j<os.length;j++)if(chipHas(os[j],f))n++;
   }
-  return { cost:o.cost, etd:o.etd, comment:o.c, match:o.match, etdWarn:o.etdWarn, img:o.img, donor:o.donor, res, sup, modPartNo: lineOv && lineOv.partNo };
-};
-const legendLabel = pt => {
-  const cl = pt.clauses[0];
-  return cl.method==='pctList' ? `${cl.value}% of list` : cl.method==='markupCost' ? `+${cl.value}% of cost` : METHODS[cl.method].label;
-};
+  return n;
+}
+function updateChipCounts(){
+  for(var i=0;i<CHIP_KEYS.length;i++){
+    var k=CHIP_KEYS[i],n=chipCount(k);
+    var el=document.getElementById('lgn-'+k);if(el)el.textContent=n;
+    var pill=document.getElementById('lgp-'+k);
+    if(pill){if(n===0)pill.classList.add('lp-zero');else pill.classList.remove('lp-zero');}
+  }
+}
+function setChipFilter(f){
+  if(chipCount(f)===0)return;
+  CHIP_FILTER=(CHIP_FILTER===f)?null:f;
+  for(var i=0;i<CHIP_KEYS.length;i++){
+    var pill=document.getElementById('lgp-'+CHIP_KEYS[i]);
+    if(!pill)continue;
+    if(CHIP_FILTER===CHIP_KEYS[i])pill.classList.add('lp-on');else pill.classList.remove('lp-on');
+  }
+  var tb=document.getElementById('partsTable');
+  if(tb)tb.style.setProperty('--hit',CHIP_FILTER?CHIP_COLOR[CHIP_FILTER]:'transparent');
+  render();
+}
 
-const SIGNAL_DEFS = [
-  { id:'match',   cls:'match',   label:'Dealer Part Match', color:'var(--green)',  fill:false, strokeW:3,
-    icon:<path d="M5 12l5 5L20 7"/>, popLabel:'Same part #', popDesc:(c,part)=>`matches dealer #${part.dealer}` },
-  { id:'etdWarn', cls:'etd',     label:'ETD Alert',         color:'var(--amber)',  fill:false, strokeW:2.4,
-    icon:<><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></>, popLabel:'ETD', popDesc:c=>c.etd },
-  { id:'comment', cls:'comment', label:'Comments',          color:'var(--text-3)', fill:true,
-    icon:<path d="M21 6H3v12h4v3l3-3h11z"/>, popLabel:'Comment', popDesc:c=>`"${c.comment}"` },
-  { id:'img',     cls:'img',     label:'Images',            color:'var(--blue)',   fill:false, strokeW:2.4,
-    icon:<><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10.5" r="1.5"/><path d="M21 15l-5-5-4 4-3-3-6 6"/></>, popLabel:'Image', popDesc:()=>'reference photo attached' },
-  { id:'donor',   cls:'donor',   label:'Donor Part',        color:'var(--purple)', fill:true,
-    icon:<path d="M12 3l2.5 5 5.5.8-4 3.9.9 5.5L12 15.8 7.1 18.2l.9-5.5-4-3.9 5.5-.8z"/>, popLabel:'Donor part', popDesc:()=>'sourced from a written-off donor vehicle' },
-];
-const signalIcon = (def, size) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill={def.fill?'currentColor':'none'} stroke={def.fill?undefined:'currentColor'} strokeWidth={def.fill?undefined:def.strokeW}>{def.icon}</svg>
-);
+/* ══════════════════ MRO WIRING ══════════════════
+   Everything below this banner and down to sellPrice()/getEffectiveRule()/rulePillText() is new:
+   it is what replaces Phase 1's original hardcoded opt.sell/opt.rule with a live call into
+   window.MRO. mroTypeIdForOpt() preserves Phase 1's existing type-inference exactly (ATS Parts
+   is priced as a parallel importer despite its on-screen "OEM" label - see getEffectiveRule() in
+   the pre-merge Phase 1 source, which only ever treated OEM Direct/s2 as true dealer OEM). */
+function mroTypeIdForOpt(opt){
+  if(opt.type==='OEM') return (opt.sid==='s2') ? 'oem' : 'parallel';
+  var map={AftM:'aftermarket',Reco:'recon',Used:'recycled'};
+  return map[opt.type] || 'parallel';
+}
+var MRO_TYPE_LABEL={oem:'OEM',aftermarket:'Aftermarket',recon:'Reconditioned',recycled:'Recycled',parallel:'Parallel'};
+function activeMroTypes(){ return (activeRuleId!=null) ? window.MRO.getActiveTypes(activeRuleId) : window.MRO.PART_TYPES_INIT; }
+function activeMroAgeRules(){ return (activeRuleId!=null) ? window.MRO.getActiveAgeRules(activeRuleId) : window.MRO.VEHICLE_AGE_RULES_INIT; }
+function activeMroCondRules(){ return (activeRuleId!=null) ? window.MRO.getActiveCondRules(activeRuleId) : window.MRO.COND_RULES_INIT; }
+function activeMroExceptions(){ return (activeRuleId!=null) ? window.MRO.getActiveExceptions(activeRuleId) : window.MRO.EXCEPTION_GROUPS; }
+function mroTypeRule(typeId, types){
+  var list=types||activeMroTypes();
+  for(var i=0;i<list.length;i++){ if(list[i].id===typeId) return list[i]; }
+  var fb=window.MRO.PART_TYPES_INIT;
+  for(var j=0;j<fb.length;j++){ if(fb[j].id===typeId) return fb[j]; }
+  return null;
+}
+// This part's safety-exception category (if any) restricted to whichever type(s) the active
+// rule's Exceptions config currently allows for that category. null = no exception on this part.
+function partExceptionAllowedTypes(part, exceptions){
+  if(!part.exc) return null;
+  var list=exceptions||activeMroExceptions();
+  for(var i=0;i<list.length;i++){ if(list[i].category===part.exc.category) return list[i].allowedTypes||[]; }
+  return null;
+}
+function partExceptionLabel(part, exceptions, types){
+  var allowed=partExceptionAllowedTypes(part, exceptions);
+  if(allowed==null) return null;
+  var all=types||activeMroTypes();
+  var names=[];
+  for(var i=0;i<all.length;i++){ if(allowed.indexOf(all[i].id)>-1) names.push(all[i].name); }
+  return names.length===0 ? 'Not accepted' : names.join(' + ')+' only';
+}
+// One offer per type per part (first supplier column wins), for feeding resolveConditional().
+function lineOffersForPart(part){
+  var offers={};
+  for(var c=0;c<COLS.length;c++){
+    var sid=COLS[c],opt=null;
+    for(var k=0;k<part.opts.length;k++){ if(part.opts[k].sid===sid){opt=part.opts[k];break;} }
+    if(!opt) continue;
+    var tid=mroTypeIdForOpt(opt);
+    if(!offers[tid]) offers[tid]={list:part.list, cost:opt.cost};
+  }
+  return offers;
+}
+function partCondOverrides(part, types, condRules){
+  var result=window.MRO.resolveConditional(types, lineOffersForPart(part), condRules);
+  var overrides={}, trace={};
+  result.trace.forEach(function(t){ overrides[t.target]=t.after; trace[t.target]=t; });
+  return {overrides:overrides, trace:trace};
+}
+function offerAllowed(typeId, part, ageRules, exceptions, condOverrides){
+  var excAllowed=partExceptionAllowedTypes(part, exceptions);
+  if(excAllowed && excAllowed.indexOf(typeId)===-1) return false;
+  if(!window.MRO.ageAllowsType(typeId, VEHICLE_MODEL_YEAR, VEHICLE_BRAND, ageRules)) return false;
+  if(condOverrides && condOverrides[typeId]===null) return false;
+  return true;
+}
+function offerLockReason(typeId, part, ageRules, exceptions, condOverrides){
+  var excAllowed=partExceptionAllowedTypes(part, exceptions);
+  if(excAllowed && excAllowed.indexOf(typeId)===-1) return 'safety';
+  if(!window.MRO.ageAllowsType(typeId, VEHICLE_MODEL_YEAR, VEHICLE_BRAND, ageRules)) return 'age';
+  if(condOverrides && condOverrides[typeId]===null) return 'conditional';
+  return null;
+}
+// Full resolution for one cell: base type rule -> conditional cross-type override (if any) ->
+// per-cell MODIFY override (if any) -> allowed/lockReason. Mirrors what the deleted QuoteGrid's
+// qcell() computed, as plain data instead of React state.
+function resolveCell(part, opt){
+  var types=activeMroTypes();
+  var typeId=mroTypeIdForOpt(opt);
+  var pt=mroTypeRule(typeId, types);
+  var ageRules=activeMroAgeRules(), exceptions=activeMroExceptions(), condRules=activeMroCondRules();
+  var base=pt ? window.MRO.resolveRule(pt, {list:part.list, cost:opt.cost}) : {na:true,sell:0,steps:[],capped:false};
+  var cond=partCondOverrides(part, types, condRules);
+  var res=base, overridden=false, preOverride=null, condRef=null, condCapped=false;
+  var ov=cond.overrides[typeId];
+  if(ov!=null && !base.na && ov!==base.sell){
+    overridden=true; preOverride=base.sell;
+    var tr=cond.trace[typeId];
+    condRef=tr?tr.ref:null; condCapped=tr?tr.capped:false;
+    res={na:false, sell:ov, steps:base.steps, winnerIdx:base.winnerIdx, capped:false, cap:base.cap};
+  }
+  var lineOverridden=false, preLineOverride=null, lineMethod=null;
+  var pov=getOverride(part,opt);
+  if(pov){
+    lineOverridden=true; preLineOverride=res.sell;
+    var sell2;
+    if(pov.mode==='manual') sell2=pov.sell;
+    else if(pov.mode==='markup') sell2=opt.cost*(1+pov.pct/100);
+    else sell2=part.list*(pov.pct/100);
+    res={na:false, sell:sell2, steps:res.steps, winnerIdx:res.winnerIdx, capped:false, cap:res.cap, preCapSell:res.preCapSell};
+    lineMethod=pov.mode;
+  }
+  return {
+    typeId:typeId, pt:pt, res:res,
+    overridden:overridden, preOverride:preOverride, condRef:condRef, condCapped:condCapped,
+    lineOverridden:lineOverridden, preLineOverride:preLineOverride, lineMethod:lineMethod,
+    allowed:offerAllowed(typeId, part, ageRules, exceptions, cond.overrides),
+    lockReason:offerLockReason(typeId, part, ageRules, exceptions, cond.overrides)
+  };
+}
+function lockTooltipHtml(part, opt, cell){
+  var tcol=TYPE_COLOR[opt.type]||'#337ab7';
+  var msg = cell.lockReason==='age'
+    ? 'Not acceptable — blocked by the active vehicle age rule for this part type.'
+    : cell.lockReason==='safety'
+    ? 'Not acceptable under this rule — '+(partExceptionLabel(part, activeMroExceptions(), activeMroTypes())||'restricted')+'.'
+    : 'Not acceptable — blocked by a conditional rule on this line.';
+  return '<div class="tth" style="color:'+tcol+'">'+opt.supplier+' &middot; '+opt.label+'</div>'
+    +'<div class="ttflag"><span class="ttf-icon ttf-amber"><i class="fa fa-lock" style="font-size:7px;color:#fff"></i></span><span>'+msg+'</span></div>';
+}
+function render(){
+  var h='';
+  for(var i=0;i<PARTS.length;i++){
+    var p=PARTS[i],ss=SEL[p.id],rowHasSel=(ss!==null);
+    h+='<tr data-pid="'+p.id+'">';
+    h+='<td class="new-part-cell"><div class="part-chk-row">'
+      +'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">'
+      +'<span style="font-size:10px;font-weight:600;color:#111827;min-width:16px">'+(i+1)+'</span>'
+      +'<input type="text" inputmode="numeric" id="qty-'+p.id+'" value="'+QTY[p.id]+'" placeholder="" style="width:24px;border:1px solid #d1d5db;border-radius:3px;padding:3px 4px;font-size:11px;text-align:center;color:#1f2937;font-family:inherit;-moz-appearance:textfield" onclick="event.stopPropagation()" onchange="QTY[\''+p.id+'\']=this.value">'
+      +'</div>'
+      +'<div><div style="font-weight:700;color:#222;font-size:12px">'+p.name+'</div>'
+      +'<div style="font-size:11px;color:#6b7280;margin-top:2px">Dealer: '+p.num+'</div>'
+      +'<div style="font-size:11px;color:#6b7280">List: '+fmt(p.list)+' ea</div>'
+      +'</div></div></td>';
+    for(var c=0;c<COLS.length;c++){
+      var sid=COLS[c],opt=null;
+      for(var k=0;k<p.opts.length;k++){if(p.opts[k].sid===sid){opt=p.opts[k];break;}}
+      if(!opt){h+='<td class="new-empty-cell'+(CHIP_FILTER?' npc-dim':'')+'" style="text-align:center;color:#9ca3af;font-size:14px">-</td>';continue;}
+      var isSel=(ss===sid),tcol=TYPE_COLOR[opt.type]||'#337ab7';
+      var en=_escAttr(p.name),ep=_escAttr(opt.pno),es=_escAttr(opt.supplier);
+      var _fcls=CHIP_FILTER?(chipHas(opt,CHIP_FILTER)?' npc-hit':' npc-dim'):'';
+      var _cell=resolveCell(p,opt);
+      if(!_cell.allowed){
+        h+='<td class="new-price-cell npc-locked'+_fcls+' ttw">';
+        var _etdL=isLongETD(opt);
+        if(opt.best||opt.mandate||opt.cmt||opt.photo||_etdL){
+          h+='<div class="corner-stack">';
+          if(opt.best) h+='<div class="chip-sq chip-flame"><i class="fa fa-fire" style="font-size:9px;color:#fff"></i></div>';
+          if(opt.mandate) h+='<div class="chip-sq chip-star"><i class="fa fa-star" style="font-size:8px;color:#fff"></i></div>';
+          if(opt.cmt) h+='<div class="chip-sq chip-info"><i class="fa fa-comment" style="font-size:8px;color:#4b5563"></i></div>';
+          if(opt.photo) h+='<div class="chip-sq chip-photo"><i class="fa fa-camera" style="font-size:8px;color:#fff"></i></div>';
+          if(_etdL) h+='<div class="chip-sq chip-etd"><i class="fa fa-clock-o" style="font-size:9px;color:#fff"></i></div>';
+          h+='</div>';
+        }
+        var _lockLbl=_cell.lockReason==='age'?'AGE RULE':_cell.lockReason==='safety'?(partExceptionLabel(p,activeMroExceptions(),activeMroTypes())||'RESTRICTED').toUpperCase():'RULE BLOCKED';
+        h+='<div class="npc-inner"><div class="npc-type-top" style="color:'+tcol+'">'+opt.label+'</div>'
+          +'<span class="bdg boos"><i class="fa fa-lock" style="font-size:8px"></i> '+_lockLbl+'</span></div>';
+        h+='<div class="tt">'+lockTooltipHtml(p,opt,_cell)+'</div>';
+        h+='</td>';
+        continue;
+      }
+      h+='<td class="new-price-cell'+(isSel?' npc-sel':'')+_fcls+' ttw" onclick="toggle(\''+p.id+'\',\''+sid+'\')">';
+      var _etd=isLongETD(opt);
+      if(opt.best||opt.mandate||opt.cmt||opt.photo||_etd){
+        h+='<div class="corner-stack">';
+        if(opt.best) h+='<div class="chip-sq chip-flame"><i class="fa fa-fire" style="font-size:9px;color:#fff"></i></div>';
+        if(opt.mandate) h+='<div class="chip-sq chip-star"><i class="fa fa-star" style="font-size:8px;color:#fff"></i></div>';
+        if(opt.cmt) h+='<div class="chip-sq chip-info"><i class="fa fa-comment" style="font-size:8px;color:#4b5563"></i></div>';
+        if(opt.photo) h+='<div class="chip-sq chip-photo"><i class="fa fa-camera" style="font-size:8px;color:#fff"></i></div>';
+        if(_etd) h+='<div class="chip-sq chip-etd"><i class="fa fa-clock-o" style="font-size:9px;color:#fff"></i></div>';
+        h+='</div>';
+      }
+      var _sell=_cell.res.na?0:_cell.res.sell;
+      var _nc=netCost(opt);
+      var _markup=_nc>0?((_sell-_nc)/_nc*100):0;
+      var _profit=_sell-_nc;
+      var _marginPct=_sell>0?(_profit/_sell*100):0;
+      h+='<div class="npc-inner-profit">';
+      if(CELL_LAYOUT_MODE==='profit'){
+        h+='<div class="npc-type-top" style="color:'+tcol+'">'+opt.label+'</div>';
+        h+='<span class="npc-amt">'+fmt(_nc)+'</span>';
+        h+='<div class="npc-profit-line">+'+fmt(_profit)+'</div>';
+      } else if(CELL_LAYOUT_MODE==='margin'){
+        h+='<div class="npc-type-top" style="color:'+tcol+'">'+opt.label+'</div>';
+        h+='<span class="npc-amt">'+fmt(_nc)+'</span>';
+        h+='<div class="npc-profit-line">'+_marginPct.toFixed(1)+'%</div>';
+      } else {
+        h+='<div class="npc-type-top" style="color:'+tcol+'">'+opt.label+'</div>';
+        h+='<span class="npc-amt">'+fmt(_nc)+'</span>';
+        h+='<div class="npc-profit-line" style="visibility:hidden">+$0.00</div>';
+      }
+      h+='</div>';
+      h+='<button class="npc-modify" onclick="event.stopPropagation();openModal(this,\''+p.id+'\',\''+sid+'\',\''+en+'\',\''+es+'\',\''+ep+'\')">&#9998; MODIFY</button>';
+      // Dealer-only discount. Non-dealer suppliers never show one, so no fallback.
+      var _discPct=(opt.sid==='s2')?(opt.discPct!=null?opt.discPct:(p.list>0?((p.list-opt.cost)/p.list*100):null)):null;
+      var _rulePill=rulePillText(opt,p);
+      // Settlement discount comes from SUP_INFO, so it covers any supplier that has one
+      // (Parts Network 5%, Reco Centre 2.5%) rather than being hardcoded.
+      var _setl=settlementPct(opt);
+      var _netCost=_nc;
+      var _setlLbl=(_setl%1===0?_setl.toFixed(0):_setl.toFixed(2).replace(/0$/,''))+'%';
+      var _discBit=(opt.sid==='s2'&&_discPct!=null)?('Target Discount '+_discPct.toFixed(1)+'%'+(Math.round(_discPct*10)/10<20?' ⚠':'')):null;
+      h+='<div class="tt"><div class="tth" style="color:'+tcol+'">'+opt.supplier+' &middot; '+opt.label+'</div>'
+        +(opt.best?'<div class="ttflag"><span class="ttf-icon ttf-green"><i class="fa fa-fire" style="font-size:8px;color:#fff"></i></span><span><b>Same part #</b> - matches dealer #'+opt.pno+'</span></div>':'')
+        +(opt.mandate?'<div class="ttflag"><span class="ttf-icon ttf-blue" style="font-size:9px;color:#fff">&#9733;</span><span><b>Donor Part Match</b> - Matches '+(opt.mandateInsurer||'insurer')+' donor part requirement</span></div>':'')
+        +(opt.deliveryAlert?'<div class="ttflag"><span class="ttf-icon ttf-amber"><i class="fa fa-clock-o" style="font-size:8px;color:#fff"></i></span><span style="color:#d97706"><b>ETD</b> - '+(opt.deliveryNote||'ETD may slip')+'</span></div>':'')
+        +(opt.cmt?'<div class="ttflag"><span class="ttf-icon ttf-grey"><i class="fa fa-comment" style="font-size:8px;color:#fff"></i></span><span><b>Comment</b> - &ldquo;'+opt.cmt+'&rdquo;</span></div>':'')
+        +(opt.photo?'<div class="ttflag"><span class="ttf-icon ttf-skyblue"><i class="fa fa-camera" style="font-size:8px;color:#fff"></i></span><span><b>Image</b> - Photo attached</span></div><div style="text-align:center;margin:2px 0 6px"><img src="'+getDemoPhotoSrc()+'" onclick="event.stopPropagation();openHeadlampPhoto()" style="width:100%;max-height:70px;object-fit:cover;border-radius:3px;cursor:pointer;border:1px solid #e5e7eb"></div>':'')
+        +((opt.best||opt.mandate||opt.deliveryAlert||opt.cmt||opt.photo)?'<div style="border-top:1px solid #f3f4f6;margin:2px 0 4px"></div>':'')
+        +(!opt.best?'<div class="ttr"><span class="ttl">Supplier Part No.</span><span class="ttv">'+opt.pno+'</span></div>':'')
+        +(opt.mno&&opt.mno!=='--'?'<div class="ttr"><span class="ttl">Modified Part No.</span><span class="ttv">'+opt.mno+'</span></div>':'')
+        +'<div class="ttr"><span class="ttl">List Price</span><span class="ttv">'+fmt(p.list)+'</span></div>'
+        // dealer discount is off LIST, so it sits directly under List Price
+        +(_discPct!=null?'<div class="ttr-sub"><span class="ttl">Dealer Discount <span class="ttq">'+_discPct.toFixed(0)+'% (target 20%)'+'</span></span><span class="ttv">-'+fmt(p.list-opt.cost)+'</span></div>':'')
+        +'<div class="ttr"><span class="ttl">'+(_setl>0?'Invoice Cost':'Your Cost')+'</span><span class="ttv">'+fmt(opt.cost)+'</span></div>'
+        // settlement is off COST, so it sits under Your Cost with Actual Cost beneath
+        +(_setl>0?'<div class="ttr-sub"><span class="ttl">Settlement Discount <span class="ttq">'+_setlLbl+'</span></span><span class="ttv">-'+fmt(opt.cost-_netCost)+'</span></div>':'')
+        +(_setl>0?'<div class="ttr"><span class="ttl">Your Cost</span><span class="ttv">'+fmt(_netCost)+'</span></div>':'')
+        // rule-trace rows - the only genuinely new content in this tooltip: what the MRO
+        // engine actually did to reach this sell price, equivalent to what the deleted
+        // QuoteGrid's CellPop popover showed.
+        +(_cell.res.na?'<div class="ttr-sub"><span class="ttl">⛔ Not accepted under this rule</span><span class="ttv">$0.00</span></div>':'')
+        +(_cell.overridden?'<div class="ttr-sub"><span class="ttl">⇄ Matched to '+(window.MRO.PT_NAME(_cell.condRef)||'other type')+'\'s rate'+(_cell.condCapped?' &middot; capped':'')+'</span><span class="ttv">'+fmt(_cell.preOverride)+' &rarr; '+fmt(_cell.res.sell)+'</span></div>':'')
+        +(_cell.res.capped?'<div class="ttr-sub"><span class="ttl">⛰ Cap applied'+(_cell.pt&&_cell.pt.cap&&window.MRO.CAP_TYPES[_cell.pt.cap.type]?' ('+window.MRO.CAP_TYPES[_cell.pt.cap.type].label+')':'')+'</span><span class="ttv">'+fmt(_cell.res.preCapSell!=null?_cell.res.preCapSell:_cell.res.sell)+' &rarr; '+fmt(_cell.res.sell)+'</span></div>':'')
+        +(_cell.lineOverridden?'<div class="ttr-sub"><span class="ttl">&#9998; Manually overridden for this line</span><span class="ttv">'+fmt(_cell.preLineOverride)+' &rarr; '+fmt(_cell.res.sell)+'</span></div>':'')
+        +'<div class="ttr" style="border-bottom:none"><span class="ttl" style="display:inline-flex;align-items:center;gap:5px">Your Sell <span style="background:#f1f5f9;color:#6b7280;border-radius:10px;padding:1px 7px;font-size:9px;font-weight:600">'+_rulePill+'</span></span><span class="ttv">'+fmt(_sell)+'</span></div>'
+        +'<div style="border-top:1px solid #f3f4f6;margin:3px 0"></div>'
+        +'<div class="ttr" style="border-bottom:none;padding-bottom:0"><span class="ttl">Your Profit</span><span class="ttv grn">'+fmt(_profit)+'</span></div>'
+        +'<div style="font-size:10px;color:#9ca3af;padding:2px 0 3px">Margin on sell '+(_sell>0?(_profit/_sell*100):0).toFixed(1)+'% &nbsp;|&nbsp; Markup on cost '+_markup.toFixed(1)+'%</div>'
+        +'</div></td>';
+    }
+    h+='<td colspan="5" class="new-empty-slot"></td>';
+    h+='</tr>';
+  }
+  // Totals row
+  h+='<tr class="new-totals-row"><td class="new-totals-label">Supplier Total (ex GST)</td>';
+  var st2={};
+  for(var ti=0;ti<PARTS.length;ti++){for(var tj=0;tj<PARTS[ti].opts.length;tj++){var to2=PARTS[ti].opts[tj];if(!st2[to2.sid])st2[to2.sid]=0;st2[to2.sid]+=to2.cost;}}
+  for(var tc2=0;tc2<COLS.length;tc2++){h+='<td class="new-totals-val">'+(st2[COLS[tc2]]?fmt(st2[COLS[tc2]]):'-')+'</td>';}
+  h+='<td colspan="5" class="new-totals-val" style="background:#fff"></td>';
+  h+='</tr>';
+  document.getElementById('tbody').innerHTML=h;
+}
+var SUMMARY_VIEW='new';
+var CELL_LAYOUT_MODE='profit';
+function setCellLayoutMode(mode){
+  CELL_LAYOUT_MODE=mode;
+  render();
+}
+window.setCellLayoutMode=setCellLayoutMode;
+function setSummaryView(mode){
+  SUMMARY_VIEW=mode;
+  document.getElementById('summary-new').style.display=(mode==='new')?'flex':'none';
+  document.getElementById('summary-classic').style.display=(mode==='classic')?'flex':'none';
+  var t=document.getElementById('summary-toggle');
+  if(t){var sp=t.querySelectorAll('span');for(var i=0;i<sp.length;i++){sp[i].classList.toggle('sv-active',sp[i].getAttribute('data-mode')===mode);}}
+}
+function updateTotals(){
+  var ct=0,st=0,matched=0,sc=0,dt=0,total=PARTS.length;
+  for(var i=0;i<PARTS.length;i++){
+    var p=PARTS[i],sid=SEL[p.id];if(!sid)continue;sc++;dt+=p.list;
+    for(var j=0;j<p.opts.length;j++){if(p.opts[j].sid===sid){var o=p.opts[j];ct+=netCost(o);var _s=sellPrice(p,o);st+=_s;if(o.inScope)matched++;break;}}
+  }
+  var pv=st-ct,mp=st>0?(pv/st*100):0,pct=total>0?Math.round((matched/total)*100):0;
+  var pcol=pct>=85?'#16a34a':pct>=65?'#d97706':pct>0?'#dc2626':'#111827';
+  document.getElementById('s-cost').textContent=fmt(ct);
+  document.getElementById('s-sell').textContent=fmt(st);
+  document.getElementById('s-profit').textContent=fmt(pv);
+  var scEl=document.getElementById('sel-count');if(scEl)scEl.textContent=sc;
+  // Clear Selections: inert until something is picked.
+  var _clr=document.getElementById('btn-clear-sel');
+  if(_clr)_clr.disabled=(sc===0);
+  var totalList=0;for(var tl=0;tl<PARTS.length;tl++)totalList+=PARTS[tl].list;
 
-/* ═══ window.ALL_RULES bridge — reimplements the real Settings↔Check-Price link that used to
-   live in Phase 1's now-deleted vanilla grid script. Dashboard's own useEffect (kept verbatim
-   elsewhere in this document) already calls window.syncRulesFromSettings(merged) on every
-   render wanting exactly this to exist — this script runs before the Settings script (see the
-   document's script order) so it's guaranteed to be defined before Dashboard first mounts.
-   Unlike the old vanilla bridge, ids here are the plain numeric Dashboard id (no 'sys-' prefix)
-   so the same id can double as the ruleId key into MRO.getActiveTypes()/etc. ═══ */
-window.ALL_RULES = [];
-window.syncRulesFromSettings = function(list){
-  if(!list) return;
-  window.ALL_RULES.length = 0;
-  list.forEach(r=>{
-    window.ALL_RULES.push({
-      id:r.id, insurer:r.insurer,
-      oem:r.oem, aftm:r.aftm, reco:r.reco, parallel:r.parallel, recycled:r.recycled,
-      isDefault:!!r.isDefault, isSystem:!!r.isSystem,
-      debtors:r.debtors||[], notAccepted:r.notAccepted||[], exceptions:r.exceptions||[],
+  // -- Dealer benchmark (must run before tooltips and badges) --
+  var dealerCost=0,dealerProfit=0;
+  for(var _dp=0;_dp<PARTS.length;_dp++){
+    var _pp=PARTS[_dp];if(!SEL[_pp.id])continue;
+    var _s2=null;for(var _dj=0;_dj<_pp.opts.length;_dj++){if(_pp.opts[_dj].sid==='s2'){_s2=_pp.opts[_dj];break;}}
+    if(!_s2)continue;
+    dealerCost+=netCost(_s2);
+    var _ds=sellPrice(_pp,_s2);
+    dealerProfit+=(_ds-netCost(_s2));
+  }
+  var pdiff=pv-dealerProfit;
+  var _spEl=document.getElementById('s-profit-wrap');
+  if(_spEl){
+    _spEl.className='sv '+(pdiff>=0?'grn':'amb');
+    // accent bar follows the same condition, so card edge and figure can't disagree
+    var _pcard=_spEl.closest('.si');
+    if(_pcard) _pcard.style.setProperty('--accent',pdiff>=0?'#16a34a':'#d97706');
+  }
+  var dealerSell=dealerCost+dealerProfit;
+  var dealerMarginPct=dealerSell>0?(dealerProfit/dealerSell*100):0;
+  var dealerMarkupPct=dealerCost>0?(dealerProfit/dealerCost*100):0;
+  var markupPct=ct>0?(pv/ct*100):0;
+
+  // Tooltip values
+  var tcl=document.getElementById('tip-cost-list');
+  var tsl=document.getElementById('tip-sell-list'),tsv=document.getElementById('tip-sell-vs'),tss=document.getElementById('tip-sell-sav');
+  var tpd=document.getElementById('tip-profit-dealer'),tpda=document.getElementById('tip-profit-dealer-abs'),tpmc=document.getElementById('tip-profit-margin-calc'),tpkc=document.getElementById('tip-profit-markup-calc');
+  var tjl=document.getElementById('tip-jobsaving-list'),tjs=document.getElementById('tip-jobsaving-sell');
+  var _insurerShort=QUOTE_INSURER.split(' ')[0];
+  var _tsw=document.getElementById('tip-sell-what');if(_tsw)_tsw.textContent='What you charge '+_insurerShort+' - set by each part\'s margin rule.';
+  if(sc===0){
+    var _dt0=0;for(var _ti=0;_ti<PARTS.length;_ti++){var _s2t=null;for(var _tj=0;_tj<PARTS[_ti].opts.length;_tj++){if(PARTS[_ti].opts[_tj].sid==='s2'){_s2t=PARTS[_ti].opts[_tj];break;}}if(_s2t)_dt0+=_s2t.cost;}
+    if(tcl)tcl.textContent=fmt(_dt0);
+    if(tsl)tsl.textContent=fmt(totalList);
+    if(tsv)tsv.textContent='No parts selected';
+    if(tss)tss.textContent='-';
+    if(tpd)tpd.textContent='-';
+    if(tpda)tpda.textContent='-';
+    if(tpmc)tpmc.textContent='-';
+    if(tpkc)tpkc.textContent='-';
+    if(tjl)tjl.textContent='-';
+    if(tjs)tjs.textContent='-';
+    var jsElReset=document.getElementById('s-jobsaving');jsElReset.textContent='$0.00';jsElReset.className='sv';
+  } else {
+    var costPct=dealerCost>0?(Math.abs(ct-dealerCost)/dealerCost*100):0;
+    var costOfDealerPct=dealerCost>0?(ct/dealerCost*100):0;
+    var sellDiff=st-dt,sellPct=dt>0?(Math.abs(sellDiff)/dt*100):0;
+    var sellOfListPct=dt>0?(st/dt*100):0;
+    var sellSaving=dt-st,sellSavingPct=dt>0?(sellSaving/dt*100):0;
+    var _cvDealer=ct-dealerCost,_cvDir=(_cvDealer<=0?fmt(Math.abs(_cvDealer))+' below dealer':fmt(_cvDealer)+' above dealer')+' ('+costOfDealerPct.toFixed(1)+'% of dealer)';
+    var sellDir=(sellDiff<=0?fmt(Math.abs(sellDiff))+' below list':fmt(sellDiff)+' above list')+' ('+sellOfListPct.toFixed(1)+'% of list)';
+    if(tcl)tcl.textContent=fmt(dealerCost);
+    if(tsl)tsl.textContent=fmt(dt);
+    if(tsv)tsv.textContent=sellDir;
+    if(tss)tss.textContent=sellSaving>0?sellSavingPct.toFixed(1)+'% below list':'-';
+    if(tpd)tpd.innerHTML=_profitCaret(pdiff);
+    if(tpda)tpda.textContent=fmt(dealerProfit);
+    if(tpmc)tpmc.textContent=mp.toFixed(1)+'%';
+    if(tpkc)tpkc.textContent=markupPct.toFixed(1)+'%';
+    if(tjl)tjl.textContent=fmt(dt);
+    if(tjs)tjs.textContent=fmt(st);
+    var jsEl=document.getElementById('s-jobsaving');
+    jsEl.textContent=(sellSaving>=0?'':'-')+fmt(Math.abs(sellSaving));
+    jsEl.className='sv';
+  }
+
+  // Card totals + tooltip-only supporting detail (no visible sub-copy)
+  var tprofitMargin=document.getElementById('s-profit-margin');
+  var tcostVs=document.getElementById('tip-cost-vs'),tjobSaves=document.getElementById('tip-jobsaving-saves');
+  if(sc===0){
+    var listTotal2=0,dealerTotal=0;
+    for(var _i=0;_i<PARTS.length;_i++){
+      listTotal2+=PARTS[_i].list;
+      var _ps2=null;for(var _pj=0;_pj<PARTS[_i].opts.length;_pj++){if(PARTS[_i].opts[_pj].sid==='s2'){_ps2=PARTS[_i].opts[_pj];break;}}
+      if(_ps2) dealerTotal+=netCost(_ps2);
+    }
+    if(tcostVs)tcostVs.textContent='-';
+    document.getElementById('s-profit').textContent='$0.00';
+    if(tprofitMargin)tprofitMargin.textContent='(0%)';
+    if(tjobSaves)tjobSaves.textContent='-';
+  } else {
+    var cdiff=ct-dealerCost,ccol=cdiff===0?'#6b7280':cdiff<0?'#16a34a':'#ef4444',carr=cdiff===0?'-':cdiff<0?'&#9660;':'&#9650;';
+    if(tcostVs)tcostVs.innerHTML='<b style="color:'+ccol+'">'+carr+' '+fmt(Math.abs(cdiff))+'</b>';
+    var svl=st-dt;
+
+    if(tprofitMargin)tprofitMargin.textContent='('+mp.toFixed(1)+'%)';
+    if(tpd)tpd.innerHTML=_profitCaret(pdiff);
+    if(tjobSaves)tjobSaves.innerHTML='<b style="color:'+(sellSaving===0?'#6b7280':sellSaving>0?'#16a34a':'#ef4444')+'">'+_insurerShort+' '+fmt(Math.abs(sellSaving))+'</b>';
+  }
+
+  // -- Classic 3-box view (Dealer Profit / Selected Profit / Job Saving) --
+  var ccDealerP=document.getElementById('cc-dealer-profit'),ccDealerMk=document.getElementById('cc-dealer-markup'),ccDealerText=document.getElementById('cc-dealer-text'),ccDealerSell=document.getElementById('cc-dealer-sell'),ccDealerPctTip=document.getElementById('cc-dealer-pct-tip'),ccDealerMkTip=document.getElementById('cc-dealer-markup-tip');
+  var ccSelP=document.getElementById('cc-selected-profit'),ccSelMk=document.getElementById('cc-selected-markup'),ccSelText=document.getElementById('cc-selected-text'),ccSelSell=document.getElementById('cc-selected-sell'),ccSelPctTip=document.getElementById('cc-selected-pct-tip'),ccSelMkTip=document.getElementById('cc-selected-markup-tip');
+  var ccJob=document.getElementById('cc-jobsaving'),ccJobText=document.getElementById('cc-jobsaving-text'),ccJobDealer=document.getElementById('cc-jobsaving-dealer'),ccJobSelected=document.getElementById('cc-jobsaving-selected');
+  if(sc===0){
+    if(ccDealerP)ccDealerP.textContent='$0.00';if(ccDealerMk)ccDealerMk.textContent='(0%)';if(ccDealerText)ccDealerText.innerHTML='Sell Price <b style="color:#6b7280">$0.00</b>';if(ccDealerSell)ccDealerSell.textContent='$0.00';if(ccDealerPctTip)ccDealerPctTip.textContent='-';if(ccDealerMkTip)ccDealerMkTip.textContent='-';
+    if(ccSelP)ccSelP.textContent='$0.00';if(ccSelMk)ccSelMk.textContent='(0%)';if(ccSelText)ccSelText.innerHTML='Sell Price <b style="color:#6b7280">$0.00</b>';if(ccSelSell)ccSelSell.textContent='$0.00';if(ccSelPctTip)ccSelPctTip.textContent='-';if(ccSelMkTip)ccSelMkTip.textContent='-';
+    if(ccJob){ccJob.textContent='$0.00';ccJob.className='sv gry';}if(ccJobText)ccJobText.textContent=_insurerShort+' saves vs full list';if(ccJobDealer)ccJobDealer.textContent='-';if(ccJobSelected)ccJobSelected.textContent='-';
+  } else {
+    if(ccDealerP)ccDealerP.textContent=fmt(dealerProfit);
+    if(ccDealerMk)ccDealerMk.textContent='('+dealerMarkupPct.toFixed(1)+'%)';
+    if(ccDealerText)ccDealerText.innerHTML='Sell Price <b style="color:#6b7280">'+fmt(dealerSell)+'</b>';
+    if(ccDealerSell)ccDealerSell.textContent=fmt(dealerSell);
+    if(ccDealerPctTip)ccDealerPctTip.textContent=dealerMarginPct.toFixed(1)+'% (Profit ÷ Sell)';
+    if(ccDealerMkTip)ccDealerMkTip.textContent=dealerMarkupPct.toFixed(1)+'% (Profit ÷ Cost)';
+
+    if(ccSelP)ccSelP.textContent=fmt(pv);
+    if(ccSelMk)ccSelMk.textContent='('+markupPct.toFixed(1)+'%)';
+    if(ccSelText)ccSelText.innerHTML='Sell Price <b style="color:#6b7280">'+fmt(st)+'</b>';
+    if(ccSelSell)ccSelSell.textContent=fmt(st);
+    if(ccSelPctTip)ccSelPctTip.textContent=mp.toFixed(1)+'% (Profit ÷ Sell)';
+    if(ccSelMkTip)ccSelMkTip.textContent=markupPct.toFixed(1)+'% (Profit ÷ Cost)';
+
+    if(ccJob){ccJob.textContent=(sellSaving>=0?'':'-')+fmt(Math.abs(sellSaving));ccJob.className='sv'+(sellSaving===0?' gry':sellSaving>0?' grn':' red');}
+    if(ccJobText)ccJobText.textContent=_insurerShort+' saves vs full list';
+    if(ccJobDealer)ccJobDealer.textContent=fmt(dt);
+    if(ccJobSelected)ccJobSelected.textContent=fmt(st);
+  }
+
+  updatePrintState(sc>0);
+}
+function selectColumn(sid){
+  for(var i=0;i<PARTS.length;i++){
+    var p=PARTS[i],opt=null;
+    for(var j=0;j<p.opts.length;j++){ if(p.opts[j].sid===sid){opt=p.opts[j];break;} }
+    if(opt && resolveCell(p,opt).allowed){ SEL[p.id]=sid; if(!QTY[p.id]) QTY[p.id]='1'; }
+  }
+  updateTotals();render();
+  if(document.getElementById('list-view')&&document.getElementById('list-view').style.display==='block') renderList();
+}
+// Acknowledged once per part line, not once per quote - each line is its own
+// commercial decision.
+var NA_ACK={};
+function _optFor(pid,sid){
+  for(var i=0;i<PARTS.length;i++){if(PARTS[i].id!==pid)continue;
+    for(var j=0;j<PARTS[i].opts.length;j++){if(PARTS[i].opts[j].sid===sid)return PARTS[i].opts[j];}}
+  return null;
+}
+function _partFor(pid){
+  for(var i=0;i<PARTS.length;i++){if(PARTS[i].id===pid)return PARTS[i];}
+  return null;
+}
+function toggle(pid,sid){
+  var o=_optFor(pid,sid),p=_partFor(pid);
+  // Locked by a vehicle-age rule, a safety exception, or a conditional rule - not selectable.
+  if(o&&p&&!resolveCell(p,o).allowed) return;
+  // Selecting a part type this insurer refuses needs an explicit acknowledgement.
+  if(SEL[pid]!==sid && !NA_ACK[pid+'|'+sid]){
+    if(o&&isNotAccepted(o)){ openNaConfirm(pid,sid,o); return; }
+  }
+  SEL[pid]=(SEL[pid]===sid)?null:sid;
+  if(SEL[pid]&&!QTY[pid]) QTY[pid]='1';
+  if(!SEL[pid]) QTY[pid]='';
+  updateTotals();render();
+  if(document.getElementById('list-view')&&document.getElementById('list-view').style.display==='block') renderList();
+}
+// Which quick-select is currently applied, or null.
+var QUICK_MODE=null;
+function toggleQuickSelect(mode){
+  if(QUICK_MODE===mode){ clearAll(); return; }   // clearAll resets and repaints
+  QUICK_MODE=mode;
+  autoSelect(mode);
+  _paintQuickSelect();
+}
+function _paintQuickSelect(){
+  ['profit','cost'].forEach(function(m){
+    var b=document.getElementById('qs-'+m);
+    if(b){ if(QUICK_MODE===m)b.classList.add('on'); else b.classList.remove('on'); }
+  });
+}
+function autoSelect(mode){
+  if(!mode) return;
+  for(var i=0;i<PARTS.length;i++){
+    var p=PARTS[i],best=null,bestScore=null;
+    for(var j=0;j<p.opts.length;j++){
+      var opt=p.opts[j];
+      if(!resolveCell(p,opt).allowed) continue;   // never auto-pick a locked offer
+      var _sell=sellPrice(p,opt);
+      var _profit=_sell-netCost(opt);
+      var score;
+      if(mode==='profit') score=_profit;
+      else score=-netCost(opt);
+      if(bestScore===null||score>bestScore){bestScore=score;best=opt.sid;}
+    }
+    SEL[p.id]=best;
+  }
+  updateTotals();render();
+  if(document.getElementById('list-view')&&document.getElementById('list-view').style.display==='block') renderList();
+}
+function clearAll(){
+  for(var i=0;i<PARTS.length;i++)SEL[PARTS[i].id]=null;
+  QUICK_MODE=null;_paintQuickSelect();
+  updateTotals();render();
+  var lv=document.getElementById('list-view');
+  if(lv&&lv.style.display==='block')renderList();
+}
+function updateMarginNote(){
+  var note=document.getElementById('margin-note');
+  if(note) note.textContent='';
+}
+
+// -- Rule dropdown --
+function renderRuleDropdown(){
+  var body=document.getElementById('rule-dropdown-body');
+  var sysRules=ALL_RULES.filter(function(r){return r.isSystem;});
+  var customRules=ALL_RULES.filter(function(r){return !r.isSystem;});
+  var QUOTE_INSURER='Allianz Australia Insurance';
+  var all=sysRules.concat(customRules);
+  var recommended=all.filter(function(r){
+    return (r.debtors||[]).some(function(d){return d.toLowerCase()===QUOTE_INSURER.toLowerCase();});
+  });
+  var other=all.filter(function(r){
+    return !recommended.some(function(rec){return rec.id===r.id;});
+  });
+  function renderRuleCard(r){
+    var isActive=(activeRuleId===r.id);
+    var pricing=[
+      {l:'OEM',v:r.oem},{l:'Parallel',v:r.parallel},{l:'Aftm',v:r.aftm},{l:'Reco',v:r.reco},{l:'Recycled',v:r.recycled||'-'}
+    ];
+    var matched=(r.debtors||[]).filter(function(d){return d.toLowerCase()===QUOTE_INSURER.toLowerCase();});
+    return '<div onclick="applyRuleDropdown(\''+r.id+'\')" style="border:2px solid '+(isActive?'#16a34a':'#e5e7eb')+';border-radius:3px;padding:10px 12px;cursor:pointer;background:'+(isActive?'#f0fdf4':'#fff')+';transition:all .15s;margin-bottom:6px">'
+      +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap">'
+      +'<div style="width:14px;height:14px;border-radius:50%;border:2px solid '+(isActive?'#16a34a':'#d1d5db')+';display:flex;align-items:center;justify-content:center;flex-shrink:0">'
+      +(isActive?'<div style="width:6px;height:6px;border-radius:50%;background:#16a34a"></div>':'')
+      +'</div>'
+      +'<span style="font-size:12px;font-weight:700;color:#111827">'+r.insurer+'</span>'
+      +(r.isSystem?'<span style="font-size:9px;font-weight:700;background:#e5e7eb;color:#6b7280;border-radius:3px;padding:1px 5px">SYSTEM</span>':'')
+      +(r.isDefault?'<span style="font-size:9px;font-weight:700;background:#dcfce7;color:#166534;border-radius:3px;padding:1px 5px">DEFAULT</span>':'')
+      +(matched.length>0?matched.map(function(d){return '<span style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:3px;padding:1px 6px;font-size:9px;font-weight:600;color:#1d4ed8">'+d+'</span>';}).join(''):'')
+      +'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:4px">'
+      +pricing.map(function(p){return '<div style="background:#f8fafc;border:1px solid #f3f4f6;border-radius:3px;padding:4px 6px"><div style="font-size:9px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:.4px">'+p.l+'</div><div style="font-size:10px;font-weight:600;color:#374151;margin-top:1px">'+p.v+'</div></div>';}).join('')
+      +'</div>'
+      +'</div>';
+  }
+  var h='';
+  if(recommended.length>0){
+    h+='<div style="font-size:10px;font-weight:700;color:#16a34a;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Matched</div>';
+    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">';
+    recommended.forEach(function(r){h+=renderRuleCard(r);});
+    h+='</div>';
+    h+='<div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Other</div>';
+  }
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+  other.forEach(function(r){h+=renderRuleCard(r);});
+  h+='</div>';
+  body.innerHTML=h;
+}
+
+function toggleRuleDropdown(){
+  var dd=document.getElementById('rule-dropdown');
+  var chevron=document.getElementById('active-rule-chevron');
+  var open=dd.style.display==='block';
+  dd.style.display=open?'none':'block';
+  if(chevron) chevron.style.transform=open?'':'rotate(180deg)';
+  if(!open) renderRuleDropdown();
+}
+function closeRuleDropdown(){
+  var dd=document.getElementById('rule-dropdown');
+  var chevron=document.getElementById('active-rule-chevron');
+  if(dd) dd.style.display='none';
+  if(chevron) chevron.style.transform='';
+}
+function applyRuleDropdown(id){
+  activeRuleId=id;
+  var rule=getActiveRule();
+  if(rule)showToast(rule.insurer+' rule applied to this quote');
+  document.getElementById('active-rule-name').textContent=rule.insurer;
+  renderRulePills();
+  updateRuleBanner();
+  closeRuleDropdown();
+  // Manual selections are a sourcing decision and are left alone. A Quick Select
+  // is an intent ("maximum profit"), and the best option changes with the rule -
+  // so re-run it rather than leave the button asserting something untrue.
+  if(QUICK_MODE) autoSelect(QUICK_MODE);
+  render();updateTotals();
+  if(document.getElementById('list-view')&&document.getElementById('list-view').style.display==='block') renderList();
+}
+document.addEventListener('click',function(e){
+  var wrap=document.getElementById('rule-dropdown-wrap');
+  if(wrap&&!wrap.contains(e.target)) closeRuleDropdown();
+});
+/* ALL_RULES / activeRuleId are the real Dashboard rule list, bridged in from Settings via
+   window.syncRulesFromSettings (called by Dashboard's own useEffect - kept verbatim elsewhere
+   in this document - on every rules/defaultRuleId change). Starts empty: there is nothing to
+   show until Settings' first sync arrives, same as the deleted QuoteGrid's equivalent bridge.
+   ids are the plain Dashboard rule id (no 'sys-' prefix, unlike Phase 1's original hardcoded
+   seed) because the same id doubles as the ruleId key into window.MRO.getActiveTypes()/etc. */
+var ALL_RULES=[];
+var activeRuleId=null;
+function pickDefaultRuleId(list){
+  var matched=null;
+  for(var i=0;i<list.length;i++){
+    if((list[i].debtors||[]).some(function(d){return d.toLowerCase()===QUOTE_INSURER.toLowerCase();})){matched=list[i];break;}
+  }
+  var pick=matched||list[0];
+  return pick?pick.id:null;
+}
+window.syncRulesFromSettings=function(list){
+  if(!list)return;
+  var prevId=activeRuleId;
+  ALL_RULES.length=0;
+  for(var i=0;i<list.length;i++){
+    var r=list[i];
+    ALL_RULES.push({
+      id:r.id,insurer:r.insurer,
+      oem:r.oem,aftm:r.aftm,reco:r.reco,parallel:r.parallel,recycled:r.recycled,
+      isDefault:!!r.isDefault,isSystem:!!r.isSystem,
+      debtors:r.debtors||[],notAccepted:r.notAccepted||[],exceptions:r.exceptions||[],
       desc:r.desc||''
     });
-  });
-  window.dispatchEvent(new CustomEvent('mro-rules-synced'));
+  }
+  var still=null;
+  for(var j=0;j<ALL_RULES.length;j++)if(ALL_RULES[j].id===prevId){still=ALL_RULES[j].id;break;}
+  activeRuleId=(still!=null)?still:pickDefaultRuleId(ALL_RULES);
+  var nm=document.getElementById('active-rule-name');
+  if(nm)nm.textContent=(getActiveRule()||{}).insurer||'';
+  renderRulePills();
+  updateExcNotice();
+  var dd=document.getElementById('rule-dropdown');
+  if(dd&&dd.style.display==='block')renderRuleDropdown();
+  if(QUICK_MODE) autoSelect(QUICK_MODE);
+  render();updateTotals();
+  var lv=document.getElementById('list-view');
+  if(lv&&lv.style.display!=='none')renderList();
 };
-window.notifyDefaultRule = function(insurerName){
-  window.ALL_RULES.forEach(r=>{ r.isDefault = r.insurer.toLowerCase()===(insurerName||'').toLowerCase(); });
-  window.dispatchEvent(new CustomEvent('mro-rules-synced'));
+window.notifySettlementSetting=function(on,showDealer){
+  SETTLEMENT_ON=!!on;
+  if(showDealer!==undefined)SETTLEMENT_SHOW_DEALER=!!showDealer;
+  render();updateTotals();
+  var lv=document.getElementById('list-view');
+  if(lv&&lv.style.display!=='none')renderList();
 };
-window.notifyRuleAdded = function(rule){
-  const i = window.ALL_RULES.findIndex(r=>r.id===rule.id);
-  if(i>-1) window.ALL_RULES[i] = rule; else window.ALL_RULES.push(rule);
-  window.dispatchEvent(new CustomEvent('mro-rules-synced'));
+window.notifyDefaultRule=function(insurerName){
+  for(var i=0;i<ALL_RULES.length;i++){
+    ALL_RULES[i].isDefault=(ALL_RULES[i].insurer.toLowerCase()===(insurerName||'').toLowerCase());
+  }
+  renderRulePills();
+  var dd=document.getElementById('rule-dropdown');
+  if(dd&&dd.style.display==='block')renderRuleDropdown();
+};
+// React app calls this when user saves a custom rule
+window.notifyRuleAdded=function(rule){
+  var exists=false;
+  for(var i=0;i<ALL_RULES.length;i++){if(ALL_RULES[i].id===rule.id){ALL_RULES[i]=rule;exists=true;break;}}
+  if(!exists) ALL_RULES.push(rule);
 };
 
-const RULE_BADGE_TYPES = [
-  { id:'oem', label:'OEM' }, { id:'parallel', label:'Parallel' }, { id:'aftm', label:'Aftm' },
-  { id:'reco', label:'Reco' }, { id:'recycled', label:'Recycled' },
+function getActiveRule(){
+  for(var i=0;i<ALL_RULES.length;i++){if(ALL_RULES[i].id===activeRuleId)return ALL_RULES[i];}
+  return ALL_RULES[0]||null;
+}
+function notAcceptedTypes(){
+  var r=getActiveRule();
+  return (r&&r.notAccepted)?r.notAccepted:[];
+}
+// Whether the active rule's live MRO config prices this offer's type as "Not Accepted" -
+// the authoritative signal (Dashboard's legacy notAccepted[] label array is derived from the
+// same per-type config on save, so both agree; this reads the live one).
+function isNotAccepted(opt){
+  var pt=mroTypeRule(mroTypeIdForOpt(opt), activeMroTypes());
+  return !!(pt && window.MRO.isNA(pt));
+}
+// Per-cell pricing overrides set via MODIFY. Key: partId|supplierId.
+//   {mode:'list'|'markup'|'manual', pct:n, sell:n}
+var PRICE_OVERRIDE={};
+function ovKey(part,opt){return part.id+'|'+opt.sid;}
+function getOverride(part,opt){return PRICE_OVERRIDE[ovKey(part,opt)]||null;}
+// Display-only: the active rule's clause for this offer's type, as {pct,mode}. Used by the
+// MODIFY modal's preselect and the Not-Accepted confirm dialog. The full winner-of-multiple-
+// clauses/cap/conditional resolution lives in resolveCell() below.
+function getEffectiveRule(opt){
+  var pt=mroTypeRule(mroTypeIdForOpt(opt), activeMroTypes());
+  if(!pt||window.MRO.isNA(pt))return null;
+  var cl=pt.clauses[0];
+  return {pct:cl.value, mode:(cl.method==='markupCost'||cl.method==='showMarkup')?'markup':'list'};
+}
+// Back-compat: still returns just the percentage.
+function getEffectiveRulePct(opt){var e=getEffectiveRule(opt);return e?e.pct:null;}
+// Single place the sell price is derived, so the methods can't drift apart.
+function sellPrice(part,opt){
+  var c=resolveCell(part,opt);
+  return c.res.na?0:c.res.sell;
+}
+// Label for the Your Sell pill.
+function rulePillText(opt,part){
+  var o=part?getOverride(part,opt):null;
+  if(o){
+    if(o.mode==='manual')return 'manual price';
+    return o.mode==='markup' ? ('+'+o.pct+'% of cost') : (o.pct+'% of list');
+  }
+  if(!part)return '';
+  var c=resolveCell(part,opt);
+  if(c.lineOverridden)return 'manual price';
+  if(c.res.na)return 'not accepted';
+  if(c.overridden)return 'matched rate';
+  var e=getEffectiveRule(opt);
+  return e ? (e.mode==='markup' ? ('+'+e.pct+'% of cost') : (e.pct+'% of list')) : '';
+}
+
+// -- Print menu --
+function togglePrintMenu(){
+  var m=document.getElementById('print-menu');
+  m.style.display=m.style.display==='block'?'none':'block';
+}
+function closePrintMenu(){
+  document.getElementById('print-menu').style.display='none';
+}
+document.addEventListener('click',function(e){
+  var wrap=document.getElementById('print-wrap');
+  if(wrap&&!wrap.contains(e.target)) document.getElementById('print-menu').style.display='none';
+});
+function updatePrintState(hasSelections){
+  var el=document.getElementById('print-cost');
+  if(!el) return;
+}
+function openModal(btn,pid,sid,name,supplier,pno){
+  _editPid=pid;_editSid=sid;
+  document.getElementById('modal-sub').textContent=name+' - '+supplier;
+  document.getElementById('modal-partno').value=pno;
+  // dealer list for this part, shown read-only against the 'use dealer list' option
+  var _lp=document.getElementById('rpi3');
+  if(_lp){var _pt=null;for(var _q=0;_q<PARTS.length;_q++)if(PARTS[_q].id===pid)_pt=PARTS[_q];_lp.value=_pt?_pt.list.toFixed(2):'';}
+  document.getElementById('modal-pntype').value='';
+  // preselect the method from any existing override for this cell
+  var _op=null;
+  for(var _i=0;_i<PARTS.length;_i++){if(PARTS[_i].id===pid){
+    for(var _j=0;_j<PARTS[_i].opts.length;_j++){if(PARTS[_i].opts[_j].sid===sid){_op={part:PARTS[_i],opt:PARTS[_i].opts[_j]};break;}}
+  }}
+  // Show what is actually applied to this cell: an override if one exists,
+  // otherwise the active margin rule for this option's part type. The inputs
+  // used to sit on hardcoded defaults, so they disagreed with the tooltip.
+  var _ex=_op?getOverride(_op.part,_op.opt):null;
+  var _idx=0,_val=null;
+  if(_ex){
+    _idx=(_ex.mode==='markup'?1:_ex.mode==='manual'?4:0);
+    _val=(_ex.mode==='manual'?_ex.sell:_ex.pct);
+  }else if(_op){
+    var _er=getEffectiveRule(_op.opt);
+    if(_er){_idx=(_er.mode==='markup'?1:0);_val=_er.pct;}
+  }
+  selPricing(_idx);
+  var _pi=document.getElementById('rpi'+_idx);
+  if(_pi&&_val!=null)_pi.value=_val;
+  var mo=document.getElementById('editModal');
+  mo.classList.add('open');
+  // anchor under the cell, same placement logic as the price tooltip
+  _editAnchor=(btn&&btn.closest)?(btn.closest('.new-price-cell')||btn.closest('.lv-row')):null;
+  if(_editAnchor)_positionEditAtCell(mo,_editAnchor);
+  // kill any visible tooltip AND any pending one that would pop after this opens
+  clearTimeout(_ttShowTimer);clearTimeout(_ttTimer);
+  if(typeof _ttActive!=='undefined'&&_ttActive){
+    var t=_ttActive.querySelector('.tt');if(t)t.style.display='none';_ttActive=null;
+  }
+}
+var _editAnchor=null;
+// click anywhere outside closes it - there is no backdrop to catch clicks now
+document.addEventListener('mousedown',function(e){
+  var mo=document.getElementById('editModal');
+  if(!mo||!mo.classList.contains('open'))return;
+  if(mo.contains(e.target))return;
+  if(e.target.closest&&e.target.closest('.npc-modify'))return;
+  closeModal();
+});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal();});
+// keep it pinned to its cell if the grid scrolls or the window resizes
+// The edit popover is much taller than a tooltip, so reusing the tooltip
+// positioner made it flip above and cover the cell being edited. This keeps it
+// below the cell and caps the scrollable body so it fits the space available.
+function _positionEditAtCell(mo,cell){
+  var r=cell.getBoundingClientRect();
+  var md=mo.querySelector('.md'),body=mo.querySelector('.emb');
+  var vw=window.innerWidth,vh=window.innerHeight,M=8,OVERLAP=1;
+  if(body)body.style.maxHeight='';           // measure at natural height first
+  var w=md?md.offsetWidth:268;
+  var h=md?md.offsetHeight:0;
+  var left=r.left+(r.width/2)-(w/2);
+  left=Math.max(M,Math.min(left,vw-w-M));
+  var roomBelow=vh-(r.bottom-OVERLAP)-M;
+  var roomAbove=(r.top+OVERLAP)-M;
+  var top;
+  if(h<=roomBelow){
+    top=r.bottom-OVERLAP;                    // fits below in full
+  }else if(h<=roomAbove){
+    top=r.top-h+OVERLAP;                     // does not fit below - go above rather
+                                             // than make the user scroll inside it
+  }else{
+    // Fits neither side in full. Use whichever has more room and cap the body,
+    // so any scrolling happens on the roomier side.
+    var chrome=body?(h-body.offsetHeight):90;
+    if(roomAbove>=roomBelow){
+      if(body)body.style.maxHeight=Math.max(120,roomAbove-chrome)+'px';
+      h=md.offsetHeight;
+      top=Math.max(M,r.top-h+OVERLAP);
+    }else{
+      if(body)body.style.maxHeight=Math.max(120,roomBelow-chrome)+'px';
+      top=r.bottom-OVERLAP;
+    }
+  }
+  mo.style.left=Math.round(left)+'px';
+  mo.style.top=Math.round(top)+'px';
+}
+function _repositionEdit(){
+  var mo=document.getElementById('editModal');
+  if(mo&&mo.classList.contains('open')&&_editAnchor)_positionEditAtCell(mo,_editAnchor);
+}
+window.addEventListener('resize',_repositionEdit);
+document.addEventListener('scroll',_repositionEdit,true);
+// Reads the selected pricing method + value, stores it against this cell and
+// re-renders. Row 0 = % of list, 1/2 = markup on cost, 3 = dealer list, 4 = manual.
+function saveModal(){
+  var idx=-1;
+  for(var r=0;r<5;r++){var row=document.getElementById('rr'+r);if(row&&row.classList.contains('active')){idx=r;break;}}
+  if(idx<0||!_editPid){closeModal();return;}
+  var inp=document.getElementById('rpi'+idx);
+  var val=inp?parseFloat(inp.value):NaN;
+  var key=_editPid+'|'+_editSid;
+  if(idx===3){ PRICE_OVERRIDE[key]={mode:'list',pct:100}; }
+  else if(isNaN(val)){ delete PRICE_OVERRIDE[key]; }
+  else if(idx===4){ PRICE_OVERRIDE[key]={mode:'manual',sell:val}; }
+  else if(idx===1||idx===2){ PRICE_OVERRIDE[key]={mode:'markup',pct:val}; }
+  else { PRICE_OVERRIDE[key]={mode:'list',pct:val}; }
+  closeModal();
+  render();updateTotals();
+  if(document.getElementById('list-view').style.display!=='none')renderList();
+  showToast('Pricing updated');
+}
+function resetModal(){
+  if(_editPid)delete PRICE_OVERRIDE[_editPid+'|'+_editSid];
+  closeModal();
+  render();updateTotals();
+  if(document.getElementById('list-view').style.display!=='none')renderList();
+}
+function closeModal(){var mo=document.getElementById('editModal');if(mo)mo.classList.remove('open');_editAnchor=null;}
+var _editPid=null,_editSid=null;
+// Nudge a percentage field by +/-10, clamped to any min/max on the input.
+function stepPct(id,delta){
+  var el=document.getElementById(id);
+  if(!el||el.disabled)return;
+  var cur=parseFloat(el.value);
+  if(isNaN(cur))cur=0;
+  var next=cur+delta;
+  var mn=el.getAttribute('min'),mx=el.getAttribute('max');
+  if(mn!==null&&next<parseFloat(mn))next=parseFloat(mn);
+  if(mx!==null&&next>parseFloat(mx))next=parseFloat(mx);
+  el.value=next;
+}
+function _setStepperState(pid,on){
+  var u=document.getElementById(pid+'-up'),d=document.getElementById(pid+'-dn');
+  if(u)u.disabled=!on;
+  if(d)d.disabled=!on;
+}
+function selPricing(idx){
+  for(var r=0;r<5;r++){
+    var row=document.getElementById('rr'+r),inp=document.getElementById('rpi'+r);
+    if(row)row.classList.remove('active');
+    // rpi3 is the dealer list price - always read-only, never an editable field
+    if(inp&&r!==3)inp.disabled=true;
+    _setStepperState('rpi'+r,false);
+  }
+  var ar=document.getElementById('rr'+idx),ai=document.getElementById('rpi'+idx);
+  if(ar)ar.classList.add('active');
+  if(ai&&idx!==3)ai.disabled=false;
+  _setStepperState('rpi'+idx,true);
+}
+var rrEls=document.querySelectorAll('.err');
+for(var ri=0;ri<rrEls.length;ri++){(function(el){var idx=parseInt((el.id||'').replace('rr',''),10);el.addEventListener('click',function(){selPricing(idx);});})(rrEls[ri]);}
+var PN_LIST=["OEM Part Number","OEM Number + Special","OEM Number + Parallel","OEM Number + NDS","Supplier Provided Part Number","OEM Part Number + 80% list","Used","Parallel","Reconditioned","Genuine","Exchange","Second Hand"];
+function renderPNCombo(filter){
+  var dd=document.getElementById('pntype-dropdown'),inp=document.getElementById('modal-pntype');
+  var items=filter?PN_LIST.filter(function(i){return i.toLowerCase().includes(filter.toLowerCase());}):PN_LIST;
+  dd.innerHTML=items.map(function(item){var sel=inp.value===item;return '<div onmousedown="pickPN(\''+item.replace(/'/g,"\\'")+'\')" style="padding:7px 10px;font-size:12px;color:#374151;cursor:pointer;background:'+(sel?'#f0fdf4':'#fff')+'" onmouseover="this.style.background=\'#f9fafb\'" onmouseout="this.style.background=\''+(sel?'#f0fdf4':'#fff')+'\'">'+item+'</div>';}).join('');
+}
+function showPNCombo(){var dd=document.getElementById('pntype-dropdown');renderPNCombo('');dd.style.display='block';}
+function hidePNCombo(){document.getElementById('pntype-dropdown').style.display='none';}
+function filterPNCombo(v){renderPNCombo(v);}
+function pickPN(val){document.getElementById('modal-pntype').value=val;document.getElementById('pntype-dropdown').style.display='none';}
+
+var LIST_COLS=[
+  {id:'cost',    label:'Cost',    show:true,  sort:false},
+  {id:'sell',    label:'Sell',    show:true,  sort:false},
+  {id:'margin',  label:'Margin on Sell',  show:true,  sort:false},
+  {id:'profit',  label:'Profit',  show:true,  sort:true},
+  {id:'eta',     label:'ETD',     show:true,  sort:false},
+  {id:'comments',label:'Comments',show:true,  sort:false},
 ];
 
-function RuleCard({ rule, selected, onClick }){
-  return (
-    <div className={"q1-rc"+(selected?' sel':'')} onClick={onClick}>
-      <div className="q1-rc-head">
-        <span className={"q1-rc-radio"+(selected?' on':'')}/>
-        <span className="q1-rc-name">{rule.insurer}</span>
-        {rule.isSystem && <span className="q1-rc-tag system">System</span>}
-        {rule.isDefault && <span className="q1-rc-tag default">Default</span>}
-      </div>
-      <div className="q1-rc-badges">
-        {RULE_BADGE_TYPES.map(bt=>(
-          <div key={bt.id} className="q1-rc-badge">
-            <div className="q1-rc-badge-k">{bt.label}</div>
-            <div className="q1-rc-badge-v">{rule[bt.id] || '--'}</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function RuleDropdown({ open, setOpen, activeRuleId, matchedRules, otherRules, onSelect }){
-  const all = [...matchedRules, ...otherRules];
-  const activeRule = all.find(r=>r.id===activeRuleId) || all[0];
-  return (
-    <div className="q1-ruledd">
-      <button type="button" className="q1-ruledd-trigger" onClick={()=>setOpen(o=>!o)}>
-        {activeRule ? activeRule.insurer : 'No rule set up'}
-        <svg width="8" height="5" viewBox="0 0 8 5" className={"q1-ruledd-caret"+(open?' up':'')}><path d="M0 0l4 5 4-5z" fill="currentColor"/></svg>
-      </button>
-      {open && (
-        <>
-          <div className="q1-ruledd-scrim" onClick={()=>setOpen(false)}/>
-          <div className="q1-ruledd-panel">
-            <div className="q1-ruledd-head">
-              <div className="q1-ruledd-title">Select Active Margin Rule</div>
-              <div className="q1-ruledd-editrow">
-                <span className="q1-ruledd-newtag">New</span>
-                <span>To edit rules, go to <a className="q1-ruledd-link" onClick={()=>{ setOpen(false); if(typeof switchTab==='function') switchTab('rules', true, 'margin'); }}>Settings</a></span>
-              </div>
-            </div>
-            {matchedRules.length>0 && (
-              <>
-                <div className="q1-ruledd-seclbl matched">Matched</div>
-                <div className="q1-ruledd-grid matched">
-                  {matchedRules.map(r=><RuleCard key={r.id} rule={r} selected={r.id===activeRuleId} onClick={()=>onSelect(r.id)}/>)}
-                </div>
-                <div className="q1-ruledd-seclbl other">Other</div>
-              </>
-            )}
-            <div className="q1-ruledd-grid">
-              {otherRules.map(r=><RuleCard key={r.id} rule={r} selected={r.id===activeRuleId} onClick={()=>onSelect(r.id)}/>)}
-            </div>
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-function QuoteGrid(){
-  const [sel, setSel] = useState({ 1:'s3', 2:'s2', 4:'s1', 7:'s1' });
-  const [lineOv, setLineOv] = useState({});
-  const [editing, setEditing] = useState(null);
-  const [activeFilter, setActiveFilter] = useState(null);
-  const [toast, setToast] = useState(null);
-  const [lightbox, setLightbox] = useState(null);
-  const [ruleOpen, setRuleOpen] = useState(false);
-  const [qtyOv, setQtyOv] = useState({});
-  const qtyFor = pid => sel[pid] ? (qtyOv[pid] != null ? qtyOv[pid] : '1') : '';
-  const toastToken = useRef(0);
-  const showToastMsg = msg => {
-    const token = ++toastToken.current;
-    setToast(msg);
-    setTimeout(()=>{ if(toastToken.current===token) setToast(null); }, 2200);
-  };
-  const modelYear = 2023;
-  const vehicleBrand = 'hyundai';
-
-  /* margin rule picker — mirrors window.ALL_RULES (populated by Settings' Dashboard) and
-     re-reads it whenever Settings dispatches 'mro-rules-synced' (rule added/edited/deleted,
-     or default changed), so switching screens never needs a page reload. */
-  const pickDefaultRuleId = list => {
-    const matched = list.find(r=>(r.debtors||[]).some(d=>d.toLowerCase()===QUOTE_INSURER.toLowerCase()));
-    return (matched || list[0] || {}).id ?? null;
-  };
-  const [rules, setRulesState] = useState(()=>window.ALL_RULES.slice());
-  const [activeRuleId, setActiveRuleId] = useState(()=>pickDefaultRuleId(window.ALL_RULES));
-  const [cfgVersion, setCfgVersion] = useState(0);
-  useEffect(()=>{
-    const refresh = () => {
-      setRulesState(window.ALL_RULES.slice());
-      setActiveRuleId(prev => (prev!=null && window.ALL_RULES.some(r=>r.id===prev)) ? prev : pickDefaultRuleId(window.ALL_RULES));
-      setCfgVersion(v=>v+1);
-    };
-    refresh();
-    window.addEventListener('mro-rules-synced', refresh);
-    return ()=>window.removeEventListener('mro-rules-synced', refresh);
-  },[]);
-  const matchedRules = rules.filter(r=>(r.debtors||[]).some(d=>d.toLowerCase()===QUOTE_INSURER.toLowerCase()));
-  const otherRules = rules.filter(r=>!matchedRules.some(m=>m.id===r.id));
-
-  // pricing rules + vehicle age rules + conditional rules — the REAL saved MRO config for
-  // whichever rule is currently active, re-read whenever the active rule or its config changes
-  const types = useMemo(()=> activeRuleId!=null ? getActiveTypes(activeRuleId) : PART_TYPES_INIT, [activeRuleId, cfgVersion]);
-  const ageRules = useMemo(()=> activeRuleId!=null ? getActiveAgeRules(activeRuleId) : VEHICLE_AGE_RULES_INIT, [activeRuleId, cfgVersion]);
-  const condRules = useMemo(()=> activeRuleId!=null ? getActiveCondRules(activeRuleId) : COND_RULES_INIT, [activeRuleId, cfgVersion]);
-  const exceptions = useMemo(()=> activeRuleId!=null ? getActiveExceptions(activeRuleId) : EXCEPTION_GROUPS, [activeRuleId, cfgVersion]);
-  const age = vehicleAge(modelYear);
-  const brandObj = VEHICLE_BRANDS.find(b=>b.id===vehicleBrand) || VEHICLE_BRANDS[1];
-  const matchedAgeRules = matchingAgeRules(modelYear, vehicleBrand, ageRules);
-  const ageActive = ageRuleActive(modelYear, vehicleBrand, ageRules);
-  const ageBlocked = typeId => !ageAllowsType(typeId, modelYear, vehicleBrand, ageRules);
-  const ageAllowedNames = types.filter(t=>!ageBlocked(t.id)).map(t=>t.name).join(' / ') || 'nothing';
-  const colorFor = typeId => (types.find(t=>t.id===typeId)||{}).color || '#9CA3AF';
-
-  const condByPart = {};
-  const condTraceByPart = {};
-  QPARTS.forEach(p=>{
-    const overrides = {}, traceMap = {};
-    resolveConditional(types, lineOffers(p), condRules).trace.forEach(t=>{ overrides[t.target] = t.after; traceMap[t.target] = t; });
-    condByPart[p.id] = overrides;
-    condTraceByPart[p.id] = traceMap;
+function openListSettings(){
+  var tbody=document.getElementById('list-settings-rows');
+  var h='';
+  LIST_COLS.forEach(function(col){
+    h+='<tr style="border-bottom:1px solid #f3f4f6">'
+      +'<td style="padding:12px 0;font-size:13px;color:#374151">'+col.label+'</td>'
+      +'<td style="text-align:center;padding:12px 0"><input type="checkbox" id="lsc-'+col.id+'" '+(col.show?'checked':'')+' style="width:16px;height:16px;accent-color:#16a34a;cursor:pointer"></td>'
+      +'<td style="text-align:center;padding:12px 0"><input type="radio" name="ls-sort" value="'+col.id+'" '+(col.sort?'checked':'')+' style="width:15px;height:15px;accent-color:#16a34a;cursor:pointer"></td>'
+      +'</tr>';
   });
-  const condHitCount = QPARTS.filter(p=>Object.keys(condByPart[p.id]).length>0).length;
-
-  useEffect(()=>{
-    setSel(prev=>{
-      const next={...prev}; let changed=false;
-      QPARTS.forEach(p=>{ const k=prev[p.id]; if(k){ const s=QSUP.find(x=>x.key===k); if(s && !cellAllowed(p,s,ageBlocked,condByPart[p.id],exceptions)){ next[p.id]=null; changed=true; } } });
-      return changed?next:prev;
-    });
-  },[ageActive, modelYear, vehicleBrand, activeRuleId, cfgVersion]);
-
-  const toggle = (id, key) => {
-    const part = QPARTS.find(p=>p.id===id);
-    const sup = QSUP.find(s=>s.key===key);
-    if(part && sup && !cellAllowed(part, sup, ageBlocked, condByPart[id], exceptions)) return;
-    setSel(prev => ({...prev, [id]: prev[id]===key ? null : key}));
-  };
-
-  const quickSelect = mode => {
-    const next = {};
-    QPARTS.forEach(p=>{
-      let best = null;
-      QSUP.forEach(s=>{
-        const c = qcell(p, s, types, condByPart[p.id], condTraceByPart[p.id]);
-        if(!c || !cellAllowed(p, s, ageBlocked, condByPart[p.id], exceptions)) return;
-        const score = mode==='profit' ? (c.res.sell - c.cost) : -c.cost;
-        if(!best || score>best.score) best = { key:s.key, score };
-      });
-      if(best) next[p.id] = best.key;
-    });
-    setSel(next);
-  };
-
-  const totals = {};
-  QSUP.forEach(s=>{ totals[s.key] = QPARTS.reduce((a,p)=>{ const c=qcell(p,s,types,condByPart[p.id]); return a+((c && cellAllowed(p,s,ageBlocked,condByPart[p.id],exceptions))?c.cost:0); },0); });
-
-  const selPairs = QPARTS.map(p=>{ const k=sel[p.id]; if(!k) return null; const s=QSUP.find(x=>x.key===k); if(!s || !cellAllowed(p,s,ageBlocked,condByPart[p.id],exceptions)) return null; return { part:p, cell:qcell(p,s,types,condByPart[p.id],condTraceByPart[p.id],lineOv[p.id+':'+k]) }; }).filter(Boolean);
-  const selData = selPairs.map(x=>x.cell);
-  const cost = selData.reduce((a,c)=>a+c.cost,0);
-  const sell = selData.reduce((a,c)=>a+c.res.sell,0);
-  const profit = sell - cost;
-  const margin = sell>0 ? profit/sell*100 : 0;
-  const selCount = selData.length;
-  const listSelTotal = selPairs.reduce((a,x)=>a+x.part.list,0);
-  const saving = listSelTotal - sell;
-
-  const allCells = [];
-  QPARTS.forEach(p=>QSUP.forEach(s=>{
-    const c = qcell(p, s, types, condByPart[p.id]);
-    if(c && cellAllowed(p, s, ageBlocked, condByPart[p.id], exceptions)) allCells.push(c);
-  }));
-  const SHOW_FILTERS = SIGNAL_DEFS.map(d=>({ ...d, count: allCells.filter(c=>c[d.id]).length }));
-  const cellMatchesFilter = c => !activeFilter || !!c[activeFilter];
-  const activeFilterColor = activeFilter && (SHOW_FILTERS.find(f=>f.id===activeFilter)||{}).color;
-
-  return (
-    <div className="mro-scope">
-      <div className="page" style={{maxWidth:'none'}}>
-        {/* Quote header + actions */}
-        <div className="q1-head">
-          <div>
-            <div className="q1-qno"><span>QUOTE:</span> 89734</div>
-            <div className="q1-qsub">{brandObj.name} Tucson · ABC123 · Insurer: <b>Allianz</b></div>
-            <div className="q1-vehctl">
-              <span className="q1-vehctl-lbl">Model year</span>
-              <span className="q1-vehctl-val" title="Set in the quoting package — not editable in PartsCheck">{modelYear}</span>
-              <span className={"q1-agechip "+(ageActive?'on':'off')}>
-                {ageActive && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg>}
-                {age} yr{age===1?'':'s'} old{ageActive?` · ${ageAllowedNames} only`:''}
-              </span>
-            </div>
-          </div>
-          <div className="q1-head-r">
-            <div>
-              <div className="q1-resp-lbl">Supplier Responses</div>
-              <div className="q1-resp-dots">
-                {QSUP.map(s=>(
-                  <span key={s.key} className={"q1-chk "+(s.responded?'':'warn')} title={s.name+' — '+(s.responded?'Received':'Not responded')}>
-                    {s.responded
-                      ? <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12l5 5L20 7"/></svg>
-                      : <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 8v5m0 3h.01"/><circle cx="12" cy="12" r="10"/></svg>}
-                  </span>
-                ))}
-              </div>
-            </div>
-            <button className="btn btn-ghost btn-lg">Print ▾</button>
-            <button className="btn btn-ghost btn-lg">Cancel Request</button>
-            <button className="btn btn-green btn-lg">Save</button>
-          </div>
-        </div>
-
-        <div className="q1-sticky">
-          <div className="q1-mcards">
-            <div className="q1-mcard"><div className="q1-mcard-k">Your Cost</div><div className="q1-mcard-v">{fmt(cost)}</div><div className="q1-mcard-s">{selCount} of {QPARTS.length} parts · paid to suppliers</div></div>
-            <div className="q1-mcard"><div className="q1-mcard-k">Your Sell</div><div className="q1-mcard-v">{fmt(sell)}</div><div className="q1-mcard-s">filed to Allianz under this rule</div></div>
-            <div className="q1-mcard profit"><div className="q1-mcard-k">Your Profit</div><div className="q1-mcard-v profit">{fmt(profit)} <span className="q1-mcard-pct">({margin.toFixed(0)}%)</span></div><div className="q1-mcard-s">margin on selection</div></div>
-            <div className="q1-mcard"><div className="q1-mcard-k">Insurer Saving</div><div className="q1-mcard-v">{fmt(saving)}</div><div className="q1-mcard-s">vs dealer list price</div></div>
-          </div>
-
-          <div className="q1-rulebanner">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="q1-rulebanner-check"><path d="M5 12l5 5L20 7"/></svg>
-            <span className="q1-rulebanner-lbl">Margin Rule Applied</span>
-            <RuleDropdown open={ruleOpen} setOpen={setRuleOpen} activeRuleId={activeRuleId}
-              matchedRules={matchedRules} otherRules={otherRules}
-              onSelect={id=>{ setActiveRuleId(id); setRuleOpen(false); }}/>
-            <div className="q1-legend">
-              {types.map(pt=>(
-                <span key={pt.id} className="q1-legend-item">
-                  <span className="q1-legend-dot" style={{background:pt.color}}/>
-                  <b>{pt.name}</b> {legendLabel(pt)}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="q1-toolbar">
-            <div className="q1-toolbar-grp">
-              <span className="q1-toolbar-lbl">Quick Select:</span>
-              <button className="btn btn-ghost btn-sm" onClick={()=>quickSelect('profit')}>Best Profit</button>
-              <button className="btn btn-ghost btn-sm" onClick={()=>quickSelect('cost')}>Lowest Cost</button>
-              <button className="btn btn-ghost btn-sm" disabled={selCount===0} onClick={()=>setSel({})}>Clear Selections</button>
-            </div>
-            <div className="q1-toolbar-grp">
-              <span className="q1-toolbar-lbl">Show:</span>
-              {SHOW_FILTERS.map(f=>(
-                <button key={f.id} className={"q1-showchip "+(activeFilter===f.id?'on':'')} style={{'--chip-c':f.color}} onClick={()=>setActiveFilter(activeFilter===f.id?null:f.id)}>
-                  {signalIcon(f, 11)}
-                  {f.label}<span className="ct">{f.count}</span>
-                </button>
-              ))}
-            </div>
-            <div className="q1-view">
-              <span className="on"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></span>
-              <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span>
-            </div>
-          </div>
-        </div>
-
-        {ageActive && (
-          <div className="q1-agebanner">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" style={{flexShrink:0,marginTop:1}}><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/><path d="M9 12l2 2 4-4"/></svg>
-            <span><b>{brandObj.name} vehicle is {age} years old ({modelYear}) — {matchedAgeRules.length} vehicle age rule{matchedAgeRules.length===1?'':'s'} in effect.</b> <b>{ageAllowedNames}-only</b> rule applies: offers outside {ageAllowedNames} are locked on every part, not just safety categories.</span>
-          </div>
-        )}
-
-        {condHitCount>0 && (
-          <div className="q1-exc" style={{background:'#F7EEFB',border:'1px solid #DCC3EA',color:'#7B2E8E'}}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" style={{flexShrink:0,marginTop:1}}><path d="M4 7h16M4 12h16M4 17h10"/></svg>
-            <span><b style={{color:'#5B1F6E'}}>{condHitCount} part{condHitCount===1?'':'s'} affected by conditional cross-type rules</b> — set on the Margin Rules screen. Prices recalculated based on other part types quoted on the same line.</span>
-          </div>
-        )}
-
-        {QPARTS.some(p=>p.exc) && (
-          <div className="q1-exc">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" style={{flexShrink:0,marginTop:1}}><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/><path d="M9 12l2 2 4-4"/></svg>
-            <span><b>{QPARTS.filter(p=>p.exc).length} parts on this quote fall under safety exception rules.</b> Safety-critical categories restrict which part types are acceptable — offers outside the allowed type(s) are locked.</span>
-          </div>
-        )}
-
-        {/* Grid */}
-        <div className="qscroll">
-          <table className="qg">
-            <colgroup>
-              <col style={{width:232,minWidth:232}}/>
-              {QSUP.map(s=><col key={s.key} style={{width:122,minWidth:122}}/>)}
-              <col style={{width:'auto'}}/>
-            </colgroup>
-            <thead>
-              <tr>
-                <th className="qg-corner">
-                  <div className="qg-corner-top"><span className="qg-selcount">{selCount}/{QPARTS.length}</span><span className="qg-selword">Selected</span></div>
-                  <div className="qg-corner-sub"><span className="qg-linenum">#</span><span className="qg-qty-hd">Qty</span><span>Part Number &amp; Description</span></div>
-                </th>
-                {QSUP.map(s=>(
-                  <th key={s.key} className="qg-suph">
-                    <div className="qg-supbar" style={{background:colorFor(s.typeId)}}/>
-                    <div className="qg-supinner">
-                      <div className="qg-supav" style={{borderColor:colorFor(s.typeId),color:colorFor(s.typeId)}}><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0z"/></svg></div>
-                      <div className="qg-supname" title={s.name}>{s.name}</div>
-                    </div>
-                  </th>
-                ))}
-                <th className="qg-filler"/>
-              </tr>
-            </thead>
-            <tbody>
-              {QPARTS.map((p,idx)=>{
-                return (
-                <tr key={p.id} className={p.exc?'qg-excrow':''}>
-                  <td className="qg-partcell">
-                    <span className="qg-linenum">{idx+1}</span>
-                    <div className="qg-cb" style={sel[p.id]?{background:'#16A34A',borderColor:'#15803D'}:{}}>{sel[p.id] && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" style={{margin:'1px'}}><path d="M5 12l5 5L20 7"/></svg>}</div>
-                    <input type="text" inputMode="numeric" className="qg-qty" value={qtyFor(p.id)} placeholder="" onClick={e=>e.stopPropagation()} onChange={e=>setQtyOv(prev=>({...prev,[p.id]:e.target.value}))}/>
-                    <div>
-                      <div className="qg-pn">{p.name}</div>
-                      <div className="qg-ps">Dealer: #{p.dealer}<br/>List: {fmt(p.list)} ea</div>
-                      {p.exc && (
-                        <span className="pn-exc oem">
-                          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg>{excLabel(p, exceptions, types)}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  {QSUP.map(s=>{
-                    const overrides = condByPart[p.id];
-                    const c = qcell(p, s, types, overrides, condTraceByPart[p.id], lineOv[p.id+':'+s.key]);
-                    if(!c) return <td key={s.key} className="gcell empty"><div className="gcell-in"/></td>;
-                    const kind = lockKind(p, s, ageBlocked, overrides, exceptions);
-                    if(kind) return (
-                      <td key={s.key} className="gcell gcell-locked" title={kind==='age' ? `Not acceptable — blocked by a vehicle age rule (${ageAllowedNames} only)` : kind==='conditional' ? 'Not acceptable — blocked by a conditional rule on this line' : `Not acceptable under this rule (${excLabel(p, exceptions, types)})`}>
-                        <div className="gcell-in">
-                          <div className="gtype gl-strike">{s.type}</div>
-                          <div className="gl-price">{fmt(c.cost)}</div>
-                          <div className="gl-tag"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 018 0v3"/></svg>{kind==='age' ? 'age rule' : kind==='conditional' ? 'rule blocked' : excLabel(p, exceptions, types)}</div>
-                        </div>
-                      </td>
-                    );
-                    const selected = sel[p.id]===s.key;
-                    const excAllowed = excAllowedTypes(p, exceptions);
-                    const reassure = (excAllowed && excAllowed.includes(s.typeId)) || (ageActive && !ageBlocked(s.typeId));
-                    const dim = !cellMatchesFilter(c);
-                    const hl = activeFilter && !dim && !selected;
-                    return (
-                      <td key={s.key} className={"gcell "+(selected?'gcell-sel':'')+(reassure?' gcell-okexc':'')+(dim?' dim':'')+(hl?' hl':'')} style={hl?{'--hl-c':activeFilterColor}:undefined} onClick={()=>toggle(p.id, s.key)}>
-                        <div className="gcell-in">
-                          <div className="gtype" style={{color:colorFor(s.typeId)}}>{s.type}</div>
-                          <div className="gprice">{fmt(c.cost)}</div>
-                          <div className={"gprofit"+(c.res.sell - c.cost < 0 ? ' neg' : '')}>{c.res.sell - c.cost >= 0 ? '+' : ''}{fmt(c.res.sell - c.cost)}</div>
-                          {c.res.lineOverridden ? <div className="glinetag">✎ overridden</div> : c.res.capped ? <div className="gcapd">⛰ capped</div> : c.res.overridden && <div className="gcondtag">⇄ rule-matched</div>}
-                          <div className="getd">ETD {c.etd}</div>
-                        </div>
-                        {SIGNAL_DEFS.some(d=>c[d.id]) && (
-                          <div className="qg-chips">
-                            {SIGNAL_DEFS.filter(d=>c[d.id]).map(d=>(
-                              <span key={d.id} className={"qg-chip "+d.cls} title={d.id==='img' ? 'View photo' : d.label}
-                                onClick={d.id==='img' ? (e=>{ e.stopPropagation(); setLightbox({ src:c.img, caption:`${titleCase(p.name)} · ${s.name}` }); }) : undefined}>
-                                {signalIcon(d)}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                        {selected && <button className="gmodify" onClick={e=>{ e.stopPropagation(); setEditing({partId:p.id, supKey:s.key}); }}>✎ MODIFY</button>}
-                        <CellPop part={p} c={c} types={types} onOpenImage={img=>setLightbox(img)}/>
-                      </td>
-                    );
-                  })}
-                  <td className="qg-filler"/>
-                </tr>
-              );})}
-              <tr className="qg-totrow">
-                <td className="qg-partcell">Supplier Total (ex GST)</td>
-                {QSUP.map(s=><td key={s.key}>{totals[s.key]>0?fmt(totals[s.key]):'$ 0.00'}</td>)}
-                <td className="qg-filler"/>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {editing && (()=>{
-        const part = QPARTS.find(p=>p.id===editing.partId);
-        const sup = QSUP.find(s=>s.key===editing.supKey);
-        const key = editing.partId+':'+editing.supKey;
-        return (
-          <EditItemModal
-            part={part} sup={sup} current={lineOv[key]}
-            onSave={vals => { setLineOv(prev=>({...prev, [key]: vals})); showToastMsg('Pricing updated'); }}
-            onReset={() => { setLineOv(prev=>{ const next={...prev}; delete next[key]; return next; }); showToastMsg('Override reset'); }}
-            onClose={() => setEditing(null)}
-          />
-        );
-      })()}
-
-      {toast && (
-        <div className="pc-toast"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12l5 5L20 7"/></svg>{toast}</div>
-      )}
-
-      {lightbox && (
-        <div className="qg-lightbox" onClick={()=>setLightbox(null)}>
-          <button className="qg-lightbox-x" onClick={()=>setLightbox(null)}>✕</button>
-          <img src={lightbox.src} alt={lightbox.caption} onClick={e=>e.stopPropagation()}/>
-          <div className="qg-lightbox-cap">{lightbox.caption}</div>
-        </div>
-      )}
-    </div>
-  );
+  tbody.innerHTML=h;
+  document.getElementById('listSettingsModal').classList.add('open');
+}
+function closeListSettings(){
+  document.getElementById('listSettingsModal').classList.remove('open');
+}
+function applyListSettings(){
+  LIST_COLS.forEach(function(col){
+    var cb=document.getElementById('lsc-'+col.id);
+    if(cb) col.show=cb.checked;
+  });
+  var sortEl=document.querySelector('input[name="ls-sort"]:checked');
+  LIST_COLS.forEach(function(col){col.sort=(sortEl&&sortEl.value===col.id);});
+  closeListSettings();
+  if(document.getElementById('list-view').style.display==='block') renderList();
 }
 
-const PN_TYPES = ['OEM Part Number','OEM Number + Special','OEM Number + Parallel','OEM Number + NDS',
-  'Supplier Provided Part Number','Used','Parallel','Reconditioned','Genuine','Exchange','Second Hand'];
+var SUP_COLORS={s2:'#2563eb',s1:'#a855f7',s3:'#a855f7',s4:'#84cc16',s6:'#84cc16',s8:'#84cc16',s5:'#f59e0b'};
+var SUP_NAMES={s2:'OEM Direct',s1:'Parts Network',s3:'ATS Parts',s4:'Eco Parts',s6:'Wreckers Direct',s8:'Salvage Direct',s5:'Reco Centre'};
 
-function EditItemModal({ part, sup, current, onSave, onReset, onClose }){
-  const [method, setMethod] = useState(current ? current.method : 'pctList');
-  const [value, setValue] = useState(current ? current.value : 100);
-  const [partNoType, setPartNoType] = useState(current ? current.partNoType || '' : '');
-  const [partNo, setPartNo] = useState(current ? current.partNo || '' : '');
+function renderList(){
+  var h='';
+  for(var i=0;i<PARTS.length;i++){
+    var p=PARTS[i],ss=SEL[p.id];
+    // Part header
+    h+='<div class="lv-part-hd">'
+      +'<span class="lv-part-name">'+p.name+'</span>'
+      +'<span class="lv-part-meta">Dealer Part Nr: <b>'+p.num.replace('#','')+'</b></span>'
+      +'<span class="lv-part-meta">Qty: <input class="lv-qty-input" type="number" value="1" min="1"></span>'
+      +'<span class="lv-part-meta">Dealer List Price: <b>'+fmt(p.list)+'</b></span>'
+      +'</div>';
+    // Column headers
+    h+='<table class="lv"><tr class="lv-col-hd"><td style="width:170px">Supplier</td><td style="width:32px"></td><td style="width:180px">Comments</td><td style="width:40px;text-align:center">Qty</td><td style="width:60px">Type</td><td style="width:85px;text-align:right">Cost</td><td style="width:85px;text-align:right">Sell</td><td style="width:100px;text-align:right">Margin on Sell</td><td style="width:80px;text-align:right">Profit</td><td style="width:135px"></td></tr>';
+    // Supplier rows - iterate all opts for this part
+    for(var j=0;j<p.opts.length;j++){
+      var opt=p.opts[j];
+      var isSel=(ss===opt.sid);
+      var _cellL=resolveCell(p,opt);
+      var _rowLocked=!_cellL.allowed;
+      var scol=SUP_COLORS[opt.sid]||'#a3a3a3';
+      var sname=SUP_NAMES[opt.sid]||opt.supplier;
+      var _sell=_rowLocked?0:sellPrice(p,opt);
+      var _profit2=_sell-netCost(opt);
+      var _margin2=_sell>0?(_profit2/_sell*100):0;
+      var tcol=TYPE_COLOR[opt.type]||'#337ab7';
+      h+='<tr class="lv-row'+(isSel?' lv-sel':'')+(_rowLocked?' lv-locked':'')+'"'+(_rowLocked?'':' onclick="toggle(\''+p.id+'\',\''+opt.sid+'\')"')+'>';
+      // Supplier cell
+      h+='<td><div class="lv-sup-cell">'
+        +'<div class="lv-circle" style="border-color:'+scol+'">'
+        +'<svg width="11" height="11" viewBox="0 0 24 24" fill="'+scol+'"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>'
+        +'</div>'
+        +'<span style="font-size:12px;font-weight:'+(isSel?'700':'500')+';color:'+(isSel?'#111827':'#1f2937')+'">'+sname+'</span>'
+        +'</div></td>';
+      // Info icon with tooltip
+      var _phone={s2:'07 3008 6411',s1:'07 3123 4567',s3:'07 3987 6543',s4:'07 3456 7890',s5:'07 3765 4321'}[opt.sid]||'-';
+      var _qref={s2:'OEM-884421',s1:'PN-220931',s3:'ATS-119043',s4:'ECO-554312',s5:'RC-330187'}[opt.sid]||'-';
+      var _discPctLV=(opt.sid==='s2')?(opt.discPct!=null?opt.discPct:(p.list>0?((p.list-opt.cost)/p.list*100):null)):null;
+      var _setlLV=settlementPct(opt);
+      var _setlLblLV=(_setlLV%1===0?_setlLV.toFixed(0):_setlLV.toFixed(2).replace(/0$/,''))+'%';
+      h+='<td onclick="event.stopPropagation()" style="width:32px;text-align:center">'
+        +'<div class="lv-info-wrap">'
+        +'<button class="lv-info-btn"><i class="fa fa-info"></i></button>'
+        +'<div class="lv-info-tip">'
+        +'<div class="lv-info-hd" style="color:'+scol+'">'+opt.supplier.toUpperCase()+'</div>'
+        +'<div class="lv-info-row"><span>Phone</span><span>'+_phone+'</span></div>'
+        +'<div class="lv-info-row"><span>Quote Ref</span><span>'+_qref+'</span></div>'
+        +'<div class="lv-info-sep"></div>'
+        +'<div class="lv-info-row"><span>Part No.</span><span>'+opt.pno+'</span></div>'
+        +(opt.mno&&opt.mno!=='--'?'<div class="lv-info-row"><span>Modified No.</span><span>'+opt.mno+'</span></div>':'')
+        +'<div class="lv-info-row"><span>Part Type</span><span>'+opt.label+'</span></div>'
+        +'<div class="lv-info-sep"></div>'
+        +(_rowLocked
+          ? '<div class="lv-info-row" style="border-bottom:none"><span>Status</span><span style="color:#b91c1c">'+(_cellL.lockReason==='age'?'Blocked - age rule':_cellL.lockReason==='safety'?'Blocked - safety exception':'Blocked - conditional rule')+'</span></div>'
+          // Same derivation chain, labels and order as the grid tooltip.
+          : '<div class="lv-info-row"><span>List Price</span><span>'+fmt(p.list)+'</span></div>'
+            +(_discPctLV!=null?'<div class="lv-info-sub"><span>Dealer Discount <span class="lv-info-q">'+_discPctLV.toFixed(0)+'% (target 20%)</span></span><span>-'+fmt(p.list-opt.cost)+'</span></div>':'')
+            +'<div class="lv-info-row"><span>'+(_setlLV>0?'Invoice Cost':'Your Cost')+'</span><span>'+fmt(opt.cost)+'</span></div>'
+            +(_setlLV>0?'<div class="lv-info-sub"><span>Settlement Discount <span class="lv-info-q">'+_setlLblLV+'</span></span><span>-'+fmt(opt.cost-netCost(opt))+'</span></div>':'')
+            +(_setlLV>0?'<div class="lv-info-row"><span>Your Cost</span><span>'+fmt(netCost(opt))+'</span></div>':'')
+            +'<div class="lv-info-row"><span>Your Sell <span class="lv-info-q">'+rulePillText(opt,p)+'</span></span><span>'+fmt(_sell)+'</span></div>'
+            +'<div class="lv-info-row" style="border-bottom:none"><span>Your Profit</span><span style="color:#15803d">'+fmt(_profit2)+'</span></div>'
+            +'<div style="font-size:10px;color:#9ca3af;padding:2px 0 3px">Margin on sell '+(_sell>0?(_profit2/_sell*100):0).toFixed(1)+'% &nbsp;|&nbsp; Markup on cost '+(netCost(opt)>0?(_profit2/netCost(opt)*100):0).toFixed(1)+'%</div>')
 
-  const ROWS = [
-    { id:'pctList',    label:'Charge % of dealer list price', suf:'%' },
-    { id:'markupCost', label:'Add % markup to cost',           suf:'%' },
-    { id:'showMarkup', label:'Add % show markup to cost',      suf:'%' },
-    { id:'listPrice',  label:'Use dealer list and part number' },
-    { id:'manual',     label:'Manually enter sell price',      pre:'$' },
+        +(opt.cmt?'<div class="lv-info-note">'+opt.cmt+'</div>':'')
+        +'</div>'
+        +'</div>'
+        +'</td>';
+      // Comment
+      h+='<td><span class="lv-cmt">'+(opt.cmt||'')+'</span></td>';
+      // Qty
+      h+='<td style="text-align:center;font-size:12px;font-weight:'+(isSel?'700':'400')+'">1</td>';
+      // Type
+      h+='<td><span class="lv-type" style="color:'+tcol+'">'+opt.label+'</span></td>';
+      // Financials
+      if(_rowLocked){
+        h+='<td class="lv-num">—</td><td class="lv-num">—</td><td class="lv-num">—</td><td class="lv-num">—</td>';
+      } else {
+        h+='<td class="lv-num">'+fmt(netCost(opt))+'</td>';
+        h+='<td class="lv-num">'+fmt(_sell)+'</td>';
+        h+='<td class="lv-num">'+_margin2.toFixed(2)+'%</td>';
+        h+='<td class="lv-num" style="color:'+(isSel?'#16a34a':'#1f2937')+'">'+fmt(_profit2)+'</td>';
+      }
+      // Action
+      h+='<td style="text-align:right;white-space:nowrap" onclick="event.stopPropagation()">';
+      if(_rowLocked){
+        h+='<span class="bdg boos"><i class="fa fa-lock" style="font-size:8px"></i> '+(_cellL.lockReason==='age'?'AGE RULE':_cellL.lockReason==='safety'?'RESTRICTED':'RULE BLOCKED')+'</span>';
+      } else if(isSel){
+        var en2=_escAttr(p.name),es2=_escAttr(opt.supplier),ep2=_escAttr(opt.pno);
+        h+='<button class="lv-mod-btn" onclick="event.stopPropagation();openModal(this,\''+p.id+'\',\''+opt.sid+'\',\''+en2+'\',\''+es2+'\',\''+ep2+'\')"><i class="fa fa-list" style="font-size:10px"></i> Modify</button>';
+        h+='<button class="lv-done-btn" onclick="toggle(\''+p.id+'\',\''+opt.sid+'\')">SELECTED &#10003;</button>';
+      } else {
+        h+='<button class="lv-sel-btn" onclick="toggle(\''+p.id+'\',\''+opt.sid+'\')">SELECT &#8635;</button>';
+      }
+      h+='</td></tr>';
+    }
+    h+='</table>';
+  }
+  document.getElementById('list-body').innerHTML=h;
+}
+
+// -- Insurer switcher --
+var INSURERS=['Allianz','NRMA Insurance','AAMI','Suncorp','QBE','IAG','Budget Direct','Private'];
+var activeInsurer='Allianz';
+
+function renderInsurerDropdown(){
+  var list=document.getElementById('insurer-dropdown-list');
+  if(!list)return;
+  list.innerHTML=INSURERS.map(function(ins){
+    var isActive=ins===activeInsurer;
+    var hasRule=ALL_RULES.some(function(r){return r.insurer.toLowerCase()===ins.toLowerCase();});
+    return '<div onclick="selectInsurer(\''+ins+'\')" style="padding:7px 12px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;background:'+(isActive?'#f0fdf4':'#fff')+'" onmouseover="this.style.background=\''+(isActive?'#f0fdf4':'#f9fafb')+'\'" onmouseout="this.style.background=\''+(isActive?'#f0fdf4':'#fff')+'\'">'
+      +'<span style="font-weight:'+(isActive?'700':'500')+';color:#374151">'+ins+'</span>'
+      +(isActive?'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>':'')
+      +(!hasRule?'<span style="font-size:9px;background:#fef3c7;color:#d97706;border-radius:3px;padding:1px 5px;font-weight:700">No rule</span>':'')
+      +'</div>';
+  }).join('');
+}
+
+function toggleInsurerDropdown(){
+  var dd=document.getElementById('insurer-dropdown');
+  if(!dd)return;
+  var open=dd.style.display==='block';
+  dd.style.display=open?'none':'block';
+  if(!open) renderInsurerDropdown();
+}
+
+function selectInsurer(ins){
+  activeInsurer=ins;
+  var nameEl=document.getElementById('qh-insurer-name');
+  if(nameEl) nameEl.textContent=ins;
+  document.getElementById('insurer-dropdown').style.display='none';
+  checkInsurerWarning();
+}
+
+function checkInsurerWarning(){
+  renderRulePills();
+}
+
+document.addEventListener('click',function(e){
+  var wrap=document.getElementById('insurer-switcher-wrap');
+  if(wrap&&!wrap.contains(e.target)) document.getElementById('insurer-dropdown').style.display='none';
+});
+
+/* tone mirrors TYPE_COLOR so a rule tag matches its type badge in the grid:
+   OEM blue - Parallel grey - AftM purple - Reco amber - Used/Recycled lime */
+var RULE_PILL_STYLES=[
+  {key:'oem',      label:'OEM',      tone:'blue'},
+  {key:'parallel', label:'Parallel', tone:'grey'},
+  {key:'aftm',     label:'Aftm',     tone:'purple'},
+  {key:'reco',     label:'Reco',     tone:'amber'},
+  {key:'recycled', label:'Recycled', tone:'lime'},
+];
+function renderRulePills(){
+  var el=document.getElementById('rule-pills');if(!el)return;
+  var r=getActiveRule();
+  if(!r){el.innerHTML='';return;}
+  // A rule covers this insurer if it MAPS it (debtors), not if it happens to be
+  // named after it. Name matching broke as soon as rules were renamed.
+  var _ins=(typeof QUOTE_INSURER!=='undefined'?QUOTE_INSURER:activeInsurer).toLowerCase();
+  var hasRule=ALL_RULES.some(function(x){
+    if((x.debtors||[]).some(function(d){return (d||'').toLowerCase()===_ins;}))return true;
+    return (x.insurer||'').toLowerCase()===_ins;
+  });
+  if(!hasRule){
+    el.innerHTML='<span style="display:inline-flex;align-items:center;gap:8px;background:#fffbeb;border:1px solid #fde68a;border-radius:3px;padding:0 14px;height:28px;font-size:11px;color:#92400e;white-space:nowrap;min-width:320px">\u26A0 No margin rule set up for this insurer. <a onclick="switchTab(\'rules\',true)" style="color:#d97706;font-weight:700;text-decoration:underline;cursor:pointer">Click here to set it up</a></span>';
+    return;
+  }
+  function shortVal(v){if(!v||v==='-')return'-';var m=v.match(/(\d+(?:\.\d+)?)/);if(!m)return'-';return v.toLowerCase().indexOf('markup')>-1?'+'+m[1]+'% of cost':m[1]+'% of list';}
+  var html='';
+  for(var i=0;i<RULE_PILL_STYLES.length;i++){
+    var p=RULE_PILL_STYLES[i];
+    var full=r[p.key]||'-';
+    var short=shortVal(full);
+    html+='<span class="rule-pill rp-'+p.tone+'">'
+      +'<span class="rule-pill-l">'+p.label+'</span>'
+      +'<span class="rule-pill-v">'+short+'</span>'
+      +'</span>';
+  }
+  el.innerHTML=html;
+  // the label's pricing basis follows the rule: "% of list" or "markup on cost".
+  // Mixed rules (some list, some markup) say "mixed" rather than pick one.
+}
+
+checkInsurerWarning();
+renderRulePills();
+var _bannerShown=false;
+
+function showRuleBanner(){
+  if(_bannerShown)return;
+  _bannerShown=true;
+  updateRuleBanner();
+  // now delivered as a toast rather than an inline bar
+  var rule=getActiveRule();
+  if(rule)showToast(rule.insurer+' rule applied to this quote');
+}
+// The inline banner is gone (it is a toast now), but this function is still the
+// hook that refreshes the rule nudge and the exceptions strip - so it must NOT
+// return early just because the old banner element is absent.
+function updateRuleBanner(){
+  updateExcNotice();
+}
+var _naPending=null;
+function openNaConfirm(pid,sid,opt){
+  _naPending={pid:pid,sid:sid};
+  var tid=mroTypeIdForOpt(opt);
+  var label=MRO_TYPE_LABEL[tid]||opt.type;
+  var eff=getEffectiveRule(opt);
+  var priced=eff?(eff.mode==='markup'?eff.pct+'% markup on cost':eff.pct+'% of list'):null;
+  document.getElementById('na-title').textContent=label+' parts not accepted';
+  document.getElementById('na-body').innerHTML='This part type has been flagged as not acceptable by the insurer.'+(priced?' It will be priced at <b>'+priced+'</b> and may not be approved.':' It carries no valid sell price under the active rule and may not be approved.');
+  document.getElementById('na-modal').style.display='flex';
+}
+function closeNaConfirm(){
+  document.getElementById('na-modal').style.display='none';
+  _naPending=null;
+}
+function confirmNaUse(){
+  if(!_naPending)return closeNaConfirm();
+  var pid=_naPending.pid,sid=_naPending.sid;
+  NA_ACK[pid+'|'+sid]=true;
+  closeNaConfirm();
+  toggle(pid,sid);
+}
+function updateExcNotice(){
+  var notice=document.getElementById('exc-notice');
+  if(!notice)return;
+  var rule=getActiveRule();
+  if(!rule){notice.style.display='none';return;}
+  var na=notAcceptedTypes();
+  var exceptions=activeMroExceptions();
+  var types=activeMroTypes();
+  // Only surface an exception category if it actually restricts a part on this quote -
+  // otherwise every rule would show all 6 safety categories by default.
+  var relevantExc=exceptions.filter(function(e){
+    return PARTS.some(function(p){return p.exc&&p.exc.category===e.category;});
+  });
+  if(!na.length&&!relevantExc.length){notice.style.display='none';return;}
+  notice.style.display='flex';
+  var pillsEl=document.getElementById('exc-pills-bar');
+  if(!pillsEl)return;
+  var html='';
+  // One treatment for both kinds: an amber pill naming the restriction, then its
+  // detail. Only the source differs - derived from the pricing rule, or entered
+  // by hand - and that is carried in the tooltip, not the styling.
+  function excEntry(label,detail,tip){
+    return '<span class="exc-entry">'
+         + '<span class="exc-pill oem">'+label+'</span>'
+         + (detail?'<span class="exc-detail">'+detail+'</span>':'')
+         + (tip?'<span class="exc-tip">'+tip+'</span>':'')
+         + '</span>';
+  }
+  // Part types this insurer refuses. Stated once here rather than on every cell.
+  na.forEach(function(t){
+    html+=excEntry('Not Accepted',t,
+      rule.insurer+' does not accept '+t+' parts. Set Accepted to Yes in the pricing rule to remove this.');
+  });
+  // Per-part safety-exception categories (Airbag Systems, ABS, etc) currently in force,
+  // read live from the active rule's MRO config rather than a static demo array.
+  relevantExc.forEach(function(e){
+    var label=partExceptionLabel({exc:{category:e.category}},exceptions,types)||'Restricted';
+    var affected=PARTS.filter(function(p){return p.exc&&p.exc.category===e.category;}).map(function(p){return p.name;}).join(', ');
+    html+=excEntry(e.category,label,'Safety-critical category - '+label+'. Affects: '+affected+'.');
+  });
+  pillsEl.innerHTML=html;
+}
+updateRuleBanner();
+updateExcNotice();
+setTimeout(showRuleBanner,300);
+
+function setView(v){
+  var gridWrap=document.getElementById('grid-view-wrap');
+  var listWrap=document.getElementById('list-view');
+  if(gridWrap) gridWrap.style.display=v==='grid'?'block':'none';
+  if(listWrap) listWrap.style.display=v==='list'?'block':'none';
+  var grid=document.getElementById('btn-grid-view');
+  var list=document.getElementById('btn-list-view');
+  if(grid){grid.style.background=v==='grid'?'#f0fdf4':'#fff';var gi=grid.querySelector('svg');if(gi)gi.setAttribute('fill',v==='grid'?'#16a34a':'#9ca3af');}
+  if(list){list.style.background=v==='list'?'#f0fdf4':'#fff';var li=list.querySelector('svg');if(li)li.setAttribute('fill',v==='list'?'#16a34a':'#9ca3af');}
+  var lsBtn=document.getElementById('btn-list-settings');
+  if(lsBtn) lsBtn.style.display=v==='list'?'inline-flex':'none';
+  if(v==='list') renderList();
+}
+
+// -- Supplier header tooltips --
+var SUP_INFO={
+  s2:{name:'OEM Direct',    status:'Quoting',phone:'02 9123 4567',type:'OEM Dealer',      delivery:'Next Run / $0.00',expiry:'25/04/2026',quoteNo:'OEM-89734',disc:'0.00%'},
+  s1:{name:'Parts Network', status:'Quoting',phone:'03 8765 4321',type:'Aftermarket',      delivery:'1-2 Days / $0.00', expiry:'25/04/2026',quoteNo:'PN-89734', disc:'5.00%'},
+  s3:{name:'ATS Parts',     status:'Quoting',phone:'07 3456 7890',type:'OEM / Parallel',   delivery:'Same Day / $0.00', expiry:'25/04/2026',quoteNo:'ATS-89734',disc:'0.00%'},
+  s4:{name:'Eco Parts',     status:'Quoting',phone:'08 6789 0123',type:'Used / Salvage',   delivery:'Next Run / $0.00', expiry:'25/04/2026',quoteNo:'ECO-89734',disc:'0.00%'},
+  s6:{name:'Wreckers Direct',status:'Quoting',phone:'07 3222 1144',type:'Used / Salvage',   delivery:'2-3 Days / $0.00', expiry:'25/04/2026',quoteNo:'WD-89734', disc:'0.00%'},
+  s8:{name:'Salvage Direct',status:'Quoting',phone:'03 8123 4477',type:'Used / Salvage',   delivery:'1-2 Days / $0.00', expiry:'25/04/2026',quoteNo:'SD-89734', disc:'0.00%'},
+  s5:{name:'Reco Centre',   status:'Quoting',phone:'02 4567 8901',type:'Reconditioned',    delivery:'3-5 Days / $0.00', expiry:'25/04/2026',quoteNo:'RC-89734', disc:'0.00%'},
+};
+var _supTipHideTimer=null,_supTipShowTimer=null,_supTipActive=null;
+function clearSupTipHide(){if(_supTipHideTimer){clearTimeout(_supTipHideTimer);_supTipHideTimer=null;}}
+function showSupTip(sid,el){
+  if(_editOpen())return;
+  if(!SUP_INFO[sid])return;
+  // Same header already showing: keep it, just cancel any pending hide.
+  if(_supTipActive===el){clearSupTipHide();return;}
+  clearTimeout(_supTipShowTimer);
+  clearSupTipHide();
+  // Different header: close the current one now and restart the dwell from zero.
+  var tip=document.getElementById('sup-hd-tip');
+  if(_supTipActive&&tip)tip.style.display='none';
+  _supTipActive=null;
+  _supTipShowTimer=setTimeout(function(){_renderSupTip(sid,el);},TT_SHOW_DELAY);
+}
+function _renderSupTip(sid,el){
+  if(_editOpen())return;
+  var s=SUP_INFO[sid];if(!s)return;
+  var tip=document.getElementById('sup-hd-tip');if(!tip)return;
+  var rows=[
+    {l:'Status',v:s.status},{l:'Phone',v:s.phone},
+    {l:'Type',v:s.type},{l:'Delivery',v:s.delivery},
+    {l:'Price Expiry',v:s.expiry},{l:'Supplier Quote #',v:s.quoteNo}
   ];
+  // only surface the settlement discount when the feature is on
+  var _shows=SETTLEMENT_ON&&!(DEALER_VIEW&&!SETTLEMENT_SHOW_DEALER);
+  if(_shows)rows.push({l:'Settlement Disc',v:s.disc});
+  tip.innerHTML='<div class="tth" style="color:'+(SUP_COLORS[sid]||'#374151')+'">'+s.name+'</div>'
+    +rows.map(function(r){return '<div class="ttr"><span class="ttl">'+r.l+'</span><span class="ttv">'+r.v+'</span></div>';}).join('');
+  tip.style.display='block';
+  _positionTooltipAtCell(tip,el);   // identical placement logic to the price cells
+  _supTipActive=el;
+}
+function hideSupTip(){
+  clearTimeout(_supTipShowTimer);
+  clearSupTipHide();
+  _supTipHideTimer=setTimeout(function(){
+    var tip=document.getElementById('sup-hd-tip');
+    if(tip) tip.style.display='none';
+    _supTipActive=null;
+  },TT_HIDE_GRACE);
+}
+function _repositionSupTip(){
+  var tip=document.getElementById('sup-hd-tip');
+  if(tip&&tip.style.display==='block'&&_supTipActive)_positionTooltipAtCell(tip,_supTipActive);
+}
+window.addEventListener('resize',_repositionSupTip);
+document.addEventListener('scroll',_repositionSupTip,true);
 
-  return (
-    <div className="qm-overlay" onClick={e=>{ if(e.target===e.currentTarget) onClose(); }}>
-      <div className="qm-panel">
-        <div className="qm-head">
-          <div><div className="qm-title">Edit Selected Item</div><div className="qm-sub">{part.name} — {sup.name}</div></div>
-          <button className="qm-x" onClick={onClose}>✕</button>
-        </div>
-        <div className="qm-body">
-          <div className="qm-field">
-            <label className="qm-lbl">Display Format</label>
-            <select className="sel" value={partNoType} onChange={e=>setPartNoType(e.target.value)}>
-              <option value="">Type or select...</option>
-              {PN_TYPES.map(t=><option key={t} value={t}>{t}</option>)}
-            </select>
-          </div>
-          <div className="qm-field">
-            <label className="qm-lbl">Part Number</label>
-            <input className="txt" type="text" placeholder="Enter or override part number" value={partNo} onChange={e=>setPartNo(e.target.value)}/>
-          </div>
-          <div className="qm-rows">
-            {ROWS.map(r=>(
-              <label key={r.id} className={"qm-row "+(method===r.id?'active':'')} onClick={()=>setMethod(r.id)}>
-                <input type="radio" name="qm-pm" checked={method===r.id} onChange={()=>setMethod(r.id)}/>
-                <span className="qm-row-lbl">{r.label}</span>
-                {r.id!=='listPrice' && (
-                  <div className="qm-valbox">
-                    {r.suf==='%' && (
-                      <div className="qm-stepper" onClick={e=>e.stopPropagation()}>
-                        <button type="button" tabIndex={-1} onClick={()=>{ setMethod(r.id); setValue(v=>v+1); }}>▲</button>
-                        <button type="button" tabIndex={-1} onClick={()=>{ setMethod(r.id); setValue(v=>Math.max(0,v-1)); }}>▼</button>
-                      </div>
-                    )}
-                    {r.pre && <span className="qm-pre">{r.pre}</span>}
-                    <input type="number" value={value} disabled={method!==r.id} onClick={e=>e.stopPropagation()} onChange={e=>setValue(parseFloat(e.target.value)||0)}/>
-                    {r.suf && <span className="qm-suf">{r.suf}</span>}
-                  </div>
-                )}
-              </label>
-            ))}
-          </div>
-          <div className="qm-hint">This pricing method overrides this line item only.</div>
-        </div>
-        <div className="qm-foot">
-          <button className="btn btn-ghost" onClick={()=>{ onReset(); onClose(); }}>Reset</button>
-          <button className="btn btn-green" style={{marginLeft:'auto'}} onClick={()=>{ onSave({method, value, partNoType, partNo}); onClose(); }}>Save Changes</button>
-        </div>
-      </div>
-    </div>
-  );
+// -- Price-cell tooltip: ANCHORED to the cell (does not follow the cursor) --
+// The tooltip is position:fixed with z-index 9999, so anchoring it flush to the
+// cell edge (with a 1px overlap) means the pointer moves straight from the cell
+// onto the tooltip surface. It never touches the neighbouring cell underneath,
+// so nothing swaps - and everything inside the tooltip is directly clickable.
+var _ttTimer=null;        // grace period before hiding, so a fast diagonal move survives
+var _ttActive=null;
+var _ttShowTimer=null;
+var TT_HIDE_GRACE=120;
+var TT_SHOW_DELAY=600;   // dwell before a tooltip opens, so sweeping the grid doesn't flash them
+
+function _positionTooltipAtCell(tt,cell){
+  var r=cell.getBoundingClientRect();
+  var w=tt.offsetWidth||230,h=tt.offsetHeight||150;
+  var vw=window.innerWidth,vh=window.innerHeight,M=8,OVERLAP=1;
+
+  // Prefer flush BELOW the cell; flip above if it won't fit. The 1px overlap keeps
+  // the tooltip contiguous with the cell so the pointer can move onto it.
+  var top=r.bottom-OVERLAP;
+  if(top+h>vh-M) top=r.top-h+OVERLAP;
+  top=Math.max(M,Math.min(top,vh-h-M));
+
+  // Centre on the cell. The tooltip (230px) is wider than a column (122px), so
+  // centring guarantees it spans the cell's full width - the pointer can leave
+  // the cell vertically from any x position and still land on the tooltip.
+  var left=r.left+(r.width/2)-(w/2);
+  left=Math.max(M,Math.min(left,vw-w-M));
+
+  tt.style.bottom='';
+  tt.style.left=Math.round(left)+'px';
+  tt.style.top=Math.round(top)+'px';
 }
 
-function CellPop({ part, c, types, onOpenImage }){
-  const { res, cost, sup } = c;
-  const pt = ruleFor(sup.typeId, types);
-  const higher = pt.resolver==='higher';
-  const markup = cost>0 ? (res.sell-cost)/cost*100 : 0;
-  const disc = part.list>0 ? (part.list-cost)/part.list*100 : 0;
-  const applied = cl => cl.method==='pctList' ? `${cl.value}% list` : cl.method==='markupCost' ? `+${cl.value}% cost` : cl.method==='listPrice' ? 'dealer list' : `$${cl.value}`;
-  const combo = res.steps.length>1;
-  const marginSell = res.sell>0 ? (res.sell-cost)/res.sell*100 : 0;
-  const imgSignal = SIGNAL_DEFS.find(d=>d.id==='img');
-  const caption = `${titleCase(part.name)} · ${sup.name}`;
-  const signals = SIGNAL_DEFS.filter(d=>c[d.id] && d.id!=='img');
-  return (
-    <div className="gpop">
-      <div className="gpop-title">{sup.name} · {sup.type}</div>
-      {c.img && (
-        <div className="gpop-photo-block" onClick={e=>{ e.stopPropagation(); onOpenImage && onOpenImage({ src:c.img, caption }); }}>
-          <div className="gpop-photo-lbl"><span className="gpop-signal-ic" style={{background:imgSignal.color}}>{signalIcon(imgSignal)}</span><b>Image</b> · Photo attached</div>
-          <img className="gpop-photo" src={c.img} alt={caption}/>
-        </div>
-      )}
-      {signals.length>0 && (
-        <div className="gpop-signals">
-          {signals.map(sig=>(
-            <div className="gpop-signal" key={sig.id}>
-              <span className="gpop-signal-ic" style={{background:sig.color}}>{signalIcon(sig)}</span>
-              <span><b>{sig.popLabel}</b> · {sig.popDesc(c, part)}</span>
-            </div>
-          ))}
-        </div>
-      )}
-      <div className="gpop-r"><span className="gpop-k">Supplier Part No.</span><span className="gpop-v">{part.dealer}</span></div>
-      <div className="gpop-r"><span className="gpop-k">Modified Part No.</span><span className="gpop-v">{c.modPartNo || '—'}</span></div>
-      <div className="gpop-r"><span className="gpop-k">Cost</span><span className="gpop-v">{fmt(cost)}</span></div>
-      <div className="gpop-r warn"><span className="gpop-k">Supplier Discount</span><span className="gpop-v">⚠ {disc.toFixed(1)}%</span></div>
-      <div className="gpop-r"><span className="gpop-k">Rule Applied</span><span className="gpop-v">{res.lineOverridden ? `✎ ${METHODS[res.lineMethod].label}` : res.overridden ? '⇄ Conditional rule' : (combo ? `${higher?'higher':'lower'} of ↓` : applied(res.steps[0].cl))}</span></div>
-      {res.lineOverridden ? (
-        <div className="gpop-sub match"><span className="gpop-k">✎ Manually overridden for this line</span><span className="gpop-v">{fmt(res.sell)}</span></div>
-      ) : res.overridden ? (
-        <>
-          <div className="gpop-sub match"><span className="gpop-k">⇄ Matched to {res.condRef ? PT_NAME(res.condRef) : 'other type'}'s rate{res.condCapped ? ' · capped' : ''}</span><span className="gpop-v">{fmt(res.sell)}</span></div>
-          <div className="gpop-sub loser"><span className="gpop-k">{pt.name} type rule ({combo ? `${higher?'higher':'lower'} of ${res.steps.map(s=>applied(s.cl)).join(' / ')}` : applied(res.steps[0].cl)}) — superseded</span><span className="gpop-v">{fmt(res.preOverride)}</span></div>
-        </>
-      ) : (
-        <>
-          {combo && res.steps.map((s,idx)=>{
-            const win = res.winnerIdx===s.i;
-            return (
-              <div key={idx} className={"gpop-sub "+(win?'win':'loser')}>
-                <span className="gpop-k">{String.fromCharCode(65+idx)} · {applied(s.cl)}{win && <span className="gpop-tagm">{higher?'HIGHER':'LOWER'}</span>}</span>
-                <span className="gpop-v">{fmt(s.v)}</span>
-              </div>
-            );
-          })}
-          {res.capped && <div className="gpop-sub cap"><span className="gpop-k">⛰ {CAP_TYPES[pt.cap.type].chip.replace('#',pt.cap.value)}</span><span className="gpop-v">{fmt(res.sell)}</span></div>}
-        </>
-      )}
-      <div className="gpop-r"><span className="gpop-k">List Price</span><span className="gpop-v">{fmt(part.list)}</span></div>
-      <div className="gpop-final"><span className="gpop-k">Sell Price</span><span className="gpop-v">{fmt(res.sell)}</span></div>
-      <div className="gpop-r" style={{borderBottom:'none'}}><span className="gpop-k">Profit</span><span className="gpop-v" style={{color: res.sell-cost < 0 ? 'var(--red)' : 'var(--green-d)'}}>{fmt(res.sell-cost)}</span></div>
-      <div className="gpop-foot">Margin on sell {marginSell.toFixed(1)}% · Markup on cost {markup.toFixed(1)}%</div>
-    </div>
-  );
+function _ttScheduleHide(tt,cell){
+  clearTimeout(_ttTimer);
+  _ttTimer=setTimeout(function(){
+    tt.style.display='none';
+    if(_ttActive===cell)_ttActive=null;
+  },TT_HIDE_GRACE);
 }
 
-ReactDOM.createRoot(document.getElementById('checkprice-react-root')).render(<QuoteGrid/>);
-})();
+// True while the MODIFY popover is open. Cell tooltips are fully suppressed then -
+// they would cover the popover and fight it for the same screen space.
+function _editOpen(){var mo=document.getElementById('editModal');return !!(mo&&mo.classList.contains('open'));}
+function showTooltip(cell,e){
+  if(_editOpen())return;
+  clearTimeout(_ttShowTimer);
+  clearTimeout(_ttTimer);            // cancel any pending hide
+  if(_ttActive&&_ttActive!==cell){
+    var old=_ttActive.querySelector('.tt');
+    if(old) old.style.display='none';
+  }
+  var tt=cell.querySelector('.tt');
+  if(!tt)return;
+  tt.style.display='block';
+  _positionTooltipAtCell(tt,cell);   // measured after display:block so w/h are real
+  _ttActive=cell;
+  tt.onmouseenter=function(){clearTimeout(_ttTimer);};
+  tt.onmouseleave=function(){_ttScheduleHide(tt,cell);};
+}
+
+function hideTooltip(cell,relatedTarget){
+  clearTimeout(_ttShowTimer);
+  var tt=cell.querySelector('.tt');
+  if(!tt)return;
+  if(tt.contains(relatedTarget))return;   // moving into the tooltip - keep it open
+  _ttScheduleHide(tt,cell);
+}
+
+document.addEventListener('mouseover',function(e){
+  if(_editOpen())return;   // popover is open - no tooltips at all
+  var cell=e.target.closest('.ttw');
+  if(cell){
+    // Same cell the tooltip is already open for: keep it, cancel any pending hide.
+    if(_ttActive===cell){clearTimeout(_ttTimer);return;}
+    // A different cell. Close whatever is open straight away, then start the dwell
+    // again from zero - moving to a new cell should never show its tooltip instantly.
+    clearTimeout(_ttShowTimer);
+    clearTimeout(_ttTimer);
+    if(_ttActive){
+      var oldTt=_ttActive.querySelector('.tt');
+      if(oldTt) oldTt.style.display='none';
+      _ttActive=null;
+    }
+    _ttShowTimer=setTimeout(function(){showTooltip(cell,e);},TT_SHOW_DELAY);
+    return;
+  }
+  if(e.target.closest('.tt'))clearTimeout(_ttTimer);   // over the tooltip - cancel hide
+});
+document.addEventListener('mouseout',function(e){
+  var cell=e.target.closest('.ttw');
+  if(!cell)return;
+  if(cell.contains(e.relatedTarget))return;
+  clearTimeout(_ttShowTimer);        // left before the dwell elapsed - never open it
+  hideTooltip(cell,e.relatedTarget);
+});
+// Keep the anchor correct if the grid scrolls or the window resizes while open.
+window.addEventListener('resize',function(){
+  if(_ttActive){var t=_ttActive.querySelector('.tt');if(t&&t.style.display==='block')_positionTooltipAtCell(t,_ttActive);}
+});
+document.addEventListener('scroll',function(){
+  if(_ttActive){var t=_ttActive.querySelector('.tt');if(t&&t.style.display==='block')_positionTooltipAtCell(t,_ttActive);}
+},true);
+
+render();updateTotals();updateChipCounts();setView('grid');showPriceSubTab('check');setSummaryView('new');
 </script>
-
 <script type="text/babel" data-presets="react">
 (function(){
 const { useState, useEffect, useMemo } = React;
