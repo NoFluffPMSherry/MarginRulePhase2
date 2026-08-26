@@ -3889,6 +3889,7 @@ ReactDOM.createRoot(document.getElementById('checkprice-react-root')).render(<Qu
 </script>
 
 <script type="text/babel" data-presets="react">
+(function(){
 const { useState, useEffect, useMemo } = React;
 
 const INSURERS = ["NRMA Insurance","AAMI","Allianz","Budget Direct","IAG / CGU","Suncorp","QBE","GIO","Youi","Bingle"];
@@ -5785,6 +5786,7 @@ function RulesApp() {
 
 const root=ReactDOM.createRoot(document.getElementById('settings-react-root'));
 root.render(<RulesApp/>);
+})();
 </script>
 
 <script>
