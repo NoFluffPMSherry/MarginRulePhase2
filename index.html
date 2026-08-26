@@ -2791,6 +2791,7 @@ function showPriceSubTab(name){
 }
 
 function switchTab(name,fromQuote,gotoTab){
+  window.scrollTo(0,0);
   var _gp=document.getElementById('getprice-screen');
   if(name==='getprice'){
     ['price-screen','info-screen','attachments-screen','rules-screen'].forEach(function(id){
