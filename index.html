@@ -2632,6 +2632,7 @@ input[type=number]{-moz-appearance:textfield}
     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;min-width:0">
       <div style="display:flex;align-items:center;gap:6px">
         <span class="ctl-lbl">Quick Select:</span>
+        <button class="qsel-btn" id="qs-rec" onclick="toggleQuickSelect('rec')">Recommended</button>
         <button class="qsel-btn" id="qs-profit" onclick="toggleQuickSelect('profit')">Best Profit</button>
         <button class="qsel-btn" id="qs-cost" onclick="toggleQuickSelect('cost')">Lowest Cost</button>
       </div>
@@ -2640,7 +2641,6 @@ input[type=number]{-moz-appearance:textfield}
       <span class="tbar-sep"></span>
       <div class="lgnd-wrap">
         <span class="ctl-lbl">Show:</span>
-        <span class="lgnd-pill lp-dark" id="lgp-rec" onclick="setChipFilter('rec')"><span class="ttf-icon ttf-dark" id="lgi-rec"></span>Recommended<span class="lgnd-n" id="lgn-rec">0</span></span>
         <span class="lgnd-pill lp-green" id="lgp-best" onclick="setChipFilter('best')"><span class="ttf-icon ttf-green" id="lgi-best"></span>Dealer Part Match<span class="lgnd-n" id="lgn-best">0</span></span>
         <span class="lgnd-pill lp-amber" id="lgp-eta" onclick="setChipFilter('eta')"><span class="ttf-icon ttf-amber" id="lgi-eta"></span>ETD Alert<span class="lgnd-n" id="lgn-eta">0</span></span>
         <span class="lgnd-pill lp-grey" id="lgp-cmt" onclick="setChipFilter('cmt')"><span class="ttf-icon ttf-info" id="lgi-cmt"></span>Comments<span class="lgnd-n" id="lgn-cmt">0</span></span>
@@ -3668,7 +3668,10 @@ var PARTS=[
 var SEL={},QTY={},COLS=['s2','s1','s3','s4','s6','s8','s5'];
 for(var z=0;z<PARTS.length;z++){SEL[PARTS[z].id]=null;QTY[PARTS[z].id]='';}
 // Reason-code config, pushed in from General Settings (React side) via notifyReasonCodeSettings.
-var REASON_CODE_REQUIRED=false, REASON_CODE_LIST=[];
+// Defaulted to on (matching genSettings.requireReasonCode below) so the Save-time prompt is
+// testable straight away without a trip to Settings first - real default is a product decision,
+// not a prototype one.
+var REASON_CODE_REQUIRED=true, REASON_CODE_LIST=[];
 // Settlement discount is money off the cost price, so every cost figure and
 // every profit calculation on screen uses the NET cost.
 // Deliberate exception: Target Discount measures the buy against list using the
@@ -3718,7 +3721,9 @@ function chipIconSvg(key,size,color){
   return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 16 16" style="display:block;flex-shrink:0">'+body+'</svg>';
 }
 var CHIP_FILTER=null;
-var CHIP_KEYS=['rec','best','eta','cmt','photo','donor'];
+// 'rec' deliberately excluded - Recommended moved from a Show: filter chip to its own
+// Quick Select button (see toggleQuickSelect('rec')), so it no longer dims/highlights cells.
+var CHIP_KEYS=['best','eta','cmt','photo','donor'];
 var CHIP_COLOR={rec:'#16a34a',best:'#16a34a',eta:'#d97706',cmt:'#4b5563',photo:'#0891b2',donor:'#1d4ed8'};
 function chipHas(opt,f,part){
   if(!opt)return false;
@@ -3920,9 +3925,11 @@ function render(){
       }
       h+='<td class="new-price-cell'+(isSel?' npc-sel':'')+_fcls+' ttw" onclick="toggle(\''+p.id+'\',\''+sid+'\')">';
       var _etd=isLongETD(opt);
-      if(isRec||opt.best||opt.mandate||opt.cmt||opt.photo||_etd){
+      // No per-cell "recommended" badge - the row's green/MODIFY selection state (Recommended
+      // is the default Quick Select) already shows which pick is recommended; a persistent
+      // badge here was redundant with that and confusing once a repairer selected elsewhere.
+      if(opt.best||opt.mandate||opt.cmt||opt.photo||_etd){
         h+='<div class="corner-stack">';
-        if(isRec) h+='<div class="chip-sq chip-rec">'+chipIconSvg('rec',8)+'</div>';
         if(opt.best) h+='<div class="chip-sq chip-flame">'+chipIconSvg('best',9)+'</div>';
         if(opt.mandate) h+='<div class="chip-sq chip-star">'+chipIconSvg('star',8)+'</div>';
         if(opt.cmt) h+='<div class="chip-sq chip-info">'+chipIconSvg('cmt',8,'#4b5563')+'</div>';
@@ -4207,14 +4214,14 @@ function toggleQuickSelect(mode){
   _paintQuickSelect();
 }
 function _paintQuickSelect(){
-  ['profit','cost'].forEach(function(m){
+  ['rec','profit','cost'].forEach(function(m){
     var b=document.getElementById('qs-'+m);
     if(b){ if(QUICK_MODE===m)b.classList.add('on'); else b.classList.remove('on'); }
   });
 }
-// Shared scoring used by both the Quick Select buttons and the "recommended"
-// signal - keeps them honest against each other and against whichever
-// margin rule is currently active, instead of drifting apart.
+// Shared scoring used by the "Best Profit"/"Lowest Cost" Quick Select buttons - pure
+// profit or cost, no ETA/dealer-match preference. "Recommended" (below) is deliberately
+// separate now: it can genuinely disagree with Best Profit, which is the point.
 function bestSidForPart(p,mode){
   var best=null,bestScore=null;
   for(var j=0;j<p.opts.length;j++){
@@ -4230,13 +4237,46 @@ function bestSidForPart(p,mode){
   }
   return best;
 }
-// "Recommended" = the rule-driven best-profit pick, recomputed live so it
-// tracks whichever margin rule is currently active on this quote.
-function recommendedSid(p){ return bestSidForPart(p,'profit'); }
+// Allowed, actually-quoted candidates for a part - the same base filter bestSidForPart
+// uses. Insurer rule compliance is a hard gate here, not a scored factor: a rule-blocked
+// offer never reaches any tier below, regardless of profit, ETA, or dealer-match status.
+function _recCandidates(p){
+  var cands=[];
+  for(var j=0;j<p.opts.length;j++){
+    var opt=p.opts[j];
+    if(!resolveCell(p,opt).allowed) continue;
+    if(opt.inScope===false) continue;
+    cands.push(opt);
+  }
+  return cands;
+}
+function _bestProfitAmong(p,opts){
+  var best=null,bestScore=null;
+  for(var i=0;i<opts.length;i++){
+    var opt=opts[i],score=sellPrice(p,opt)-netCost(opt);
+    if(bestScore===null||score>bestScore){bestScore=score;best=opt.sid;}
+  }
+  return best;
+}
+// "Recommended" = a tiered preference cascade, not pure profit: (1) prefer a Dealer
+// Part Match if one is allowed/quoted, (2) among those, drop long-ETD options unless
+// that would leave nothing, (3) take highest profit among whatever survives. Each tier
+// only narrows the field if it doesn't empty it out entirely, so there's always a pick
+// as long as at least one allowed, quoted offer exists. Recomputed live so it tracks
+// whichever margin rule is currently active on this quote.
+function recommendedSid(p){
+  var cands=_recCandidates(p);
+  if(!cands.length) return null;
+  var dealerMatch=cands.filter(function(o){return !!o.best;});
+  var tier1=dealerMatch.length?dealerMatch:cands;
+  var noLongEtd=tier1.filter(function(o){return !isLongETD(o);});
+  var tier2=noLongEtd.length?noLongEtd:tier1;
+  return _bestProfitAmong(p,tier2);
+}
 function autoSelect(mode){
   if(!mode) return;
   for(var i=0;i<PARTS.length;i++){
-    SEL[PARTS[i].id]=bestSidForPart(PARTS[i],mode);
+    SEL[PARTS[i].id]=(mode==='rec')?recommendedSid(PARTS[i]):bestSidForPart(PARTS[i],mode);
   }
   updateTotals();render();
   if(document.getElementById('list-view')&&document.getElementById('list-view').style.display==='block') renderList();
@@ -4898,11 +4938,10 @@ function confirmNaUse(){
 }
 
 /* ── Reason codes: fires at Save (order time), not at selection ──
-   "recommended" = whichever allowed, actually-quoted option currently scores
-   best on profit under the active margin rule (recommendedSid, the same
-   logic Quick Select > Best Profit uses), recomputed live so it can't drift
-   out of sync with rule changes or exceptions. Every currently-selected line
-   that differs from its recommendation is gathered into one combined prompt
+   "recommended" = the tiered pick from recommendedSid() (Dealer Part Match, then
+   ETA, then profit - see that function), recomputed live so it can't drift out of
+   sync with rule changes, exceptions, or which supplier actually quoted. Every
+   currently-selected line that differs from its recommendation is gathered into one combined prompt
    rather than interrupting per click, matching Drive Group's "just before
    ordering, not at quote time" ask. A line already justified this session
    (REASON_ACK) doesn't ask again unless the pick itself changes. */
@@ -5217,12 +5256,24 @@ document.addEventListener('scroll',function(){
   if(_ttActive){var t=_ttActive.querySelector('.tt');if(t&&t.style.display==='block')_positionTooltipAtCell(t,_ttActive);}
 },true);
 
-document.getElementById('lgi-rec').innerHTML=chipIconSvg('rec',7);
 document.getElementById('lgi-best').innerHTML=chipIconSvg('best',8);
 document.getElementById('lgi-eta').innerHTML=chipIconSvg('eta',8);
 document.getElementById('lgi-cmt').innerHTML=chipIconSvg('cmt',7,'#4b5563');
 document.getElementById('lgi-photo').innerHTML=chipIconSvg('photo',7);
-render();updateTotals();updateChipCounts();setChipFilter('rec');setView('grid');showPriceSubTab('check');setSummaryView('new');
+// This prototype boots straight into the grid (no separate Check Price list screen exists
+// in this build - screen-checkprice-list/-detail and openCpDetail's cp-tbody target are all
+// dead code left over from the Phase 1 merge), so page-load IS the "select a quote, grid
+// opens" moment. Every row pre-selects its recommended pick via the "Recommended" Quick
+// Select button (first of the three, ahead of Best Profit/Lowest Cost - same profit-based
+// scoring under the hood, but its own labelled action/button state now, not borrowed from
+// Best Profit), so a repairer who agrees with every recommendation can review and hit Save
+// directly, and the active button correctly reads "Recommended" rather than implying they
+// clicked Best Profit. "Recommended" no longer lives in the "Show:" filter row or auto-dims
+// the grid on entry, either - the green/MODIFY selection state is signal enough, and dimming
+// 5 of every 6 cells fought the grid's compare job. The remaining "Show:" chips (Dealer Part
+// Match, ETD Alert, etc.) are unaffected - still opt-in filters.
+render();updateTotals();updateChipCounts();setView('grid');showPriceSubTab('check');setSummaryView('new');
+autoSelect('rec'); QUICK_MODE='rec'; _paintQuickSelect();
 </script>
 <script type="text/babel" data-presets="react">
 (function(){
@@ -5416,7 +5467,7 @@ function Dashboard({rules,setRules,onCreate,onEdit,onCopy,onView,initialTab}) {
     screenOrder:'quote-asc',autoSyncOrder:'no',autoSyncPrices:'no',
     overrideStatus:'no',syncPOOnly:'no',autoSelectDealer:'no',
     submitClaim:'no',suppressPricing:'no',useGridDisplay:'yes',priceGridDisplay:'profit'
-  ,settlementDiscount:'no',settlementShowDealer:'no',requireReasonCode:'no'});
+  ,settlementDiscount:'no',settlementShowDealer:'no',requireReasonCode:'yes'});
   const [reasonCodes,setReasonCodes] = useState([
     {id:1,text:"Part won't arrive in time"},
     {id:2,text:"It's out of stock"},
@@ -7435,6 +7486,11 @@ function goList(){ goPackage(); }
 
 function goCheckPrice()     { showScreen('checkprice'); renderCpTable(); setSubNav(null); }
 function openCpDetail(id){
+  // Default every line to its recommended pick on open via the "Recommended" Quick
+  // Select button/mode (see the page-load init for the full rationale) - kept in
+  // sync with that path even though this function is currently unreachable in this
+  // build (no Check Price list screen wires into it yet).
+  autoSelect('rec'); QUICK_MODE='rec'; _paintQuickSelect();
   showScreen('checkprice-detail');
 }
 function goWizard(quoteId)  {
