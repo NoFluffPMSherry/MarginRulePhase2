@@ -3885,7 +3885,7 @@ function lockTooltipHtml(part, opt, cell){
 function render(){
   var h='';
   for(var i=0;i<PARTS.length;i++){
-    var p=PARTS[i],ss=SEL[p.id],rowHasSel=(ss!==null),_recSid=recommendedSid(p);
+    var p=PARTS[i],ss=SEL[p.id],rowHasSel=(ss!==null);
     h+='<tr data-pid="'+p.id+'">';
     h+='<td class="new-part-cell"><div class="part-chk-row">'
       +'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">'
@@ -3900,7 +3900,7 @@ function render(){
       var sid=COLS[c],opt=null;
       for(var k=0;k<p.opts.length;k++){if(p.opts[k].sid===sid){opt=p.opts[k];break;}}
       if(!opt){h+='<td class="new-empty-cell'+(CHIP_FILTER?' npc-dim':'')+'" style="text-align:center;color:#9ca3af;font-size:14px">-</td>';continue;}
-      var isSel=(ss===sid),isRec=(_recSid===sid),tcol=TYPE_COLOR[opt.type]||'#337ab7';
+      var isSel=(ss===sid),tcol=TYPE_COLOR[opt.type]||'#337ab7';
       var en=_escAttr(p.name),ep=_escAttr(opt.pno),es=_escAttr(opt.supplier);
       var _fcls=CHIP_FILTER?(chipHas(opt,CHIP_FILTER,p)?' npc-hit':' npc-dim'):'';
       var _cell=resolveCell(p,opt);
@@ -3968,13 +3968,12 @@ function render(){
       var _setlLbl=(_setl%1===0?_setl.toFixed(0):_setl.toFixed(2).replace(/0$/,''))+'%';
       var _discBit=(opt.sid==='s2'&&_discPct!=null)?('Target Discount '+_discPct.toFixed(1)+'%'+(Math.round(_discPct*10)/10<20?' ⚠':'')):null;
       h+='<div class="tt"><div class="tth" style="color:'+tcol+'">'+opt.supplier+' &middot; '+opt.label+'</div>'
-        +(isRec?'<div class="ttflag"><span class="ttf-icon ttf-dark">'+chipIconSvg('rec',8)+'</span><span><b>Recommended</b> - the active margin rule\'s pick for this part</span></div>':'')
         +(opt.best?'<div class="ttflag"><span class="ttf-icon ttf-green">'+chipIconSvg('best',8)+'</span><span><b>Same part #</b> - matches dealer #'+opt.pno+'</span></div>':'')
         +(opt.mandate?'<div class="ttflag"><span class="ttf-icon ttf-blue" style="font-size:9px;color:#fff">&#9733;</span><span><b>Donor Part Match</b> - Matches '+(opt.mandateInsurer||'insurer')+' donor part requirement</span></div>':'')
         +(opt.deliveryAlert?'<div class="ttflag"><span class="ttf-icon ttf-amber">'+chipIconSvg('eta',8)+'</span><span style="color:#d97706"><b>ETD</b> - '+(opt.deliveryNote||'ETD may slip')+'</span></div>':'')
         +(opt.cmt?'<div class="ttflag"><span class="ttf-icon ttf-grey">'+chipIconSvg('cmt',8)+'</span><span><b>Comment</b> - &ldquo;'+opt.cmt+'&rdquo;</span></div>':'')
         +(opt.photo?'<div class="ttflag"><span class="ttf-icon ttf-skyblue">'+chipIconSvg('photo',8)+'</span><span><b>Image</b> - Photo attached</span></div><div style="text-align:center;margin:2px 0 6px"><img src="'+getDemoPhotoSrc()+'" onclick="event.stopPropagation();openHeadlampPhoto()" style="width:100%;max-height:70px;object-fit:cover;border-radius:3px;cursor:pointer;border:1px solid #e5e7eb"></div>':'')
-        +((isRec||opt.best||opt.mandate||opt.deliveryAlert||opt.cmt||opt.photo)?'<div style="border-top:1px solid #f3f4f6;margin:2px 0 4px"></div>':'')
+        +((opt.best||opt.mandate||opt.deliveryAlert||opt.cmt||opt.photo)?'<div style="border-top:1px solid #f3f4f6;margin:2px 0 4px"></div>':'')
         +(!opt.best?'<div class="ttr"><span class="ttl">Supplier Part No.</span><span class="ttv">'+opt.pno+'</span></div>':'')
         +(opt.mno&&opt.mno!=='--'?'<div class="ttr"><span class="ttl">Modified Part No.</span><span class="ttv">'+opt.mno+'</span></div>':'')
         +'<div class="ttr"><span class="ttl">List Price</span><span class="ttv">'+fmt(p.list)+'</span></div>'
