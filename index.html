@@ -150,6 +150,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-siz
 .chip-etd{background:#d97706;border:1px solid #b45309}
 .chip-photo{background:#0891b2;border:1px solid #0e7490}
 .chip-info{background:#d1d5db;padding:2px;border:1px solid #9ca3af}
+.chip-rec{background:#16a34a;border:1px solid #15803d}
 .ttf-icon.ttf-info{background:#d1d5db;border:1px solid #9ca3af;box-sizing:border-box}
 .selbar{display:flex;align-items:center;justify-content:space-between;padding:3px 6px;margin-top:5px;border-radius:3px;background:#16a34a}
 .selbar.red{background:#ef4444}
@@ -181,6 +182,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-siz
 .ttf-skyblue{background:#0369a1}
 .ttf-amber{background:#d97706;border:1px solid #b45309}
 .ttf-grey{background:#6b7280;border:1px solid #4b5563}
+.ttf-dark{background:#16a34a;border:1px solid #15803d}
 .ttflag>span:last-child{flex:1 1 auto;min-width:0}
 .ttflag b{color:#111827}
 .lgnd-wrap{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
@@ -237,6 +239,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-siz
 .lgnd-pill.lp-amber{--c:#d97706;--cbg:#fffbeb;--cbd:#fcd34d;--ctx:#92400e;--csh:rgba(217,119,6,.22)}
 .lgnd-pill.lp-grey{--c:#4b5563;--cbg:#e5e7eb;--cbd:#4b5563;--ctx:#374151;--csh:rgba(75,85,99,.22)}
 .lgnd-pill.lp-cyan{--c:#0891b2;--cbg:#ecfeff;--cbd:#a5f3fc;--ctx:#155e75;--csh:rgba(8,145,178,.22)}
+.lgnd-pill.lp-dark{--c:#16a34a;--cbg:#dcfce7;--cbd:#86efac;--ctx:#166534;--csh:rgba(22,163,74,.22)}
 .ttf-icon.ttf-cyan{background:#0891b2;border:1px solid #0e7490}
 .lgnd-pill.lp-blue{--c:#1d4ed8;--cbg:#dbeafe;--cbd:#93c5fd;--ctx:#1e40af;--csh:rgba(29,78,216,.22)}
 .lgnd-pill.lp-on{background:var(--cbg);border-color:var(--cbd);color:var(--ctx);box-shadow:0 0 0 2px var(--csh)}
@@ -1958,6 +1961,22 @@ input[type=number]{-moz-appearance:textfield}
     </div>
   </div>
 </div>
+<div id="reason-modal" class="mo" style="display:none;position:fixed;inset:0;z-index:9500;background:rgba(17,24,39,.45);align-items:center;justify-content:center">
+  <div class="md" style="width:480px;max-height:85vh;display:flex;flex-direction:column">
+    <div class="mhd" style="background:#f8fafc;padding:14px 20px;flex-shrink:0">
+      <div class="mht" style="color:#111827;font-size:13px;font-weight:700">Reason needed before ordering</div>
+      <button class="mhx" onclick="closeReasonModal()" style="color:#9ca3af;font-size:18px">&#10005;</button>
+    </div>
+    <div style="padding:12px 20px;overflow-y:auto;flex:1">
+      <div id="reason-modal-count" style="font-size:11px;color:#6b7280;line-height:1.5;margin-bottom:8px"></div>
+      <div id="reason-modal-rows"></div>
+    </div>
+    <div class="emf" style="flex-shrink:0">
+      <button class="embn" onclick="closeReasonModal()">Cancel</button>
+      <button id="reason-modal-confirm" class="embn embp" disabled style="opacity:.5;cursor:not-allowed" onclick="confirmReasonModal()">Continue</button>
+    </div>
+  </div>
+</div>
 <div id="toast" role="status" aria-live="polite">
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" style="flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>
   <span id="toast-msg"></span>
@@ -2473,7 +2492,7 @@ input[type=number]{-moz-appearance:textfield}
           </div>
         </div>
         <button class="btn">Cancel Request</button>
-        <button class="btn btng">Save</button>
+        <button class="btn btng" onclick="handleCheckPriceSave()">Save</button>
       </div>
     </div>
   </div>
@@ -2621,10 +2640,11 @@ input[type=number]{-moz-appearance:textfield}
       <span class="tbar-sep"></span>
       <div class="lgnd-wrap">
         <span class="ctl-lbl">Show:</span>
-        <span class="lgnd-pill lp-green" id="lgp-best" onclick="setChipFilter('best')"><span class="ttf-icon ttf-green"><i class="fa fa-fire" style="font-size:8px;color:#fff"></i></span>Dealer Part Match<span class="lgnd-n" id="lgn-best">0</span></span>
-        <span class="lgnd-pill lp-amber" id="lgp-eta" onclick="setChipFilter('eta')"><span class="ttf-icon ttf-amber"><i class="fa fa-clock-o" style="font-size:8px;color:#fff"></i></span>ETD Alert<span class="lgnd-n" id="lgn-eta">0</span></span>
-        <span class="lgnd-pill lp-grey" id="lgp-cmt" onclick="setChipFilter('cmt')"><span class="ttf-icon ttf-info"><i class="fa fa-comment" style="font-size:7px;color:#4b5563"></i></span>Comments<span class="lgnd-n" id="lgn-cmt">0</span></span>
-        <span class="lgnd-pill lp-cyan" id="lgp-photo" onclick="setChipFilter('photo')"><span class="ttf-icon ttf-cyan"><i class="fa fa-camera" style="font-size:7px;color:#fff"></i></span>Images<span class="lgnd-n" id="lgn-photo">0</span></span>
+        <span class="lgnd-pill lp-dark" id="lgp-rec" onclick="setChipFilter('rec')"><span class="ttf-icon ttf-dark" id="lgi-rec"></span>Recommended<span class="lgnd-n" id="lgn-rec">0</span></span>
+        <span class="lgnd-pill lp-green" id="lgp-best" onclick="setChipFilter('best')"><span class="ttf-icon ttf-green" id="lgi-best"></span>Dealer Part Match<span class="lgnd-n" id="lgn-best">0</span></span>
+        <span class="lgnd-pill lp-amber" id="lgp-eta" onclick="setChipFilter('eta')"><span class="ttf-icon ttf-amber" id="lgi-eta"></span>ETD Alert<span class="lgnd-n" id="lgn-eta">0</span></span>
+        <span class="lgnd-pill lp-grey" id="lgp-cmt" onclick="setChipFilter('cmt')"><span class="ttf-icon ttf-info" id="lgi-cmt"></span>Comments<span class="lgnd-n" id="lgn-cmt">0</span></span>
+        <span class="lgnd-pill lp-cyan" id="lgp-photo" onclick="setChipFilter('photo')"><span class="ttf-icon ttf-cyan" id="lgi-photo"></span>Images<span class="lgnd-n" id="lgn-photo">0</span></span>
         <span class="lgnd-pill lp-blue" id="lgp-donor" onclick="setChipFilter('donor')"><span class="ttf-icon ttf-blue" style="font-size:9px;color:#fff">&#9733;</span>Donor Part<span class="lgnd-n" id="lgn-donor">0</span></span>
       </div>
     </div>
@@ -3575,51 +3595,51 @@ var QUOTE_INSURER="Allianz Australia Insurance"; // global - used by onclick att
 // Info sub-tab) - the vehicle-age gate below is evaluated against this same vehicle.
 var VEHICLE_MODEL_YEAR=2023, VEHICLE_BRAND='hyundai';
 var PARTS=[
-  {id:'p1',name:'FRONT BUMPER',num:'#86510-G3700',list:659.80,autoSel:'s3',opts:[
+  {id:'p1',name:'FRONT BUMPER',num:'#86510-G3700',list:659.80,opts:[
     {sid:'s2',type:'OEM',label:'OEM',supplier:'OEM Direct',  cost:560.83,inScope:true, best:false,eta:'2-3 Weeks',pno:'86510-G3700',mno:'--',cmt:'Supplied in black only, unpainted.',discPct:15,deliveryAlert:true,deliveryNote:'2-3 weeks ex Japan'},
     {sid:'s3',type:'OEM',label:'OEM',supplier:'ATS Parts',   cost:470.00,inScope:true, best:true, eta:'Same Day', pno:'86510-G3700',mno:'--',cmt:'Genuine OEM stock item, same-day pickup available.'},
     {sid:'s1',type:'AftM',label:'Cert AftM',supplier:'Parts Network',cost:299.00,inScope:true,best:false,eta:'1-2 Days',pno:'PN-FB-G3700',mno:'86510-G3700',cmt:'Certified aftermarket.'},
     {sid:'s5',type:'Reco',label:'Recon',supplier:'Reco Centre',cost:290.00,inScope:false,best:false,eta:'4-5 Days',pno:'86510-G3700',mno:'--',cmt:''}
   ]},
-  {id:'p2',name:'LOWER BUMPER COVER',num:'#86512-G3700',list:261.26,autoSel:'s2',opts:[
+  {id:'p2',name:'LOWER BUMPER COVER',num:'#86512-G3700',list:261.26,opts:[
     {sid:'s2',type:'OEM',label:'OEM',supplier:'OEM Direct',  cost:209.01,inScope:true, best:false,eta:'Same Day', pno:'86512-G3700',mno:'--',cmt:''},
     {sid:'s3',type:'OEM',label:'OEM',supplier:'ATS Parts',   cost:132.30,inScope:true, best:false,eta:'2-3 Days',pno:'86512-G3700',mno:'--',cmt:'ATS parallel import.'},
     {sid:'s1',type:'AftM',label:'Cert AftM',supplier:'Parts Network',cost:110.00,inScope:true,best:true,eta:'1-2 Days',pno:'PN-LBC-G3700',mno:'86512-G3700',cmt:''},
     {sid:'s4',type:'Used',label:'Used',supplier:'Eco Parts', cost:122.43,inScope:true, best:false,eta:'4-5 Days',pno:'86512-G3700',mno:'--',cmt:''},
     {sid:'s6',type:'Used',label:'Used',supplier:'Wreckers Direct',cost:105.00,inScope:true,best:false,eta:'2-3 Days',pno:'86512-G3700',mno:'--',cmt:''},
   ]},
-  {id:'p3',name:'R/F OUT BUMPER BRKT',num:'#86514-G3000',list:41.16,autoSel:'s4',opts:[
+  {id:'p3',name:'R/F OUT BUMPER BRKT',num:'#86514-G3000',list:41.16,opts:[
     {sid:'s2',type:'OEM',label:'OEM',supplier:'OEM Direct',  cost:35.81,inScope:true, best:false,eta:'2-3 Days',pno:'86514-G3000',mno:'--',cmt:''},
     {sid:'s4',type:'Used',label:'Used',supplier:'Eco Parts', cost:15.09,inScope:true, best:false, eta:'2-3 Weeks', pno:'86514-G3000',mno:'--',cmt:'',deliveryAlert:true,deliveryNote:'Backordered - 10-14 days'},
     {sid:'s6',type:'Used',label:'Used',supplier:'Wreckers Direct',cost:13.88,inScope:true,best:false,eta:'2-3 Days',pno:'86514-G3000',mno:'--',cmt:''},
   ]},
-  {id:'p4',name:'RIGHT HEADLAMP ASSY',num:'#92102-G3115',list:2259.56,autoSel:'s1',opts:[
+  {id:'p4',name:'RIGHT HEADLAMP ASSY',num:'#92102-G3115',list:2259.56,opts:[
     {sid:'s2',type:'OEM',label:'OEM',supplier:'OEM Direct',  cost:1807.65,inScope:true, best:false,eta:'4-5 Days',pno:'92102-G3115',mno:'--',cmt:''},
     {sid:'s1',type:'OEM',label:'OEM',supplier:'Parts Network',cost:1095.00,inScope:true,best:true, eta:'Same Day', pno:'92102-G3115',mno:'--',cmt:'Confirmed genuine OEM stock, boxed and ready.'},
     {sid:'s4',type:'Used',label:'Used',supplier:'Eco Parts', cost:1180.00,inScope:true, best:false,eta:'2-3 Days',pno:'92102-G3115',mno:'--',cmt:'Grade A used.'},
     {sid:'s6',type:'Used',label:'Used',supplier:'Wreckers Direct',cost:1050.00,inScope:true,best:false,eta:'2-3 Days',pno:'92102-G3115',mno:'--',cmt:''},
     {sid:'s5',type:'Reco',label:'Recon',supplier:'Reco Centre',cost:1402.00,inScope:false,best:false,eta:'1-2 Days',pno:'92102-G3115',mno:'--',cmt:'',photo:true}
   ]},
-  {id:'p5',name:'R/BADGE "N-LINE"',num:'#86312-G4700',list:70.14,autoSel:'s4',opts:[
+  {id:'p5',name:'R/BADGE "N-LINE"',num:'#86312-G4700',list:70.14,opts:[
     {sid:'s2',type:'OEM',label:'OEM',supplier:'OEM Direct',  cost:61.22,inScope:true, best:false,eta:'2-3 Days',pno:'86312-G4700',mno:'--',cmt:''},
     {sid:'s4',type:'Used',label:'Used',supplier:'Eco Parts', cost:19.80, inScope:true, best:false, eta:'Same Day', pno:'86312-G4700',mno:'--',cmt:''},
     {sid:'s6',type:'Used',label:'Used',supplier:'Wreckers Direct',cost:22.80,inScope:true,best:false,eta:'2-3 Days',pno:'86312-G4700',mno:'--',cmt:''},
   ]},
-  {id:'p6',name:'R/H SILL PANEL MOULD',num:'#9124106',list:965.50,autoSel:'s2',opts:[
+  {id:'p6',name:'R/H SILL PANEL MOULD',num:'#9124106',list:965.50,opts:[
     {sid:'s2',type:'OEM',label:'OEM',supplier:'OEM Direct',  cost:772.40,inScope:true, best:false,eta:'4-5 Days',pno:'9124106',   mno:'--',cmt:''},
     {sid:'s1',type:'AftM',label:'Cert AftM',supplier:'Parts Network',cost:520.00,inScope:true, best:true, eta:'1-2 Days',pno:'PN-SILL-9124',mno:'9124106',cmt:'Certified aftermarket, confirmed fitment.'},
     {sid:'s3',type:'OEM',label:'OEM',supplier:'ATS Parts',   cost:340.00,inScope:true, best:false,eta:'4-6 Weeks',pno:'9124106',   mno:'--',cmt:'',deliveryAlert:true,deliveryNote:'3-4 weeks ex UK'},
     {sid:'s4',type:'Used',label:'Used',supplier:'Eco Parts', cost:308.00,inScope:true, best:false,eta:'Same Day', pno:'9124106',   mno:'--',cmt:'Grade A, low km vehicle.'},
     {sid:'s6',type:'Used',label:'Used',supplier:'Wreckers Direct',cost:268.90,inScope:true,best:false,eta:'2-3 Days',pno:'9124106',mno:'--',cmt:''},
   ]},
-  {id:'p7',name:'R/H SILL PANEL ASSY',num:'#5450241',list:315.23,autoSel:'s1',opts:[
+  {id:'p7',name:'R/H SILL PANEL ASSY',num:'#5450241',list:315.23,opts:[
     {sid:'s2',type:'OEM',label:'OEM',supplier:'OEM Direct',  cost:269.95,inScope:true, best:false,eta:'2-3 Days',pno:'5450241',   mno:'--',cmt:''},
     {sid:'s1',type:'AftM',label:'Cert AftM',supplier:'Parts Network',cost:105.00,inScope:true, best:true, eta:'Same Day', pno:'PN-SILL-5450',mno:'5450241',cmt:''},
     {sid:'s4',type:'Used',label:'Used',supplier:'Eco Parts', cost:95.00, inScope:true, best:false,eta:'1-2 Days',pno:'5450241',   mno:'--',cmt:''},
     {sid:'s6',type:'Used',label:'Used',supplier:'Wreckers Direct',cost:91.20,inScope:true,best:false,eta:'2-3 Days',pno:'5450241',mno:'--',cmt:''},
     {sid:'s5',type:'Reco',label:'Recon',supplier:'Reco Centre',cost:198.00,inScope:true,best:false,eta:'4-5 Days',pno:'5450241',  mno:'--',cmt:'Fully reconditioned, 12 month warranty.',mandate:true,mandateInsurer:'Allianz'}
   ]},
-  {id:'p8',name:'R/H HEADLAMP ASSY',num:'#92102-G3115',list:3200.00,autoSel:'s2',opts:[
+  {id:'p8',name:'R/H HEADLAMP ASSY',num:'#92102-G3115',list:3200.00,opts:[
     {sid:'s2',type:'OEM',label:'OEM',supplier:'OEM Direct',  cost:2560.00,inScope:true,best:false,eta:'4-5 Days',pno:'92102-G3115',   mno:'--',          cmt:'Genuine OEM. Includes DRL and auto-levelling.'},
     {sid:'s1',type:'AftM',label:'Cert AftM',supplier:'Parts Network',cost:890.00,inScope:true,best:true,eta:'1-2 Days', pno:'PN-HL-G3115', mno:'92102-G3115',cmt:'Certified replacement. Confirmed fitment.'},
     {sid:'s3',type:'OEM',label:'OEM',supplier:'ATS Parts',   cost:940.00,inScope:true,best:false,eta:'2-3 Days',pno:'92102-G3115',   mno:'--',          cmt:''},
@@ -3631,14 +3651,14 @@ var PARTS=[
   // rather than Phase 2's invented supplier names. pno/mno are new (Phase 2's shape had none;
   // Phase 1's MODIFY modal and tooltips need them) and simply mirror the pattern already used
   // for every other part in this array.
-  {id:'p9',name:'DRIVER AIRBAG MODULE',num:'#56900-YOUI',list:1420.00,autoSel:'s6',exc:{category:'Airbag Systems'},opts:[
+  {id:'p9',name:'DRIVER AIRBAG MODULE',num:'#56900-YOUI',list:1420.00,exc:{category:'Airbag Systems'},opts:[
     {sid:'s2',type:'OEM',label:'OEM',supplier:'OEM Direct',  cost:1150.00,inScope:true,best:false,eta:'3-5 Days',pno:'56900-YOUI',mno:'--',cmt:'Ex-stock, ships same day.',deliveryAlert:true},
     {sid:'s1',type:'AftM',label:'Cert AftM',supplier:'Parts Network',cost:680.00,inScope:true,best:false,eta:'2-3 Days',pno:'PN-AB-56900',mno:'56900-YOUI',cmt:''},
     {sid:'s3',type:'OEM',label:'OEM',supplier:'ATS Parts',   cost:610.00,inScope:true,best:false,eta:'1-2 Days',pno:'56900-YOUI',mno:'--',cmt:'Certified aftermarket replacement, T\u00DCV tested.'},
     {sid:'s6',type:'Used',label:'Used',supplier:'Wreckers Direct',cost:395.00,inScope:true,best:true,eta:'Same Day',pno:'56900-YOUI',mno:'--',cmt:''},
     {sid:'s5',type:'Reco',label:'Recon',supplier:'Reco Centre',cost:1180.00,inScope:true,best:false,eta:'2-3 Days',pno:'56900-YOUI',mno:'--',cmt:'OEM-equivalent dealer stock, freight included.'}
   ]},
-  {id:'p10',name:'R/F ABS SPEED SENSOR',num:'#95671-YOUI',list:205.00,autoSel:'s6',exc:{category:'ABS / Braking Safety Systems'},opts:[
+  {id:'p10',name:'R/F ABS SPEED SENSOR',num:'#95671-YOUI',list:205.00,exc:{category:'ABS / Braking Safety Systems'},opts:[
     {sid:'s2',type:'OEM',label:'OEM',supplier:'OEM Direct',  cost:165.00,inScope:true,best:false,eta:'Same Day',pno:'95671-YOUI',mno:'--',cmt:'In stock, same-day dispatch.'},
     {sid:'s3',type:'OEM',label:'OEM',supplier:'ATS Parts',   cost:74.00,inScope:true,best:false,eta:'1-2 Days',pno:'95671-YOUI',mno:'--',cmt:''},
     {sid:'s6',type:'Used',label:'Used',supplier:'Wreckers Direct',cost:50.00,inScope:true,best:true,eta:'2-3 Days',pno:'95671-YOUI',mno:'--',cmt:''},
@@ -3647,6 +3667,8 @@ var PARTS=[
 ];
 var SEL={},QTY={},COLS=['s2','s1','s3','s4','s6','s8','s5'];
 for(var z=0;z<PARTS.length;z++){SEL[PARTS[z].id]=null;QTY[PARTS[z].id]='';}
+// Reason-code config, pushed in from General Settings (React side) via notifyReasonCodeSettings.
+var REASON_CODE_REQUIRED=false, REASON_CODE_LIST=[];
 // Settlement discount is money off the cost price, so every cost figure and
 // every profit calculation on screen uses the NET cost.
 // Deliberate exception: Target Discount measures the buy against list using the
@@ -3665,6 +3687,7 @@ function settlementPct(o){
 }
 function netCost(o){return o.cost*(1-settlementPct(o)/100);}
 function _escAttr(v){return String(v==null?'':v).replace(/'/g,"\\'").replace(/"/g,'&quot;');}
+function _escHtml(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 // fmt() is NOT redeclared here - window.MRO's engine script (loaded just above this one)
 // already declares a top-level `const fmt` for the same purpose ($ + thousands separators).
 // Redeclaring it here would be the exact duplicate-top-level-identifier crash this file hit
@@ -3681,11 +3704,25 @@ function _profitCaret(diff){
 }
 var TYPE_COLOR={OEM:'#2563eb',AftM:'#a855f7',Used:'#84cc16',Reco:'#f59e0b',Parallel:'#6b7280'};
 /* ---- chip legend filter ---- */
+// Inline SVG in place of Font Awesome glyphs for this chip/legend/tooltip set -
+// these render without depending on a webfont finishing its download, so the
+// small colour-square icons never show up blank.
+function chipIconSvg(key,size,color){
+  var c=color||'#fff',body='';
+  if(key==='rec') body='<rect x="1.5" y="7" width="2.3" height="6.5" rx="1" fill="'+c+'"/><path d="M5.3 7.3c0-.4.2-.7.5-1L8.3 3c.3-.5.9-.7 1.4-.4.7.4 1 1.2.7 1.9l-.8 2h2.7c1 0 1.7.9 1.5 1.8l-1 4.3c-.2.8-.9 1.4-1.7 1.4H6.8c-.3 0-.6-.1-.8-.2l-.7-.4V7.3z" fill="'+c+'"/>';
+  else if(key==='best') body='<path d="M8 1c2 2.6 3 4.8 3 6.6a3 3 0 11-6 0C5 5.8 6 3.6 8 1z" fill="'+c+'"/>';
+  else if(key==='star') body='<path d="M8 1l1.9 4.6 5 .4-3.8 3.3 1.2 4.9L8 11.6l-4.3 2.6 1.2-4.9L1.1 6l5-.4L8 1z" fill="'+c+'"/>';
+  else if(key==='eta') body='<circle cx="8" cy="8" r="6" fill="none" stroke="'+c+'" stroke-width="1.4"/><path d="M8 4.8v3.4l2.3 1.3" stroke="'+c+'" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+  else if(key==='cmt') body='<path d="M2 3h11a1 1 0 011 1v6a1 1 0 01-1 1H7l-3 2.6V11H2a1 1 0 01-1-1V4a1 1 0 011-1z" fill="'+c+'"/>';
+  else if(key==='photo') body='<rect x="2" y="5.5" width="12" height="8" rx="1.3" fill="none" stroke="'+c+'" stroke-width="1.3"/><circle cx="8" cy="9.5" r="2.3" fill="none" stroke="'+c+'" stroke-width="1.3"/><rect x="5.8" y="3.3" width="4.4" height="2" rx="0.4" fill="'+c+'"/>';
+  return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 16 16" style="display:block;flex-shrink:0">'+body+'</svg>';
+}
 var CHIP_FILTER=null;
-var CHIP_KEYS=['best','eta','cmt','photo','donor'];
-var CHIP_COLOR={best:'#16a34a',eta:'#d97706',cmt:'#4b5563',photo:'#0891b2',donor:'#1d4ed8'};
-function chipHas(opt,f){
+var CHIP_KEYS=['rec','best','eta','cmt','photo','donor'];
+var CHIP_COLOR={rec:'#16a34a',best:'#16a34a',eta:'#d97706',cmt:'#4b5563',photo:'#0891b2',donor:'#1d4ed8'};
+function chipHas(opt,f,part){
   if(!opt)return false;
+  if(f==='rec')return !!(part&&recommendedSid(part)===opt.sid);
   if(f==='best')return !!opt.best;
   if(f==='eta')return isLongETD(opt);
   if(f==='cmt')return !!opt.cmt;
@@ -3697,7 +3734,7 @@ function chipCount(f){
   var n=0;
   for(var i=0;i<PARTS.length;i++){
     var os=PARTS[i].opts||[];
-    for(var j=0;j<os.length;j++)if(chipHas(os[j],f))n++;
+    for(var j=0;j<os.length;j++)if(chipHas(os[j],f,PARTS[i]))n++;
   }
   return n;
 }
@@ -3843,7 +3880,7 @@ function lockTooltipHtml(part, opt, cell){
 function render(){
   var h='';
   for(var i=0;i<PARTS.length;i++){
-    var p=PARTS[i],ss=SEL[p.id],rowHasSel=(ss!==null);
+    var p=PARTS[i],ss=SEL[p.id],rowHasSel=(ss!==null),_recSid=recommendedSid(p);
     h+='<tr data-pid="'+p.id+'">';
     h+='<td class="new-part-cell"><div class="part-chk-row">'
       +'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">'
@@ -3858,20 +3895,20 @@ function render(){
       var sid=COLS[c],opt=null;
       for(var k=0;k<p.opts.length;k++){if(p.opts[k].sid===sid){opt=p.opts[k];break;}}
       if(!opt){h+='<td class="new-empty-cell'+(CHIP_FILTER?' npc-dim':'')+'" style="text-align:center;color:#9ca3af;font-size:14px">-</td>';continue;}
-      var isSel=(ss===sid),tcol=TYPE_COLOR[opt.type]||'#337ab7';
+      var isSel=(ss===sid),isRec=(_recSid===sid),tcol=TYPE_COLOR[opt.type]||'#337ab7';
       var en=_escAttr(p.name),ep=_escAttr(opt.pno),es=_escAttr(opt.supplier);
-      var _fcls=CHIP_FILTER?(chipHas(opt,CHIP_FILTER)?' npc-hit':' npc-dim'):'';
+      var _fcls=CHIP_FILTER?(chipHas(opt,CHIP_FILTER,p)?' npc-hit':' npc-dim'):'';
       var _cell=resolveCell(p,opt);
       if(!_cell.allowed){
         h+='<td class="new-price-cell npc-locked'+_fcls+' ttw">';
         var _etdL=isLongETD(opt);
         if(opt.best||opt.mandate||opt.cmt||opt.photo||_etdL){
           h+='<div class="corner-stack">';
-          if(opt.best) h+='<div class="chip-sq chip-flame"><i class="fa fa-fire" style="font-size:9px;color:#fff"></i></div>';
-          if(opt.mandate) h+='<div class="chip-sq chip-star"><i class="fa fa-star" style="font-size:8px;color:#fff"></i></div>';
-          if(opt.cmt) h+='<div class="chip-sq chip-info"><i class="fa fa-comment" style="font-size:8px;color:#4b5563"></i></div>';
-          if(opt.photo) h+='<div class="chip-sq chip-photo"><i class="fa fa-camera" style="font-size:8px;color:#fff"></i></div>';
-          if(_etdL) h+='<div class="chip-sq chip-etd"><i class="fa fa-clock-o" style="font-size:9px;color:#fff"></i></div>';
+          if(opt.best) h+='<div class="chip-sq chip-flame">'+chipIconSvg('best',9)+'</div>';
+          if(opt.mandate) h+='<div class="chip-sq chip-star">'+chipIconSvg('star',8)+'</div>';
+          if(opt.cmt) h+='<div class="chip-sq chip-info">'+chipIconSvg('cmt',8,'#4b5563')+'</div>';
+          if(opt.photo) h+='<div class="chip-sq chip-photo">'+chipIconSvg('photo',8)+'</div>';
+          if(_etdL) h+='<div class="chip-sq chip-etd">'+chipIconSvg('eta',9)+'</div>';
           h+='</div>';
         }
         var _lockLbl=_cell.lockReason==='age'?'AGE RULE':_cell.lockReason==='safety'?(partExceptionLabel(p,activeMroExceptions(),activeMroTypes())||'RESTRICTED').toUpperCase():'RULE BLOCKED';
@@ -3883,13 +3920,14 @@ function render(){
       }
       h+='<td class="new-price-cell'+(isSel?' npc-sel':'')+_fcls+' ttw" onclick="toggle(\''+p.id+'\',\''+sid+'\')">';
       var _etd=isLongETD(opt);
-      if(opt.best||opt.mandate||opt.cmt||opt.photo||_etd){
+      if(isRec||opt.best||opt.mandate||opt.cmt||opt.photo||_etd){
         h+='<div class="corner-stack">';
-        if(opt.best) h+='<div class="chip-sq chip-flame"><i class="fa fa-fire" style="font-size:9px;color:#fff"></i></div>';
-        if(opt.mandate) h+='<div class="chip-sq chip-star"><i class="fa fa-star" style="font-size:8px;color:#fff"></i></div>';
-        if(opt.cmt) h+='<div class="chip-sq chip-info"><i class="fa fa-comment" style="font-size:8px;color:#4b5563"></i></div>';
-        if(opt.photo) h+='<div class="chip-sq chip-photo"><i class="fa fa-camera" style="font-size:8px;color:#fff"></i></div>';
-        if(_etd) h+='<div class="chip-sq chip-etd"><i class="fa fa-clock-o" style="font-size:9px;color:#fff"></i></div>';
+        if(isRec) h+='<div class="chip-sq chip-rec">'+chipIconSvg('rec',8)+'</div>';
+        if(opt.best) h+='<div class="chip-sq chip-flame">'+chipIconSvg('best',9)+'</div>';
+        if(opt.mandate) h+='<div class="chip-sq chip-star">'+chipIconSvg('star',8)+'</div>';
+        if(opt.cmt) h+='<div class="chip-sq chip-info">'+chipIconSvg('cmt',8,'#4b5563')+'</div>';
+        if(opt.photo) h+='<div class="chip-sq chip-photo">'+chipIconSvg('photo',8)+'</div>';
+        if(_etd) h+='<div class="chip-sq chip-etd">'+chipIconSvg('eta',9)+'</div>';
         h+='</div>';
       }
       var _sell=_cell.res.na?0:_cell.res.sell;
@@ -3923,12 +3961,13 @@ function render(){
       var _setlLbl=(_setl%1===0?_setl.toFixed(0):_setl.toFixed(2).replace(/0$/,''))+'%';
       var _discBit=(opt.sid==='s2'&&_discPct!=null)?('Target Discount '+_discPct.toFixed(1)+'%'+(Math.round(_discPct*10)/10<20?' ⚠':'')):null;
       h+='<div class="tt"><div class="tth" style="color:'+tcol+'">'+opt.supplier+' &middot; '+opt.label+'</div>'
-        +(opt.best?'<div class="ttflag"><span class="ttf-icon ttf-green"><i class="fa fa-fire" style="font-size:8px;color:#fff"></i></span><span><b>Same part #</b> - matches dealer #'+opt.pno+'</span></div>':'')
+        +(isRec?'<div class="ttflag"><span class="ttf-icon ttf-dark">'+chipIconSvg('rec',8)+'</span><span><b>Recommended</b> - the active margin rule\'s pick for this part</span></div>':'')
+        +(opt.best?'<div class="ttflag"><span class="ttf-icon ttf-green">'+chipIconSvg('best',8)+'</span><span><b>Same part #</b> - matches dealer #'+opt.pno+'</span></div>':'')
         +(opt.mandate?'<div class="ttflag"><span class="ttf-icon ttf-blue" style="font-size:9px;color:#fff">&#9733;</span><span><b>Donor Part Match</b> - Matches '+(opt.mandateInsurer||'insurer')+' donor part requirement</span></div>':'')
-        +(opt.deliveryAlert?'<div class="ttflag"><span class="ttf-icon ttf-amber"><i class="fa fa-clock-o" style="font-size:8px;color:#fff"></i></span><span style="color:#d97706"><b>ETD</b> - '+(opt.deliveryNote||'ETD may slip')+'</span></div>':'')
-        +(opt.cmt?'<div class="ttflag"><span class="ttf-icon ttf-grey"><i class="fa fa-comment" style="font-size:8px;color:#fff"></i></span><span><b>Comment</b> - &ldquo;'+opt.cmt+'&rdquo;</span></div>':'')
-        +(opt.photo?'<div class="ttflag"><span class="ttf-icon ttf-skyblue"><i class="fa fa-camera" style="font-size:8px;color:#fff"></i></span><span><b>Image</b> - Photo attached</span></div><div style="text-align:center;margin:2px 0 6px"><img src="'+getDemoPhotoSrc()+'" onclick="event.stopPropagation();openHeadlampPhoto()" style="width:100%;max-height:70px;object-fit:cover;border-radius:3px;cursor:pointer;border:1px solid #e5e7eb"></div>':'')
-        +((opt.best||opt.mandate||opt.deliveryAlert||opt.cmt||opt.photo)?'<div style="border-top:1px solid #f3f4f6;margin:2px 0 4px"></div>':'')
+        +(opt.deliveryAlert?'<div class="ttflag"><span class="ttf-icon ttf-amber">'+chipIconSvg('eta',8)+'</span><span style="color:#d97706"><b>ETD</b> - '+(opt.deliveryNote||'ETD may slip')+'</span></div>':'')
+        +(opt.cmt?'<div class="ttflag"><span class="ttf-icon ttf-grey">'+chipIconSvg('cmt',8)+'</span><span><b>Comment</b> - &ldquo;'+opt.cmt+'&rdquo;</span></div>':'')
+        +(opt.photo?'<div class="ttflag"><span class="ttf-icon ttf-skyblue">'+chipIconSvg('photo',8)+'</span><span><b>Image</b> - Photo attached</span></div><div style="text-align:center;margin:2px 0 6px"><img src="'+getDemoPhotoSrc()+'" onclick="event.stopPropagation();openHeadlampPhoto()" style="width:100%;max-height:70px;object-fit:cover;border-radius:3px;cursor:pointer;border:1px solid #e5e7eb"></div>':'')
+        +((isRec||opt.best||opt.mandate||opt.deliveryAlert||opt.cmt||opt.photo)?'<div style="border-top:1px solid #f3f4f6;margin:2px 0 4px"></div>':'')
         +(!opt.best?'<div class="ttr"><span class="ttl">Supplier Part No.</span><span class="ttv">'+opt.pno+'</span></div>':'')
         +(opt.mno&&opt.mno!=='--'?'<div class="ttr"><span class="ttl">Modified Part No.</span><span class="ttv">'+opt.mno+'</span></div>':'')
         +'<div class="ttr"><span class="ttl">List Price</span><span class="ttv">'+fmt(p.list)+'</span></div>'
@@ -4127,6 +4166,10 @@ function selectColumn(sid){
 // Acknowledged once per part line, not once per quote - each line is its own
 // commercial decision.
 var NA_ACK={};
+// Same per-line acknowledgement pattern, keyed by pid+sid - re-selecting the
+// exact same off-recommendation pick later doesn't re-ask; picking a
+// different one does.
+var REASON_ACK={};
 function _optFor(pid,sid){
   for(var i=0;i<PARTS.length;i++){if(PARTS[i].id!==pid)continue;
     for(var j=0;j<PARTS[i].opts.length;j++){if(PARTS[i].opts[j].sid===sid)return PARTS[i].opts[j];}}
@@ -4144,6 +4187,11 @@ function toggle(pid,sid){
   if(SEL[pid]!==sid && !NA_ACK[pid+'|'+sid]){
     if(o&&isNotAccepted(o)){ openNaConfirm(pid,sid,o); return; }
   }
+  // Reason-code capture (if on) happens at Save, not here - see
+  // handleCheckPriceSave/checkPriceDeviations.
+  _applyToggle(pid,sid);
+}
+function _applyToggle(pid,sid){
   SEL[pid]=(SEL[pid]===sid)?null:sid;
   if(SEL[pid]&&!QTY[pid]) QTY[pid]='1';
   if(!SEL[pid]) QTY[pid]='';
@@ -4164,21 +4212,31 @@ function _paintQuickSelect(){
     if(b){ if(QUICK_MODE===m)b.classList.add('on'); else b.classList.remove('on'); }
   });
 }
+// Shared scoring used by both the Quick Select buttons and the "recommended"
+// signal - keeps them honest against each other and against whichever
+// margin rule is currently active, instead of drifting apart.
+function bestSidForPart(p,mode){
+  var best=null,bestScore=null;
+  for(var j=0;j<p.opts.length;j++){
+    var opt=p.opts[j];
+    if(!resolveCell(p,opt).allowed) continue;   // never recommend a locked offer
+    if(opt.inScope===false) continue;   // or one this supplier never actually quoted
+    var _sell=sellPrice(p,opt);
+    var _profit=_sell-netCost(opt);
+    var score;
+    if(mode==='cost') score=-netCost(opt);
+    else score=_profit;
+    if(bestScore===null||score>bestScore){bestScore=score;best=opt.sid;}
+  }
+  return best;
+}
+// "Recommended" = the rule-driven best-profit pick, recomputed live so it
+// tracks whichever margin rule is currently active on this quote.
+function recommendedSid(p){ return bestSidForPart(p,'profit'); }
 function autoSelect(mode){
   if(!mode) return;
   for(var i=0;i<PARTS.length;i++){
-    var p=PARTS[i],best=null,bestScore=null;
-    for(var j=0;j<p.opts.length;j++){
-      var opt=p.opts[j];
-      if(!resolveCell(p,opt).allowed) continue;   // never auto-pick a locked offer
-      var _sell=sellPrice(p,opt);
-      var _profit=_sell-netCost(opt);
-      var score;
-      if(mode==='profit') score=_profit;
-      else score=-netCost(opt);
-      if(bestScore===null||score>bestScore){bestScore=score;best=opt.sid;}
-    }
-    SEL[p.id]=best;
+    SEL[PARTS[i].id]=bestSidForPart(PARTS[i],mode);
   }
   updateTotals();render();
   if(document.getElementById('list-view')&&document.getElementById('list-view').style.display==='block') renderList();
@@ -4326,6 +4384,10 @@ window.notifySettlementSetting=function(on,showDealer){
   render();updateTotals();
   var lv=document.getElementById('list-view');
   if(lv&&lv.style.display!=='none')renderList();
+};
+window.notifyReasonCodeSettings=function(required,list){
+  REASON_CODE_REQUIRED=!!required;
+  REASON_CODE_LIST=(list||[]).slice();
 };
 window.notifyDefaultRule=function(insurerName){
   for(var i=0;i<ALL_RULES.length;i++){
@@ -4834,6 +4896,104 @@ function confirmNaUse(){
   closeNaConfirm();
   toggle(pid,sid);
 }
+
+/* ── Reason codes: fires at Save (order time), not at selection ──
+   "recommended" = whichever allowed, actually-quoted option currently scores
+   best on profit under the active margin rule (recommendedSid, the same
+   logic Quick Select > Best Profit uses), recomputed live so it can't drift
+   out of sync with rule changes or exceptions. Every currently-selected line
+   that differs from its recommendation is gathered into one combined prompt
+   rather than interrupting per click, matching Drive Group's "just before
+   ordering, not at quote time" ask. A line already justified this session
+   (REASON_ACK) doesn't ask again unless the pick itself changes. */
+var _reasonRows=[];
+function checkPriceDeviations(){
+  var out=[];
+  for(var i=0;i<PARTS.length;i++){
+    var p=PARTS[i],sid=SEL[p.id];
+    if(!sid)continue;
+    var rec=recommendedSid(p);
+    if(!rec||sid===rec)continue;
+    if(REASON_ACK[p.id+'|'+sid])continue;
+    var selOpt=_optFor(p.id,sid),recOpt=_optFor(p.id,rec);
+    out.push({
+      pid:p.id,sid:sid,name:p.name,
+      recommendedLabel:recOpt?(recOpt.label+' — '+recOpt.supplier):rec,
+      selectedLabel:selOpt?(selOpt.label+' — '+selOpt.supplier):sid,
+      reason:null,other:''
+    });
+  }
+  return out;
+}
+function handleCheckPriceSave(){
+  if(REASON_CODE_REQUIRED){
+    var dev=checkPriceDeviations();
+    if(dev.length){ openReasonModal(dev); return; }
+  }
+  finalizeCheckPriceSave();
+}
+function finalizeCheckPriceSave(){
+  showToast('Order saved');
+}
+function openReasonModal(rows){
+  _reasonRows=rows;
+  document.getElementById('reason-modal-count').textContent=rows.length+(rows.length===1?' part differs':' parts differ')+' from the recommended pick. Choose a reason for each before the order is placed.';
+  renderReasonRows();
+  document.getElementById('reason-modal').style.display='flex';
+}
+function closeReasonModal(){
+  document.getElementById('reason-modal').style.display='none';
+  _reasonRows=[];
+}
+function renderReasonRows(){
+  var wrap=document.getElementById('reason-modal-rows');
+  var pillStyle=function(on){return 'padding:5px 10px;border-radius:3px;border:1px solid '+(on?'#16a34a':'#d1d5db')+';background:'+(on?'#f0fdf4':'#fff')+';color:'+(on?'#15803d':'#374151')+';font-size:11px;font-weight:600;cursor:pointer;margin:0 5px 5px 0';};
+  wrap.innerHTML=_reasonRows.map(function(row,idx){
+    var pills=REASON_CODE_LIST.map(function(r,ri){
+      return '<button type="button" onclick="pickReasonForRow('+idx+','+ri+')" style="'+pillStyle(row.reason===r)+'">'+_escHtml(r)+'</button>';
+    }).join('');
+    pills+='<button type="button" onclick="pickReasonForRowOther('+idx+')" style="'+pillStyle(row.reason==='__other')+'">Other</button>';
+    return ''+
+      '<div style="padding:10px 0;border-bottom:1px solid #f3f4f6">'+
+        '<div style="font-size:12px;font-weight:700;color:#111827;margin-bottom:2px">'+_escHtml(row.name)+'</div>'+
+        '<div style="font-size:11px;color:#6b7280;margin-bottom:8px">Recommended: '+_escHtml(row.recommendedLabel)+' &nbsp;·&nbsp; Selected: <b style="color:#374151">'+_escHtml(row.selectedLabel)+'</b></div>'+
+        '<div>'+pills+'</div>'+
+        (row.reason==='__other'?'<input value="'+_escHtml(row.other)+'" oninput="setReasonRowOtherText('+idx+',this.value)" placeholder="Type a reason…" style="width:100%;margin-top:4px;font-family:inherit;font-size:12px;border:1px solid #d1d5db;border-radius:3px;padding:6px 8px;outline:none;box-sizing:border-box"/>':'')+
+      '</div>';
+  }).join('');
+  updateReasonConfirmState();
+}
+function pickReasonForRow(idx,ri){
+  _reasonRows[idx].reason=REASON_CODE_LIST[ri];
+  _reasonRows[idx].other='';
+  renderReasonRows();
+}
+function pickReasonForRowOther(idx){
+  _reasonRows[idx].reason='__other';
+  renderReasonRows();
+}
+function setReasonRowOtherText(idx,value){
+  _reasonRows[idx].other=value;
+  updateReasonConfirmState();
+}
+function reasonModalValid(){
+  return _reasonRows.length>0 && _reasonRows.every(function(r){
+    return r.reason && (r.reason!=='__other' || r.other.trim());
+  });
+}
+function updateReasonConfirmState(){
+  var btn=document.getElementById('reason-modal-confirm');
+  var valid=reasonModalValid();
+  btn.disabled=!valid;
+  btn.style.opacity=valid?1:0.5;
+  btn.style.cursor=valid?'pointer':'not-allowed';
+}
+function confirmReasonModal(){
+  if(!reasonModalValid())return;
+  _reasonRows.forEach(function(r){ REASON_ACK[r.pid+'|'+r.sid]=true; });
+  closeReasonModal();
+  finalizeCheckPriceSave();
+}
 function updateExcNotice(){
   var notice=document.getElementById('exc-notice');
   if(!notice)return;
@@ -5057,7 +5217,12 @@ document.addEventListener('scroll',function(){
   if(_ttActive){var t=_ttActive.querySelector('.tt');if(t&&t.style.display==='block')_positionTooltipAtCell(t,_ttActive);}
 },true);
 
-render();updateTotals();updateChipCounts();setView('grid');showPriceSubTab('check');setSummaryView('new');
+document.getElementById('lgi-rec').innerHTML=chipIconSvg('rec',7);
+document.getElementById('lgi-best').innerHTML=chipIconSvg('best',8);
+document.getElementById('lgi-eta').innerHTML=chipIconSvg('eta',8);
+document.getElementById('lgi-cmt').innerHTML=chipIconSvg('cmt',7,'#4b5563');
+document.getElementById('lgi-photo').innerHTML=chipIconSvg('photo',7);
+render();updateTotals();updateChipCounts();setChipFilter('rec');setView('grid');showPriceSubTab('check');setSummaryView('new');
 </script>
 <script type="text/babel" data-presets="react">
 (function(){
@@ -5251,7 +5416,36 @@ function Dashboard({rules,setRules,onCreate,onEdit,onCopy,onView,initialTab}) {
     screenOrder:'quote-asc',autoSyncOrder:'no',autoSyncPrices:'no',
     overrideStatus:'no',syncPOOnly:'no',autoSelectDealer:'no',
     submitClaim:'no',suppressPricing:'no',useGridDisplay:'yes',priceGridDisplay:'profit'
-  ,settlementDiscount:'no',settlementShowDealer:'no'});
+  ,settlementDiscount:'no',settlementShowDealer:'no',requireReasonCode:'no'});
+  const [reasonCodes,setReasonCodes] = useState([
+    {id:1,text:"Part won't arrive in time"},
+    {id:2,text:"It's out of stock"},
+    {id:3,text:"Supplier says they have it but I don't trust it"},
+    {id:4,text:"I use a different supplier for this"},
+    {id:5,text:"This insurer has a rule the system doesn't know about"},
+    {id:6,text:"It's a fixed-price job — protecting my margin"},
+    {id:7,text:"The dearer part is better or saves labour"},
+  ]);
+  const [newReason,setNewReason] = useState('');
+  const addReason = () => {
+    const text = newReason.trim();
+    if(!text) return;
+    setReasonCodes(rc=>[...rc,{id:(rc.length?Math.max(...rc.map(r=>r.id)):0)+1,text}]);
+    setNewReason('');
+  };
+  const updateReason = (id,text) => setReasonCodes(rc=>rc.map(r=>r.id===id?{...r,text}:r));
+  const removeReason = id => setReasonCodes(rc=>rc.filter(r=>r.id!==id));
+  const [previewOpen,setPreviewOpen] = useState(false);
+  const [previewChoice,setPreviewChoice] = useState(null);
+  const [previewOther,setPreviewOther] = useState('');
+  const closePreview = () => { setPreviewOpen(false); setPreviewChoice(null); setPreviewOther(''); };
+  // push reason-code config straight to the Check Price screen (vanilla-JS side), same
+  // bridge pattern as the settlement-discount settings below
+  useEffect(()=>{
+    if(window.notifyReasonCodeSettings){
+      window.notifyReasonCodeSettings(genSettings.requireReasonCode==='yes',reasonCodes.map(r=>r.text));
+    }
+  },[genSettings.requireReasonCode,reasonCodes]);
   const setGen=(k,v)=>setGenSettings(s=>{
     const next={...s,[k]:v};
     // push the settlement settings straight to the Check Price screen
@@ -5337,9 +5531,36 @@ function Dashboard({rules,setRules,onCreate,onEdit,onCopy,onView,initialTab}) {
               <SettingRow label="Apply Settlement Discounts" desc="Deducts each supplier's settlement discount from their invoiced cost, so Your Cost and profit reflect what you actually pay. When off, no discount is calculated and Invoice Cost and Settlement Discount are hidden throughout the Check Price screen.">
                 <YesNo k="settlementDiscount"/>
               </SettingRow>
-              <SettingRow label="Show Settlement Discounts to Dealers" desc={genSettings.settlementDiscount==='yes'?"When a dealer views the quote and sees competitor pricing, show the settlement discount breakdown. Turn off to show the invoice cost only.":"Available once Apply Settlement Discounts is on."} muted={genSettings.settlementDiscount!=='yes'} last>
+              <SettingRow label="Show Settlement Discounts to Dealers" desc={genSettings.settlementDiscount==='yes'?"When a dealer views the quote and sees competitor pricing, show the settlement discount breakdown. Turn off to show the invoice cost only.":"Available once Apply Settlement Discounts is on."} muted={genSettings.settlementDiscount!=='yes'}>
                 <YesNo k="settlementShowDealer" disabled={genSettings.settlementDiscount!=='yes'}/>
               </SettingRow>
+              <SettingRow label="Require a Reason When a Different Part Is Selected?" desc="Prompts the estimator for a reason on Save, for any line still set to a part other than the one the margin rule recommends — not while they're still comparing suppliers." last={genSettings.requireReasonCode!=='yes'}>
+                <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+                  <YesNo k="requireReasonCode"/>
+                  <button onClick={()=>setPreviewOpen(true)} style={{background:"#fff",color:"#374151",border:"1px solid #d1d5db",borderRadius:"3px",padding:"5px 12px",fontSize:"11px",fontWeight:"700",cursor:"pointer",whiteSpace:"nowrap"}}>Preview</button>
+                </div>
+              </SettingRow>
+              {genSettings.requireReasonCode==='yes'&&(
+                <div style={{padding:"0 20px 18px"}}>
+                  <div style={{fontSize:"11px",color:"#6b7280",lineHeight:"1.6",marginBottom:"10px",maxWidth:"560px"}}>
+                    Estimators pick from this list as one-click buttons when they save with a line still set to something other than the recommended part. Keep it short.
+                  </div>
+                  {reasonCodes.map(r=>(
+                    <div key={r.id} style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"6px"}}>
+                      <input value={r.text} onChange={e=>updateReason(r.id,e.target.value)} style={{flex:1,fontFamily:"inherit",fontSize:"12px",color:"#374151",border:"1px solid #d1d5db",borderRadius:"3px",padding:"6px 10px",outline:"none",boxSizing:"border-box"}}/>
+                      <button onClick={()=>removeReason(r.id)} style={{background:"none",border:"none",color:"#9ca3af",fontSize:"16px",cursor:"pointer",padding:"0 4px",lineHeight:1}}>✕</button>
+                    </div>
+                  ))}
+                  <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"14px"}}>
+                    <div style={{flex:1,fontSize:"12px",fontStyle:"italic",color:"#9ca3af",padding:"6px 10px",border:"1px dashed #d1d5db",borderRadius:"3px",boxSizing:"border-box"}}>Other — estimator types their own reason</div>
+                    <div style={{width:"24px",flexShrink:0}}/>
+                  </div>
+                  <div style={{display:"flex",gap:"8px"}}>
+                    <input value={newReason} onChange={e=>setNewReason(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();addReason();}}} placeholder="Add a reason…" style={{flex:1,fontFamily:"inherit",fontSize:"12px",color:"#374151",border:"1px solid #d1d5db",borderRadius:"3px",padding:"6px 10px",outline:"none",boxSizing:"border-box"}}/>
+                    <button onClick={addReason} disabled={!newReason.trim()} style={{background:"#fff",color:newReason.trim()?"#16a34a":"#9ca3af",border:`1px solid ${newReason.trim()?'#16a34a':'#d1d5db'}`,borderRadius:"3px",padding:"6px 14px",fontSize:"12px",fontWeight:"700",cursor:newReason.trim()?"pointer":"not-allowed",whiteSpace:"nowrap"}}>+ Add Reason</button>
+                  </div>
+                </div>
+              )}
           </div>
           <div style={{background:"#fff",border:"1px solid #d1d5db",overflow:"hidden",marginBottom:"24px"}}>
             <div style={{background:"#f8fafc",padding:"11px 20px",borderBottom:"1px solid #d1d5db"}}>
@@ -5367,6 +5588,43 @@ function Dashboard({rules,setRules,onCreate,onEdit,onCopy,onView,initialTab}) {
             <SettingRow label="Suppress Pricing on Order Emails?" desc="Use this option to remove buy and list price from Purchase Order Emails." last>
               <YesNo k="suppressPricing"/>
             </SettingRow>
+          </div>
+        </div>
+      )}
+
+      {previewOpen&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.45)",zIndex:800,display:"flex",alignItems:"center",justifyContent:"center"}} onClick={closePreview}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:"3px",width:"440px",maxWidth:"92vw",boxShadow:"0 20px 60px rgba(0,0,0,.25)",overflow:"hidden"}}>
+            <div style={{background:"#f8fafc",padding:"14px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid #e5e7eb"}}>
+              <span style={{fontSize:"13px",fontWeight:"700",color:"#111827"}}>Different Part Selected</span>
+              <button onClick={closePreview} style={{background:"none",border:"none",color:"#9ca3af",fontSize:"18px",cursor:"pointer",lineHeight:1,padding:"0 2px"}}>✕</button>
+            </div>
+            <div style={{padding:"16px 20px",borderBottom:"1px solid #e5e7eb"}}>
+              <div style={{fontSize:"11px",color:"#9ca3af",lineHeight:"1.5",marginBottom:"12px"}}>Preview only — this is how one line of the prompt would appear on Save, if it's still set to a part other than the one recommended.</div>
+              <div style={{display:"grid",gridTemplateColumns:"auto 1fr",gap:"4px 10px",fontSize:"12px",marginBottom:"16px"}}>
+                <span style={{color:"#6b7280",fontWeight:"600"}}>Recommended:</span><span style={{color:"#374151"}}>Bumper Bar — OEM, Toyota Genuine</span>
+                <span style={{color:"#6b7280",fontWeight:"600"}}>Selected:</span><span style={{color:"#111827",fontWeight:"700"}}>Bumper Bar — Aftermarket, ACM Parts</span>
+              </div>
+              <div style={{fontSize:"13px",fontWeight:"600",color:"#111827",marginBottom:"10px"}}>Why this part instead?</div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:"6px",marginBottom:previewChoice==='__other'?"10px":0}}>
+                {reasonCodes.map(r=>{
+                  const on=previewChoice===r.id;
+                  return (
+                    <button key={r.id} onClick={()=>setPreviewChoice(r.id)} style={{padding:"6px 12px",borderRadius:"3px",border:`1px solid ${on?'#16a34a':'#d1d5db'}`,background:on?'#f0fdf4':'#fff',color:on?'#15803d':'#374151',fontSize:"12px",fontWeight:"600",cursor:"pointer"}}>{r.text}</button>
+                  );
+                })}
+                <button onClick={()=>setPreviewChoice('__other')} style={{padding:"6px 12px",borderRadius:"3px",border:`1px solid ${previewChoice==='__other'?'#16a34a':'#d1d5db'}`,background:previewChoice==='__other'?'#f0fdf4':'#fff',color:previewChoice==='__other'?'#15803d':'#374151',fontSize:"12px",fontWeight:"600",cursor:"pointer"}}>Other</button>
+              </div>
+              {previewChoice==='__other'&&(
+                <input value={previewOther} onChange={e=>setPreviewOther(e.target.value)} placeholder="Type a reason…" style={{width:"100%",fontFamily:"inherit",fontSize:"12px",border:"1px solid #d1d5db",borderRadius:"3px",padding:"7px 10px",outline:"none",boxSizing:"border-box"}}/>
+              )}
+            </div>
+            <div style={{padding:"12px 20px",display:"flex",justifyContent:"flex-end",gap:"8px",background:"#f9fafb"}}>
+              <button onClick={closePreview} style={{padding:"8px 16px",borderRadius:"3px",border:"1px solid #d1d5db",background:"#fff",fontSize:"12px",fontWeight:"600",cursor:"pointer",color:"#374151"}}>Cancel</button>
+              {(()=>{const disabled=!previewChoice||(previewChoice==='__other'&&!previewOther.trim());return (
+                <button disabled={disabled} onClick={()=>{closePreview();showToast('Reason captured (preview only)');}} style={{padding:"8px 20px",borderRadius:"3px",border:"none",background:disabled?'#a7d7b8':'#16a34a',color:"#fff",fontSize:"12px",fontWeight:"700",cursor:disabled?"not-allowed":"pointer"}}>Continue</button>
+              );})()}
+            </div>
           </div>
         </div>
       )}
