@@ -1943,6 +1943,9 @@ input[type=number]{-moz-appearance:textfield}
   <div class="nav-sub-item" id="nsub-info" onclick="showPriceSubTab('info')"><div class="nav-sub-badge"><i class="fa fa-info"></i></div>INFO</div>
   <div class="nav-sub-item" id="nsub-attachments" onclick="showPriceSubTab('attachments');markAttachmentsRead()"><div class="nav-sub-badge"><i class="fa fa-paperclip"></i></div>DOCUMENTS<span id="attachments-pill" style="position:relative;display:inline-flex;align-items:center;justify-content:center;background:#fff;border:1px solid #e5e7eb;color:#ef4444;font-size:9px;font-weight:700;border-radius:10px;padding:1px 6px;margin-left:5px;line-height:1;min-width:18px">1<span id="attachments-dot" style="position:absolute;top:-4px;right:-4px;width:7px;height:7px;border-radius:50%;background:#ef4444;border:1.5px solid #404040"></span></span></div>
 </div>
+<div class="nav-sub" id="nav-sub-orderparts" style="display:none">
+  <div class="nav-sub-item active" id="nsub-orderparts"><div class="nav-sub-badge"><i class="fa fa-usd"></i></div>ORDER PARTS</div>
+</div>
 
 </div>
 <!-- Toast -->
@@ -3039,6 +3042,65 @@ input[type=number]{-moz-appearance:textfield}
       </div>
     </div>
 
+  </div>
+</div>
+<div id="orderparts-screen" style="display:none;background:#f4f5f7;min-height:400px">
+  <div class="qh" style="background:#16a34a;padding:12px 20px">
+    <div style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800;color:#fff">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      QUOTE: <span id="op-qnum">89734</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#fff">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M5 17h-2v-6l2-5h9l4 5h1a2 2 0 012 2v4h-2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>
+      <span id="op-vehicle">Hyundai Tucson, 2023. ABC123</span>
+    </div>
+  </div>
+  <div style="padding:16px 20px;display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap">
+    <div style="flex:1;min-width:420px">
+      <div style="display:flex;align-items:center;gap:16px;padding-bottom:10px;border-bottom:1px solid #e5e7eb;flex-wrap:wrap">
+        <span style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px">Export Selection Reports</span>
+        <a onclick="showToast('Unavailable Part List downloaded')" style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:#dc2626;text-decoration:none;cursor:pointer"><i class="fa fa-file-pdf-o"></i>Unavailable Part List</a>
+        <a onclick="showToast('List Price Report downloaded')" style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:#dc2626;text-decoration:none;cursor:pointer"><i class="fa fa-file-pdf-o"></i>List Price Report</a>
+        <a onclick="showToast('Cost Price Report downloaded')" style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:#dc2626;text-decoration:none;cursor:pointer"><i class="fa fa-file-pdf-o"></i>Cost Price Report</a>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 2px 10px;cursor:pointer;user-select:none" onclick="toggleOrderPartsTable()">
+        <span style="font-size:13px;font-weight:800;color:#111827;letter-spacing:.3px">PARTS SELECTED FOR PURCHASE</span>
+        <svg id="op-caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2.5" style="transition:transform .12s"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div id="op-table-wrap" style="background:#fff;border:1px solid #e5e7eb;border-radius:3px;overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;white-space:nowrap">
+          <thead><tr style="border-bottom:1px solid #e5e7eb;text-align:left">
+            <th style="padding:9px 12px;font-size:10.5px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.3px">Part Description</th>
+            <th style="padding:9px 12px;font-size:10.5px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.3px">Supplier</th>
+            <th style="padding:9px 12px;font-size:10.5px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.3px">Part Type</th>
+            <th style="padding:9px 12px;font-size:10.5px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.3px">Expiry</th>
+            <th style="padding:9px 12px;font-size:10.5px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.3px">Comment</th>
+            <th style="padding:9px 12px;font-size:10.5px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.3px">Qty</th>
+            <th style="padding:9px 12px;font-size:10.5px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.3px">Cost Price</th>
+            <th style="padding:9px 12px;font-size:10.5px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.3px">Sell Price</th>
+          </tr></thead>
+          <tbody id="op-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div style="width:260px;flex-shrink:0;background:#fff;border:1px solid #e5e7eb;border-radius:3px;padding:16px;box-sizing:border-box">
+      <label style="display:block;font-size:12px;font-weight:700;color:#111827;margin-bottom:6px">When do you need these parts delivered? <span style="color:#ef4444">*</span></label>
+      <input id="op-delivery-date" type="text" value="30/09/2026" style="width:100%;box-sizing:border-box;border:1px solid #d1d5db;border-radius:3px;padding:6px 8px;font-family:inherit;font-size:12px;color:#111827;margin-bottom:4px">
+      <div style="font-size:10.5px;color:#9ca3af;margin-bottom:16px">Select the date parts are required onsite.</div>
+      <label style="display:block;font-size:12px;font-weight:700;color:#111827;margin-bottom:6px">Supply Notes:</label>
+      <select style="width:100%;box-sizing:border-box;border:1px solid #d1d5db;border-radius:3px;padding:6px 8px;font-family:inherit;font-size:12px;color:#111827;margin-bottom:16px;background:#fff"><option></option></select>
+      <label style="display:block;font-size:12px;font-weight:700;color:#111827;margin-bottom:6px">Custom Notes:</label>
+      <textarea rows="3" style="width:100%;box-sizing:border-box;border:1px solid #d1d5db;border-radius:3px;padding:6px 8px;font-family:inherit;font-size:12px;color:#111827;margin-bottom:16px;resize:vertical"></textarea>
+      <label style="display:block;font-size:12px;font-weight:700;color:#111827;margin-bottom:6px">From:</label>
+      <select style="width:100%;box-sizing:border-box;border:1px solid #d1d5db;border-radius:3px;padding:6px 8px;font-family:inherit;font-size:12px;color:#111827;margin-bottom:16px;background:#fff"><option></option></select>
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:#111827;margin-bottom:20px;cursor:pointer">
+        <input id="op-autosync" type="checkbox" checked style="width:14px;height:14px;accent-color:#16a34a">AutoSync Order
+      </label>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn" style="width:100%;color:#16a34a;border-color:#16a34a" onclick="backFromOrderParts()">BACK</button>
+        <button class="btn btng" style="width:100%" onclick="purchaseOrder()">PURCHASE</button>
+      </div>
+    </div>
   </div>
 </div>
 <div id="rules-screen" style="display:none">
@@ -4971,7 +5033,59 @@ function handleCheckPriceSave(){
   finalizeCheckPriceSave();
 }
 function finalizeCheckPriceSave(){
-  showToast('Order saved');
+  openOrderPartsScreen();
+}
+// Order Parts screen - what a repairer actually sees after Save clears (whether or not
+// the reason-code modal fired first; both paths above land here through finalizeCheckPriceSave).
+// Reuses SUP_INFO (supplier name/quote#/expiry) and the same cost/sell helpers the grid uses,
+// so this can never drift from what was actually selected on Check Price.
+function renderOrderParts(){
+  var rows='';
+  for(var i=0;i<PARTS.length;i++){
+    var p=PARTS[i],sid=SEL[p.id];
+    if(!sid) continue;
+    var opt=_optFor(p.id,sid);
+    if(!opt) continue;
+    var sup=SUP_INFO[sid]||{name:sid,quoteNo:sid,expiry:'-'};
+    rows+='<tr style="border-bottom:1px solid #f3f4f6">'
+      +'<td style="padding:10px 12px;font-size:12px"><div style="font-weight:700;color:#111827">'+_escHtml(p.name)+'</div><div style="font-size:10.5px;color:#9ca3af">'+_escHtml(p.num)+'</div></td>'
+      +'<td style="padding:10px 12px;font-size:12px"><div style="font-weight:700;color:#111827">'+_escHtml(sup.name)+'</div><div style="font-size:10.5px;color:#9ca3af">Quote: '+_escHtml(sup.quoteNo)+'</div></td>'
+      +'<td style="padding:10px 12px;font-size:12px;color:#374151">'+_escHtml(opt.label)+'</td>'
+      +'<td style="padding:10px 12px;font-size:12px;color:#374151">'+_escHtml(sup.expiry)+'</td>'
+      +'<td style="padding:10px 12px;font-size:12px;color:#374151">'+(opt.cmt?_escHtml(opt.cmt):'')+'</td>'
+      +'<td style="padding:10px 12px;font-size:12px;color:#374151">'+_escHtml(String(QTY[p.id]||'1'))+'</td>'
+      +'<td style="padding:10px 12px;font-size:12px;color:#374151">'+fmt(netCost(opt))+'</td>'
+      +'<td style="padding:10px 12px;font-size:12px;color:#374151">'+fmt(sellPrice(p,opt))+'</td>'
+      +'</tr>';
+  }
+  var tb=document.getElementById('op-tbody');
+  if(tb) tb.innerHTML=rows;
+}
+function toggleOrderPartsTable(){
+  var wrap=document.getElementById('op-table-wrap'),caret=document.getElementById('op-caret');
+  if(!wrap) return;
+  var hidden=wrap.style.display==='none';
+  wrap.style.display=hidden?'':'none';
+  if(caret) caret.style.transform=hidden?'':'rotate(-90deg)';
+}
+function openOrderPartsScreen(){
+  ['price-screen','info-screen','attachments-screen'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.style.display='none';
+  });
+  var nsp=document.getElementById('nav-sub-price'); if(nsp) nsp.style.display='none';
+  var nso=document.getElementById('nav-sub-orderparts'); if(nso) nso.style.display='flex';
+  var op=document.getElementById('orderparts-screen'); if(op) op.style.display='block';
+  renderOrderParts();
+  window.scrollTo(0,0);
+}
+function backFromOrderParts(){
+  var op=document.getElementById('orderparts-screen'); if(op) op.style.display='none';
+  var nso=document.getElementById('nav-sub-orderparts'); if(nso) nso.style.display='none';
+  var nsp=document.getElementById('nav-sub-price'); if(nsp) nsp.style.display='flex';
+  showPriceSubTab('check');
+}
+function purchaseOrder(){
+  showToast('Order placed');
 }
 function openReasonModal(rows){
   _reasonRows=rows;
