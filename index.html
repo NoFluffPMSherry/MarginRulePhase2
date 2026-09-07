@@ -3616,10 +3616,47 @@ function getActiveExceptions(ruleId){
   return (saved && Array.isArray(saved.exceptions)) ? saved.exceptions : EXCEPTION_GROUPS;
 }
 
+/* ── Shop Exceptions — shop-wide, above every rule (OD #52 follow-on) ────────────────────
+   Same {allowedTypes, override} shape as a per-rule EXCEPTION_GROUPS entry, but stored once
+   for the whole shop instead of inside a rule's config, and checked FIRST wherever a rule's
+   own exceptions are checked - see matchedException() below. Starts empty; seedShopBaseline()
+   copies the same 6 safety categories already used as the rule-level default, for a shop that
+   wants them enforced shop-wide (locked) rather than left as a per-rule, per-rule-author default. */
+const shopExcStorageKey = 'mro_shop_exceptions_v1';
+const shopExcAuditStorageKey = 'mro_shop_exceptions_audit_v1';
+function loadShopExceptions(){
+  try { const raw = localStorage.getItem(shopExcStorageKey); return raw ? JSON.parse(raw) : null; }
+  catch(e){ return null; }
+}
+function saveShopExceptions(list){
+  try { localStorage.setItem(shopExcStorageKey, JSON.stringify(list)); return true; }
+  catch(e){ return false; }
+}
+function getShopExceptions(){
+  const saved = loadShopExceptions();
+  return Array.isArray(saved) ? saved : [];
+}
+function shopExceptionSafetyBaseline(){
+  // safety:true persists even after an unlock, so the UI can still offer "Re-lock" on a
+  // category that used to be a compliance floor - locked:false alone can't tell that apart
+  // from a shop-defined category (e.g. Cooling) that was never locked in the first place.
+  return EXCEPTION_GROUPS.map(g => ({...g, override:{...EXC_OVERRIDE_OFF}, locked:true, safety:true}));
+}
+function loadShopExceptionAudit(){
+  try { const raw = localStorage.getItem(shopExcAuditStorageKey); return raw ? JSON.parse(raw) : []; }
+  catch(e){ return []; }
+}
+function appendShopExceptionAudit(entry){
+  const list = [{...entry, when:new Date().toISOString()}, ...loadShopExceptionAudit()].slice(0,50);
+  try { localStorage.setItem(shopExcAuditStorageKey, JSON.stringify(list)); } catch(e){}
+  return list;
+}
+
 window.MRO = { METHODS, CAP_TYPES, resolveRule, clauseValue, isNA, fmt, fmt0, PART_TYPES_INIT, SAMPLE_PARTS, EXCEPTION_GROUPS, PT_COLOR, PT_NAME, CURRENT_YEAR,
   VEHICLE_BRANDS, AGE_OPERATORS, VEHICLE_AGE_RULES_INIT, vehicleAge, ageRuleMatches, matchingAgeRules, ageRuleActive, ageAllowsType,
   COND_PREDICATES, COND_OUTCOMES, COND_CAP_TYPES, SUPPLIER_TYPES, resolveConditional, condMatches, typeAvailable, COND_RULES_INIT, COND_SAMPLE,
-  loadRuleConfig, saveRuleConfig, getActiveTypes, getActiveAgeRules, getActiveCondRules, getActiveExceptions };
+  loadRuleConfig, saveRuleConfig, getActiveTypes, getActiveAgeRules, getActiveCondRules, getActiveExceptions,
+  getShopExceptions, saveShopExceptions, shopExceptionSafetyBaseline, loadShopExceptionAudit, appendShopExceptionAudit };
 </script>
 
 <script>
@@ -3849,13 +3886,31 @@ function mroTypeRule(typeId, types){
   for(var j=0;j<fb.length;j++){ if(fb[j].id===typeId) return fb[j]; }
   return null;
 }
-// This part's safety-exception category (if any) restricted to whichever type(s) the active
-// rule's Exceptions config currently allows for that category. null = no exception on this part.
-function partExceptionAllowedTypes(part, exceptions){
+// A shop exception on this part's category, if any - checked ahead of the active rule's own
+// exceptions (see matchedException()) since a shop exception overrides every rule.
+function shopExceptionFor(part){
   if(!part.exc) return null;
-  var list=exceptions||activeMroExceptions();
-  for(var i=0;i<list.length;i++){ if(list[i].category===part.exc.category) return list[i].allowedTypes||[]; }
+  var list=window.MRO.getShopExceptions();
+  for(var i=0;i<list.length;i++){ if(list[i].category===part.exc.category) return list[i]; }
   return null;
+}
+// The exception group actually in force for this part: a shop exception on its category wins
+// outright (the rule's own exception for that category, if any, is not consulted at all -
+// "global always wins"); otherwise falls back to the active rule's own exceptions.
+function matchedException(part, exceptions){
+  if(!part.exc) return null;
+  var shop=shopExceptionFor(part);
+  if(shop) return {scope:'shop', group:shop};
+  var list=exceptions||activeMroExceptions();
+  for(var i=0;i<list.length;i++){ if(list[i].category===part.exc.category) return {scope:'rule', group:list[i]}; }
+  return null;
+}
+// This part's safety-exception category (if any) restricted to whichever type(s) are
+// currently allowed for that category - shop-wide first, else the active rule's own
+// Exceptions config. null = no exception on this part.
+function partExceptionAllowedTypes(part, exceptions){
+  var m=matchedException(part, exceptions);
+  return m ? (m.group.allowedTypes||[]) : null;
 }
 function partExceptionLabel(part, exceptions, types){
   var allowed=partExceptionAllowedTypes(part, exceptions);
@@ -3884,15 +3939,15 @@ function partCondOverrides(part, types, condRules){
   return {overrides:overrides, trace:trace};
 }
 function offerAllowed(typeId, part, ageRules, exceptions, condOverrides){
-  var excAllowed=partExceptionAllowedTypes(part, exceptions);
-  if(excAllowed && excAllowed.indexOf(typeId)===-1) return false;
+  var m=matchedException(part, exceptions);
+  if(m && (m.group.allowedTypes||[]).indexOf(typeId)===-1) return false;
   if(!window.MRO.ageAllowsType(typeId, VEHICLE_MODEL_YEAR, VEHICLE_BRAND, ageRules)) return false;
   if(condOverrides && condOverrides[typeId]===null) return false;
   return true;
 }
 function offerLockReason(typeId, part, ageRules, exceptions, condOverrides){
-  var excAllowed=partExceptionAllowedTypes(part, exceptions);
-  if(excAllowed && excAllowed.indexOf(typeId)===-1) return 'safety';
+  var m=matchedException(part, exceptions);
+  if(m && (m.group.allowedTypes||[]).indexOf(typeId)===-1) return m.scope==='shop' ? 'shop' : 'safety';
   if(!window.MRO.ageAllowsType(typeId, VEHICLE_MODEL_YEAR, VEHICLE_BRAND, ageRules)) return 'age';
   if(condOverrides && condOverrides[typeId]===null) return 'conditional';
   return null;
@@ -3907,13 +3962,26 @@ function resolveCell(part, opt){
   var ageRules=activeMroAgeRules(), exceptions=activeMroExceptions(), condRules=activeMroCondRules();
   var base=pt ? window.MRO.resolveRule(pt, {list:part.list, cost:opt.cost}) : {na:true,sell:0,steps:[],capped:false};
   var cond=partCondOverrides(part, types, condRules);
-  var res=base, overridden=false, preOverride=null, condRef=null, condCapped=false;
-  var ov=cond.overrides[typeId];
-  if(ov!=null && !base.na && ov!==base.sell){
-    overridden=true; preOverride=base.sell;
-    var tr=cond.trace[typeId];
-    condRef=tr?tr.ref:null; condCapped=tr?tr.capped:false;
-    res={na:false, sell:ov, steps:base.steps, winnerIdx:base.winnerIdx, capped:false, cap:base.cap};
+  var res=base, overridden=false, preOverride=null, condRef=null, condCapped=false, exceptionOverride=null;
+  // A matched exception's pricing Allowance (shop or rule-level) replaces the rule's own
+  // pricing method outright when enabled - "resolution order: exception -> the rule's pricing
+  // method" (design concept, OD #52) - so it pre-empts the conditional cross-type override
+  // below rather than stacking with it. Previously this field was stored but never applied.
+  var m=matchedException(part, exceptions);
+  var mOverride=(m && !base.na && m.group.override && m.group.override.enabled && (m.group.allowedTypes||[]).indexOf(typeId)>-1) ? m.group.override : null;
+  if(mOverride){
+    exceptionOverride={scope:m.scope, category:m.group.category};
+    preOverride=base.sell;
+    var exSell=window.MRO.clauseValue(mOverride, {list:part.list, cost:opt.cost});
+    res={na:false, sell:exSell, steps:base.steps, winnerIdx:base.winnerIdx, capped:false, cap:base.cap};
+  } else {
+    var ov=cond.overrides[typeId];
+    if(ov!=null && !base.na && ov!==base.sell){
+      overridden=true; preOverride=base.sell;
+      var tr=cond.trace[typeId];
+      condRef=tr?tr.ref:null; condCapped=tr?tr.capped:false;
+      res={na:false, sell:ov, steps:base.steps, winnerIdx:base.winnerIdx, capped:false, cap:base.cap};
+    }
   }
   var lineOverridden=false, preLineOverride=null, lineMethod=null;
   var pov=getOverride(part,opt);
@@ -3929,6 +3997,7 @@ function resolveCell(part, opt){
   return {
     typeId:typeId, pt:pt, res:res,
     overridden:overridden, preOverride:preOverride, condRef:condRef, condCapped:condCapped,
+    exceptionOverride:exceptionOverride,
     lineOverridden:lineOverridden, preLineOverride:preLineOverride, lineMethod:lineMethod,
     allowed:offerAllowed(typeId, part, ageRules, exceptions, cond.overrides),
     lockReason:offerLockReason(typeId, part, ageRules, exceptions, cond.overrides)
@@ -3938,6 +4007,8 @@ function lockTooltipHtml(part, opt, cell){
   var tcol=TYPE_COLOR[opt.type]||'#337ab7';
   var msg = cell.lockReason==='age'
     ? 'Not acceptable — blocked by the active vehicle age rule for this part type.'
+    : cell.lockReason==='shop'
+    ? 'Not acceptable — locked shop-wide by a Shop Exception ('+(partExceptionLabel(part, activeMroExceptions(), activeMroTypes())||'restricted')+'). Overrides every margin rule, including this one.'
     : cell.lockReason==='safety'
     ? 'Not acceptable under this rule — '+(partExceptionLabel(part, activeMroExceptions(), activeMroTypes())||'restricted')+'.'
     : 'Not acceptable — blocked by a conditional rule on this line.';
@@ -3978,7 +4049,10 @@ function render(){
           if(_etdL) h+='<div class="chip-sq chip-etd">'+chipIconSvg('eta',9)+'</div>';
           h+='</div>';
         }
-        var _lockLbl=_cell.lockReason==='age'?'AGE RULE':_cell.lockReason==='safety'?(partExceptionLabel(p,activeMroExceptions(),activeMroTypes())||'RESTRICTED').toUpperCase():'RULE BLOCKED';
+        var _lockLbl=_cell.lockReason==='age'?'AGE RULE'
+          :_cell.lockReason==='shop'?'SHOP: '+(partExceptionLabel(p,activeMroExceptions(),activeMroTypes())||'RESTRICTED').toUpperCase()
+          :_cell.lockReason==='safety'?(partExceptionLabel(p,activeMroExceptions(),activeMroTypes())||'RESTRICTED').toUpperCase()
+          :'RULE BLOCKED';
         h+='<div class="npc-inner"><div class="npc-type-top" style="color:'+tcol+'">'+opt.label+'</div>'
           +'<span class="bdg boos"><i class="fa fa-lock" style="font-size:8px"></i> '+_lockLbl+'</span></div>';
         h+='<div class="tt">'+lockTooltipHtml(p,opt,_cell)+'</div>';
@@ -4049,6 +4123,7 @@ function render(){
         // engine actually did to reach this sell price, equivalent to what the deleted
         // QuoteGrid's CellPop popover showed.
         +(_cell.res.na?'<div class="ttr-sub"><span class="ttl">⛔ Not accepted under this rule</span><span class="ttv">$0.00</span></div>':'')
+        +(_cell.exceptionOverride?'<div class="ttr-sub"><span class="ttl">'+(_cell.exceptionOverride.scope==='shop'?'&#128274; Shop exception':'&#9873; Rule exception')+' &middot; '+_cell.exceptionOverride.category+' &mdash; overrides the rule</span><span class="ttv">'+fmt(_cell.preOverride)+' &rarr; '+fmt(_cell.res.sell)+'</span></div>':'')
         +(_cell.overridden?'<div class="ttr-sub"><span class="ttl">⇄ Matched to '+(window.MRO.PT_NAME(_cell.condRef)||'other type')+'\'s rate'+(_cell.condCapped?' &middot; capped':'')+'</span><span class="ttv">'+fmt(_cell.preOverride)+' &rarr; '+fmt(_cell.res.sell)+'</span></div>':'')
         +(_cell.res.capped?'<div class="ttr-sub"><span class="ttl">⛰ Cap applied'+(_cell.pt&&_cell.pt.cap&&window.MRO.CAP_TYPES[_cell.pt.cap.type]?' ('+window.MRO.CAP_TYPES[_cell.pt.cap.type].label+')':'')+'</span><span class="ttv">'+fmt(_cell.res.preCapSell!=null?_cell.res.preCapSell:_cell.res.sell)+' &rarr; '+fmt(_cell.res.sell)+'</span></div>':'')
         +(_cell.lineOverridden?'<div class="ttr-sub"><span class="ttl">&#9998; Manually overridden for this line</span><span class="ttv">'+fmt(_cell.preLineOverride)+' &rarr; '+fmt(_cell.res.sell)+'</span></div>':'')
@@ -4503,6 +4578,15 @@ window.notifyRuleAdded=function(rule){
   var exists=false;
   for(var i=0;i<ALL_RULES.length;i++){if(ALL_RULES[i].id===rule.id){ALL_RULES[i]=rule;exists=true;break;}}
   if(!exists) ALL_RULES.push(rule);
+};
+// Settings' Shop Exceptions panel calls this after every add/edit/delete/lock/unlock -
+// shop exceptions are read live from window.MRO.getShopExceptions() by resolveCell(), but
+// nothing re-renders the grid on its own when that data changes underneath it.
+window.notifyShopExceptionsChanged=function(){
+  updateExcNotice();
+  render();updateTotals();
+  var lv=document.getElementById('list-view');
+  if(lv&&lv.style.display!=='none')renderList();
 };
 
 function getActiveRule(){
@@ -5154,12 +5238,20 @@ function updateExcNotice(){
   var na=notAcceptedTypes();
   var exceptions=activeMroExceptions();
   var types=activeMroTypes();
+  var shopExceptions=window.MRO.getShopExceptions();
+  var shopCategories={};
+  shopExceptions.forEach(function(e){ shopCategories[e.category]=true; });
   // Only surface an exception category if it actually restricts a part on this quote -
-  // otherwise every rule would show all 6 safety categories by default.
+  // otherwise every rule would show all 6 safety categories by default. A category a shop
+  // exception already owns is excluded here (it wins over the rule's own copy - see
+  // matchedException()) and surfaced once below instead, so it isn't shown twice.
   var relevantExc=exceptions.filter(function(e){
+    return !shopCategories[e.category] && PARTS.some(function(p){return p.exc&&p.exc.category===e.category;});
+  });
+  var relevantShopExc=shopExceptions.filter(function(e){
     return PARTS.some(function(p){return p.exc&&p.exc.category===e.category;});
   });
-  if(!na.length&&!relevantExc.length){notice.style.display='none';return;}
+  if(!na.length&&!relevantExc.length&&!relevantShopExc.length){notice.style.display='none';return;}
   notice.style.display='flex';
   var pillsEl=document.getElementById('exc-pills-bar');
   if(!pillsEl)return;
@@ -5178,6 +5270,12 @@ function updateExcNotice(){
   na.forEach(function(t){
     html+=excEntry('Not Accepted',t,
       rule.insurer+' does not accept '+t+' parts. Set Accepted to Yes in the pricing rule to remove this.');
+  });
+  // Shop Exceptions - shop-wide, override every rule. Surfaced first since these win.
+  relevantShopExc.forEach(function(e){
+    var label=partExceptionLabel({exc:{category:e.category}},exceptions,types)||'Restricted';
+    var affected=PARTS.filter(function(p){return p.exc&&p.exc.category===e.category;}).map(function(p){return p.name;}).join(', ');
+    html+=excEntry('&#128274; Shop: '+e.category,label,'Shop exception - runs on every margin rule, overrides '+rule.insurer+'\'s own pricing. '+label+'. Affects: '+affected+'.');
   });
   // Per-part safety-exception categories (Airbag Systems, ABS, etc) currently in force,
   // read live from the active rule's MRO config rather than a static demo array.
@@ -5533,6 +5631,22 @@ function Dashboard({rules,setRules,onCreate,onEdit,onCopy,onView,initialTab}) {
   // SYSRULES (Standard Baseline, id 1) and the user's own rules, so the badge
   // can only ever appear in one place.
   const [defaultRuleId,setDefaultRuleId] = useState(1);
+  // Shop Exceptions - shop-wide, above every rule (design concept, OD #52 follow-on).
+  // Lives in Dashboard (not RuleForm) since it isn't scoped to any one rule; persisted to
+  // its own localStorage key via window.MRO so the vanilla-JS Check Price grid reads the
+  // same data live (see resolveCell()/matchedException() in the engine script above).
+  const [shopExc,setShopExc] = useState(()=>window.MRO.getShopExceptions());
+  const [shopExcAudit,setShopExcAudit] = useState(()=>window.MRO.loadShopExceptionAudit());
+  const logShopExc = (ev,what,detail) => {
+    const entry={ev, what, detail, who:'You'};
+    setShopExcAudit(window.MRO.appendShopExceptionAudit(entry));
+  };
+  const commitShopExc = (next, ev, what, detail) => {
+    setShopExc(next);
+    window.MRO.saveShopExceptions(next);
+    if(ev) logShopExc(ev,what,detail);
+    if(window.notifyShopExceptionsChanged) window.notifyShopExceptionsChanged();
+  };
   // Settings owns the rules; keep the Check Price screen in step with any edit.
   useEffect(()=>{
     if(!window.syncRulesFromSettings)return;
@@ -5959,7 +6073,8 @@ function Dashboard({rules,setRules,onCreate,onEdit,onCopy,onView,initialTab}) {
           <div style={{fontSize:"14px",fontWeight:"800",color:"#111827",marginBottom:"4px"}}>Margin Settings</div>
           <p style={{fontSize:"12px",color:"#6b7280",lineHeight:"1.55",maxWidth:"760px"}}>Create margin rules for your work providers. These rules are applied to quotes and determine the margins used on the Check Price screen. Set a default rule to use when no matching insurer is found.</p>
         </div>
-        
+
+        <ShopExceptionsPanel shopExc={shopExc} commit={commitShopExc} audit={shopExcAudit} isAdmin={isAdmin} ruleCount={rules.length + SYSRULES.filter(r=>r.template).length}/>
 
         {/* System Templates */}
         <div>
@@ -6035,7 +6150,8 @@ function Dashboard({rules,setRules,onCreate,onEdit,onCopy,onView,initialTab}) {
                           <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
                             <span style={{fontWeight:"700",fontSize:"13px",color:"#111827"}}>{rule.insurer}</span>
                             {rule.pinned&&<svg width="11" height="11" viewBox="0 0 24 24" fill="#d97706" stroke="#d97706" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>}
-                            {((rule.exceptions?.length||0)+(rule.notAccepted?.length||0))>0&&<span style={{fontSize:"9px",fontWeight:"700",background:"#fef3c7",color:"#92400e",border:"1px solid #fde68a",borderRadius:"3px",padding:"1px 5px"}}>{(rule.exceptions?.length||0)+(rule.notAccepted?.length||0)} exception{((rule.exceptions?.length||0)+(rule.notAccepted?.length||0))>1?"s":""}</span>}
+                            {shopExc.length>0&&<span title="Shop exceptions apply to every rule" style={{fontSize:"9px",fontWeight:"700",background:"#f0fdf4",color:"#15803d",border:"1px solid #bbf7d0",borderRadius:"3px",padding:"1px 5px"}}><i className="fa fa-lock" style={{marginRight:3}}/>{shopExc.length} shop</span>}
+                            {((rule.exceptions?.length||0)+(rule.notAccepted?.length||0))>0&&<span style={{fontSize:"9px",fontWeight:"700",background:"#fef3c7",color:"#92400e",border:"1px solid #fde68a",borderRadius:"3px",padding:"1px 5px"}}>{(rule.exceptions?.length||0)+(rule.notAccepted?.length||0)} rule exception{((rule.exceptions?.length||0)+(rule.notAccepted?.length||0))>1?"s":""}</span>}
                           </div>
                           {defaultRuleId===rule.id&&<div style={{marginTop:"4px"}}><span style={{fontSize:"9px",fontWeight:"700",background:"#dcfce7",color:"#166534",borderRadius:"3px",padding:"1px 5px"}}>DEFAULT</span></div>}
                           </>
@@ -6803,12 +6919,19 @@ function ExcCard({ g, onChange, onDelete, types, viewOnly }){
 
 function Exceptions({ groups, setGroups, types, viewOnly }){
   const [cat, setCat] = useState('');
+  const [conflict, setConflict] = useState(null);
   const partCount = groups.reduce((a,g)=>a+g.parts.length,0);
   const update = g => setGroups(groups.map(x=>x.id===g.id?g:x));
   const del = id => setGroups(groups.filter(x=>x.id!==id));
   const addCat = () => {
-    if(!cat.trim())return;
-    setGroups([...groups, {id:'c'+groups.length+1, category:cat.trim(), allowedTypes:['oem'], override:{enabled:false, method:'pctList', value:100}, parts:[]}]);
+    const name = cat.trim();
+    if(!name) return;
+    // Global always wins: a category a Shop Exception already owns can't get a second,
+    // conflicting rule-level exception - change it shop-wide instead (design concept, OD #52).
+    const shopOwner = window.MRO.getShopExceptions().find(e=>e.category.toLowerCase()===name.toLowerCase());
+    if(shopOwner){ setConflict(shopOwner); return; }
+    setConflict(null);
+    setGroups([...groups, {id:'c'+groups.length+1, category:name, allowedTypes:['oem'], override:{enabled:false, method:'pctList', value:100}, parts:[]}]);
     setCat('');
   };
   return (
@@ -6824,10 +6947,181 @@ function Exceptions({ groups, setGroups, types, viewOnly }){
         </div>
         {!viewOnly && <div className="exc-add">
           <span className="lbl">New category</span>
-          <input className="txt" style={{flex:1,minWidth:200}} placeholder="Category name — e.g. Steering Safety…" value={cat} onChange={e=>setCat(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addCat()}/>
+          <input className="txt" style={{flex:1,minWidth:200}} placeholder="Category name — e.g. Steering Safety…" value={cat} onChange={e=>{setCat(e.target.value);setConflict(null);}} onKeyDown={e=>e.key==='Enter'&&addCat()}/>
           <button className="btn btn-green btn-sm" onClick={addCat}>Add category</button>
         </div>}
+        {conflict && (
+          <div style={{display:'flex',gap:9,marginTop:10,background:'#fef2f2',border:'1px solid #fecaca',borderRadius:3,padding:'9px 11px',fontSize:11,color:'#991b1b',lineHeight:1.5}}>
+            <i className="fa fa-lock" style={{marginTop:2}}/>
+            <span><b>A shop exception already owns “{conflict.category}.”</b> It runs on every rule and can't be overridden here — change it shop-wide instead, in Settings → Margin Rules → Shop Exceptions.</span>
+          </div>
+        )}
       </div>
+    </div>
+  );
+}
+
+/* ─── read-only shop-exceptions band, shown above a rule's own Exceptions in RuleForm ───
+   Mirrors the rule's own list visually (same ExcCard) but always viewOnly - shop exceptions
+   are managed shop-wide, in Settings → Margin Rules, not from inside one rule. */
+function ShopExceptionsBand({ onManage }){
+  const shopExc = window.MRO.getShopExceptions();
+  const types = window.MRO.PART_TYPES_INIT;
+  if(!shopExc.length) return null;
+  const lockedCount = shopExc.filter(e=>e.locked).length;
+  return (
+    <div className="sec">
+      <div className="sec-head">
+        <div style={{display:'flex',alignItems:'center',gap:9}}>
+          <i className="fa fa-lock" style={{color:'#6b7280'}}/>
+          <div className="sec-title">Shop Exceptions</div>
+          <span className="count">{shopExc.length} · run before this rule's pricing{lockedCount?' · '+lockedCount+' locked':''}</span>
+        </div>
+        <span style={{fontSize:11,fontWeight:600,color:'#16a34a',textDecoration:'underline',cursor:'pointer'}} onClick={onManage}>Manage in Settings</span>
+      </div>
+      <div className="sec-body">
+        <div className="xg">
+          {shopExc.map(g=><ExcCard key={g.id} g={g} onChange={()=>{}} onDelete={()=>{}} types={types} viewOnly={true}/>)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Shop Exceptions panel — Settings → Margin Rules, above the rule list ───────────────
+   Design concept, OD #52 follow-on: a shop-wide tier that runs on every margin rule and
+   overrides rule-level pricing for the same category (see matchedException() in the engine
+   script). Reuses ExcCard for the actual category/allowed-types/Allowance editing - same
+   mechanic as a rule's own Exceptions - adding only what's genuinely new here: the shop-wide
+   framing, a lock/unlock flow for safety-critical categories, and a lightweight change log. */
+function ShopExceptionsPanel({ shopExc, commit, audit, isAdmin, ruleCount }){
+  const [cat,setCat] = useState('');
+  const [conflict,setConflict] = useState('');
+  const [unlocking,setUnlocking] = useState(null);
+  const [showAudit,setShowAudit] = useState(false);
+  const types = window.MRO.PART_TYPES_INIT;
+  const lockedCount = shopExc.filter(e=>e.locked).length;
+
+  const addCat = () => {
+    const name = cat.trim();
+    if(!name) return;
+    if(shopExc.some(e=>e.category.toLowerCase()===name.toLowerCase())){ setConflict('“'+name+'” is already a shop exception.'); return; }
+    setConflict('');
+    const g = {id:'shop'+Date.now(), category:name, allowedTypes:['oem'], override:{enabled:false, method:'pctList', value:100}, parts:[], locked:false};
+    commit([...shopExc, g], 'Created', name, 'Added — OEM only, applies to all '+ruleCount+' rules');
+    setCat('');
+  };
+  const update = g => commit(shopExc.map(x=>x.id===g.id?g:x));
+  const del = g => { if(!g.locked) commit(shopExc.filter(x=>x.id!==g.id), 'Deleted', g.category, 'Removed from all '+ruleCount+' rules'); };
+  const doUnlock = () => {
+    const g = unlocking;
+    commit(shopExc.map(x=>x.id===g.id?{...x, locked:false}:x), 'Unlocked', g.category,
+      (g.reason?'“'+g.reason+'” — ':'')+'Safety lock removed, editable on all '+ruleCount+' rules');
+    setUnlocking(null);
+    showToast('Unlocked — '+g.category+' can now be edited');
+  };
+  const relock = g => {
+    commit(shopExc.map(x=>x.id===g.id?{...x, locked:true}:x), 'Re-locked', g.category, 'Compliance floor restored');
+    showToast('Re-locked — '+g.category);
+  };
+  const seedBaseline = () => {
+    const seeded = window.MRO.shopExceptionSafetyBaseline();
+    commit(seeded, 'Seeded', 'Safety-critical baseline', seeded.length+' categories added and locked');
+    showToast(seeded.length+' safety-critical categories seeded and locked');
+  };
+  const canConfirmUnlock = unlocking && unlocking.confirmWord.trim().toUpperCase()==='UNLOCK' && unlocking.reason.trim();
+
+  return (
+    <div className="sec" style={{border:'1px solid #16a34a'}}>
+      <div className="sec-head">
+        <div style={{display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
+          <div className="sec-title">Shop Exceptions</div>
+          <span style={{fontSize:9,fontWeight:800,letterSpacing:.3,textTransform:'uppercase',background:'#16a34a',color:'#fff',borderRadius:3,padding:'1px 5px'}}>New</span>
+          <span className="count">Applies to all {ruleCount} margin rules · overrides rule-level pricing</span>
+        </div>
+        {isAdmin && shopExc.length>0 && <button className="btn btn-ghost btn-sm" onClick={()=>setShowAudit(s=>!s)}><i className="fa fa-history"/> {showAudit?'Hide log':'Change log'}</button>}
+      </div>
+      <div className="sec-body">
+        {!isAdmin && <div style={{fontSize:12,color:'#6b7280',marginBottom:12}}>You have view-only access. Contact an Administrator to change shop exceptions.</div>}
+        {shopExc.length===0 ? (
+          <div style={{textAlign:'center',padding:'28px 16px'}}>
+            <i className="fa fa-file-o" style={{fontSize:22,color:'#9ca3af'}}/>
+            <div style={{fontSize:13,fontWeight:700,color:'#374151',marginTop:10}}>No shop exceptions yet</div>
+            <div style={{fontSize:11,color:'#6b7280',margin:'5px auto 0',maxWidth:440,lineHeight:1.55}}>Exceptions here run on every margin rule — use them for parts that must be priced the same way no matter which insurer is paying.</div>
+            {isAdmin && <div style={{fontSize:11,color:'#9ca3af',marginTop:9}}>Start from <span style={{color:'#16a34a',fontWeight:600,textDecoration:'underline',cursor:'pointer'}} onClick={seedBaseline}>the safety-critical baseline ({EXCEPTION_GROUPS.length} categories)</span>, or add one below.</div>}
+          </div>
+        ) : (
+          <div className="xg">
+            {shopExc.map(g=>(
+              <div key={g.id}>
+                <div style={{position:'relative'}}>
+                  {g.locked && isAdmin && <button className="btn btn-ghost btn-sm" style={{position:'absolute',top:12,right:44,zIndex:2}} onClick={()=>setUnlocking({...g,reason:'',confirmWord:''})}><i className="fa fa-unlock-alt"/> Unlock</button>}
+                  {g.locked && !isAdmin && <span style={{position:'absolute',top:14,right:44,zIndex:2,fontSize:11,color:'#9ca3af'}}><i className="fa fa-lock"/> Locked</span>}
+                  <ExcCard g={g} onChange={update} onDelete={()=>del(g)} types={types} viewOnly={!isAdmin||g.locked}/>
+                </div>
+                {g.safety && !g.locked && (
+                  <div style={{display:'flex',alignItems:'center',gap:7,fontSize:11,color:'#92400e',background:'#fffbeb',border:'1px solid #fde68a',borderTop:'none',borderRadius:'0 0 3px 3px',padding:'6px 10px'}}>
+                    <i className="fa fa-unlock"/><span>Unlocked — this category's compliance floor is not currently enforced.</span>
+                    {isAdmin && <span style={{marginLeft:'auto',textDecoration:'underline',fontWeight:700,color:'#d97706',cursor:'pointer',whiteSpace:'nowrap'}} onClick={()=>relock(g)}>Re-lock</span>}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+        {isAdmin && <div className="exc-add">
+          <span className="lbl">New category</span>
+          <input className="txt" style={{flex:1,minWidth:200}} placeholder="Category name — e.g. Cooling — Radiators &amp; Condensers…" value={cat} onChange={e=>{setCat(e.target.value);setConflict('');}} onKeyDown={e=>e.key==='Enter'&&addCat()}/>
+          <button className="btn btn-green btn-sm" onClick={addCat}>Add Shop Exception</button>
+        </div>}
+        {conflict && <div style={{marginTop:8,fontSize:11,color:'#991b1b',background:'#fef2f2',border:'1px solid #fecaca',borderRadius:3,padding:'6px 10px'}}>{conflict}</div>}
+
+        {showAudit && (
+          <div style={{marginTop:16,paddingTop:14,borderTop:'1px solid #e5e7eb'}}>
+            <div style={{fontSize:11,fontWeight:700,color:'#6b7280',textTransform:'uppercase',letterSpacing:.5,marginBottom:8}}>Change log · this device</div>
+            {audit.length===0 ? <div style={{fontSize:11,color:'#9ca3af'}}>No changes logged yet.</div> : (
+              <div style={{display:'flex',flexDirection:'column',gap:8,maxHeight:220,overflow:'auto'}}>
+                {audit.map((a,i)=>(
+                  <div key={i} style={{fontSize:11,color:'#374151',display:'flex',gap:8,alignItems:'baseline'}}>
+                    <span style={{color:'#9ca3af',flexShrink:0,minWidth:118}}>{new Date(a.when).toLocaleString('en-AU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</span>
+                    <span style={{fontWeight:700,flexShrink:0}}>{a.ev}</span>
+                    <span><b>{a.what}</b>{a.detail?' — '+a.detail:''}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {unlocking && (
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.45)',zIndex:800,display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <div style={{background:'#fff',borderRadius:3,width:440,maxWidth:'95vw',boxShadow:'0 20px 60px rgba(0,0,0,.25)',overflow:'hidden'}}>
+            <div style={{padding:'14px 20px',background:'#f8fafc',borderBottom:'1px solid #e5e7eb'}}>
+              <div style={{fontSize:13,fontWeight:700,color:'#111827'}}>Unlock "{unlocking.category}"</div>
+              <div style={{fontSize:11,color:'#6b7280',marginTop:2}}>Shop exception · safety-critical · applies to all {ruleCount} rules</div>
+            </div>
+            <div style={{padding:20,display:'flex',flexDirection:'column',gap:12}}>
+              <div style={{display:'flex',gap:9,fontSize:11,color:'#92400e',background:'#fffbeb',border:'1px solid #fde68a',borderRadius:3,padding:'9px 11px',lineHeight:1.5}}>
+                <i className="fa fa-exclamation-triangle" style={{marginTop:2}}/>
+                <span>Unlocking lets any margin rule price non-OEM parts in this category. This is a compliance decision, not a pricing one.</span>
+              </div>
+              <div>
+                <label style={{fontSize:11,fontWeight:600,color:'#374151',display:'block',marginBottom:4}}>Reason (required — shown in the change log)</label>
+                <textarea className="txt" style={{width:'100%',minHeight:52,padding:'6px 8px'}} value={unlocking.reason} onChange={e=>setUnlocking({...unlocking,reason:e.target.value})}/>
+              </div>
+              <div>
+                <label style={{fontSize:11,fontWeight:600,color:'#374151',display:'block',marginBottom:4}}>Type <b style={{fontFamily:'ui-monospace,Menlo,monospace'}}>UNLOCK</b> to confirm</label>
+                <input className="txt" style={{width:'100%',fontFamily:'ui-monospace,Menlo,monospace'}} value={unlocking.confirmWord} onChange={e=>setUnlocking({...unlocking,confirmWord:e.target.value})}/>
+              </div>
+            </div>
+            <div style={{padding:'12px 20px',borderTop:'1px solid #e5e7eb',display:'flex',justifyContent:'flex-end',gap:8,background:'#f9fafb'}}>
+              <button className="btn btn-ghost" onClick={()=>setUnlocking(null)}>Keep locked</button>
+              <button className="btn btn-green" disabled={!canConfirmUnlock} style={{opacity:canConfirmUnlock?1:0.5,cursor:canConfirmUnlock?'pointer':'not-allowed'}} onClick={doUnlock}>Unlock &amp; log</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -7108,6 +7402,7 @@ function RuleForm({onBack,onSave,editingRule,isCopy,existingRules=[],viewOnly=fa
 
           <VehicleAgeRules rules={ageRules} setRules={setAgeRules} types={types} viewOnly={viewOnly}/>
           <ConditionalRules rules={condRules} setRules={setCondRules} types={types} viewOnly={viewOnly}/>
+          <ShopExceptionsBand onManage={onBack}/>
           <Exceptions groups={mroExceptions} setGroups={setMroExceptions} types={types} viewOnly={viewOnly}/>
         </div>
 
