@@ -3599,9 +3599,34 @@ function saveRuleConfig(ruleId, cfg){
   try { localStorage.setItem(storageKey(ruleId), JSON.stringify(cfg)); return true; }
   catch(e){ return false; }
 }
+// Legacy display-string parsing - a System Rule (and RulesApp's 5 pre-seeded custom rules)
+// only ever has oem/aftm/reco/parallel/recycled display strings (e.g. "100% of List") until
+// someone opens it in the RuleForm editor, which seeds a rich config on mount. Before that,
+// EVERY reader of a rule's config - Check Price included, not just the editor - must derive
+// from these same legacy strings, or it silently prices off the generic engine defaults
+// instead of what the rule's own banner/ledger displays. Shared with RuleForm's seedFromLegacy
+// below so the two never drift apart.
+function parseLegacyClause(str){
+  if(!str || str==='--') return {method:'pctList', value:0};
+  if(/not accepted/i.test(str)) return {method:'notAccepted', value:0};
+  var m=String(str).match(/(\d+(?:\.\d+)?)/), val=m?parseFloat(m[1]):0;
+  if(/show markup/i.test(str)) return {method:'showMarkup', value:val};
+  if(/markup/i.test(str)) return {method:'markupCost', value:val};
+  if(/dealer list/i.test(str)) return {method:'listPrice', value:val};
+  return {method:'pctList', value:val};
+}
+var LEGACY_FIELD={oem:'oem', aftermarket:'aftm', recon:'reco', parallel:'parallel', recycled:'recycled'};
+function typesFromLegacyRule(r){
+  return PART_TYPES_INIT.map(function(t){
+    var raw=r[LEGACY_FIELD[t.id]];
+    return raw==null ? t : Object.assign({}, t, {clauses:[parseLegacyClause(raw)], cap:{enabled:false,type:'capAtList',value:0}});
+  });
+}
 function getActiveTypes(ruleId){
   const saved = loadRuleConfig(ruleId);
-  return (saved && Array.isArray(saved.types) && saved.types.length) ? saved.types : PART_TYPES_INIT;
+  if(saved && Array.isArray(saved.types) && saved.types.length) return saved.types;
+  var rule=(typeof ALL_RULES!=='undefined'?ALL_RULES:[]).filter(function(r){return r.id===ruleId;})[0];
+  return (rule && rule.oem!=null) ? typesFromLegacyRule(rule) : PART_TYPES_INIT;
 }
 function getActiveAgeRules(ruleId){
   const saved = loadRuleConfig(ruleId);
@@ -3619,7 +3644,8 @@ function getActiveExceptions(ruleId){
 window.MRO = { METHODS, CAP_TYPES, resolveRule, clauseValue, isNA, fmt, fmt0, PART_TYPES_INIT, SAMPLE_PARTS, EXCEPTION_GROUPS, PT_COLOR, PT_NAME, CURRENT_YEAR,
   VEHICLE_BRANDS, AGE_OPERATORS, VEHICLE_AGE_RULES_INIT, vehicleAge, ageRuleMatches, matchingAgeRules, ageRuleActive, ageAllowsType,
   COND_PREDICATES, COND_OUTCOMES, COND_CAP_TYPES, SUPPLIER_TYPES, resolveConditional, condMatches, typeAvailable, COND_RULES_INIT, COND_SAMPLE,
-  loadRuleConfig, saveRuleConfig, getActiveTypes, getActiveAgeRules, getActiveCondRules, getActiveExceptions };
+  loadRuleConfig, saveRuleConfig, getActiveTypes, getActiveAgeRules, getActiveCondRules, getActiveExceptions,
+  parseLegacyClause, typesFromLegacyRule };
 </script>
 
 <script>
@@ -4487,11 +4513,21 @@ document.addEventListener('click',function(e){
 var ALL_RULES=[];
 var activeRuleId=null;
 function pickDefaultRuleId(list){
-  var matched=null;
+  // A System Rule and a "Your Rules" custom rule can be mapped to the same debtor (e.g. the
+  // pre-seeded "Allianz Standard" custom rule shares Allianz's debtors with the read-only
+  // Allianz System Rule) - whichever one the PM actually customises must win, or "Copy &
+  // customise" silently does nothing for every quote. Without this, list order alone decided
+  // (System Rules are pushed first in syncRulesFromSettings), so a customised rule could sit
+  // there fully edited and saved while every quote kept quietly pricing off the untouched
+  // System Rule next to it.
+  var sysMatch=null, customMatch=null;
   for(var i=0;i<list.length;i++){
-    if((list[i].debtors||[]).some(function(d){return d.toLowerCase()===QUOTE_INSURER.toLowerCase();})){matched=list[i];break;}
+    if((list[i].debtors||[]).some(function(d){return d.toLowerCase()===QUOTE_INSURER.toLowerCase();})){
+      if(!list[i].isSystem){ customMatch=list[i]; break; }
+      if(!sysMatch) sysMatch=list[i];
+    }
   }
-  var pick=matched||list[0];
+  var pick=customMatch||sysMatch||list[0];
   return pick?pick.id:null;
 }
 window.syncRulesFromSettings=function(list){
@@ -7094,24 +7130,11 @@ function RuleForm({onBack,onSave,editingRule,isCopy,existingRules=[],viewOnly=fa
      display strings — none of them have a saved rich MRO config yet the first time this form
      opens for them. Without seeding from those legacy strings, opening ANY of them (View or
      Edit) would silently show generic engine defaults instead of that rule's own displayed
-     percentages. parseLegacyClause/seedFromLegacy convert a legacy string like "70% of List"
-     or "+20% Markup on Cost" into the equivalent single-clause MRO type config. */
-  const parseLegacyClause = str => {
-    if(!str || str==='--') return {method:'pctList', value:0};
-    if(/not accepted/i.test(str)) return {method:'notAccepted', value:0};
-    const m = String(str).match(/(\d+(?:\.\d+)?)/);
-    const val = m ? parseFloat(m[1]) : 0;
-    if(/show markup/i.test(str)) return {method:'showMarkup', value:val};
-    if(/markup/i.test(str)) return {method:'markupCost', value:val};
-    if(/dealer list/i.test(str)) return {method:'listPrice', value:val};
-    return {method:'pctList', value:val};
-  };
-  const LEGACY_FIELD = {oem:'oem', aftermarket:'aftm', recon:'reco', parallel:'parallel', recycled:'recycled'};
+     percentages. Reuses the same parseLegacyClause/typesFromLegacyRule Check Price's
+     getActiveTypes() falls back to (see window.MRO), so the editor's seed and Check Price's
+     live read can never drift apart. */
   const seedFromLegacy = r => ({
-    types: PART_TYPES_INIT.map(t => {
-      const raw = r[LEGACY_FIELD[t.id]];
-      return raw==null ? t : {...t, clauses:[parseLegacyClause(raw)], cap:{enabled:false,type:'capAtList',value:0}};
-    }),
+    types: window.MRO.typesFromLegacyRule(r),
     ageRules: VEHICLE_AGE_RULES_INIT, condRules: COND_RULES_INIT, exceptions: EXCEPTION_GROUPS,
   });
   const ruleId = useMemo(() => {
