@@ -5711,7 +5711,7 @@ function SystemRulesLedger({groups, baseline, isAdmin, defaultRuleId, setDefault
           <div style={cellPad}><Fig value={baseline.recycled}/></div>
           <div style={cellPad}><span style={{fontSize:"10px",fontWeight:"700",color:"#9ca3af",background:"#fff",border:"1px dashed #d1d5db",borderRadius:"3px",padding:"2px 6px"}}>None</span></div>
           <div style={{...cellPad,display:"flex",justifyContent:"flex-end",gap:"5px"}}>
-            {isAdmin ? <DefaultBtn id={baseline.id}/> : <ViewOnlyBtn rule={baseline}/>}
+            {isAdmin ? <><DefaultBtn id={baseline.id}/><button onClick={()=>onCopy(baseline)} style={{background:"#f9fafb",border:"1px solid #d1d5db",borderRadius:"3px",padding:"5px 12px",fontSize:"11px",fontWeight:"700",color:"#374151",cursor:"pointer",whiteSpace:"nowrap"}}>Copy &amp; customise</button></> : <ViewOnlyBtn rule={baseline}/>}
           </div>
         </div>
       </div>
