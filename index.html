@@ -5440,14 +5440,27 @@ const { useState, useEffect, useMemo } = React;
 const INSURERS = ["NRMA Insurance","AAMI","Allianz","Budget Direct","IAG / CGU","Suncorp","QBE","GIO","Youi","Bingle"];
 const PMETHODS = ["Charge of List","Markup on Cost","Show Markup on Cost"];
 const SYSTEM_PNL = ["OEM Part Number","OEM Number + Special","OEM Number + Parallel","OEM Number + NDS","Supplier Provided Part Number","OEM Part Number + 80% list","Used","Parallel","Reconditioned","Genuine","Exchange","Second Hand"];
+/* System Rules are grouped by the underwriter that actually sets the rates (Margin
+   Settings home redesign, option 1a — see OD #50). Every insurer brand still needs its
+   own rule record downstream (debtors/auto-detect), but the rates and exceptions belong
+   to the underwriter, so brands are carried as one debtors[] per group rather than as
+   separate SYSRULES rows. Debtor membership reuses RuleForm's own DEBTOR_TEMPLATES groups
+   ("IAG Group" / "Suncorp / AAI" / "Allianz Group") so the two don't drift apart.
+   Rates reflect the 6 Aug 2026 underwriter coverage review: IAG, Suncorp, Allianz and
+   Auto & General confirmed; QBE disputed (no confirmed schedule, reads through to
+   Standard Baseline); RACQ/RACW still outstanding and therefore not modelled yet. */
 const SYSRULES = [
-  {id:1,insurer:"Standard Baseline",appliesTo:"System Default",oem:"100% of List",aftm:"75% of List",reco:"75% of List",parallel:"80% of List",recycled:"70% of List",isDefault:true,template:true,desc:"Your workshop default fallback rule.",debtors:[]},
-    {id:7,insurer:"Auto & General Insurance",appliesTo:"Auto & General Insurance",providedBy:"Auto & General",oem:"100% of List",aftm:"75% of List",reco:"75% of List",parallel:"80% of List",recycled:"70% of List",isDefault:false,template:true,desc:"Suggested margins for Auto & General.",debtors:[]},
-  {id:2,insurer:"NRMA Insurance",   oem:"100% of List",aftm:"75% of List",reco:"75% of List",parallel:"80% of List",recycled:"70% of List",isDefault:false,desc:"Suggested margins for NRMA.",debtors:["NRMA Insurance","RACV Insurance","CGU Insurance","SGIO","SGIC","Swann Insurance","WFI"]},
-  {id:3,insurer:"AAMI",             oem:"100% of List",aftm:"75% of List",reco:"75% of List",parallel:"80% of List",recycled:"70% of List",isDefault:false,desc:"Suggested margins for AAMI.",debtors:["AAI Limited","AAMI","GIO","Bingle","Vero Insurance","Apia"]},
-  {id:4,insurer:"Allianz",          oem:"100% of List",aftm:"70% of List",reco:"85% of List",parallel:"80% of List",recycled:"85% of List",isDefault:false,desc:"Suggested margins for Allianz.",debtors:["Allianz Australia Insurance","TIO","RAA Insurance"]},
-  {id:5,insurer:"Suncorp",          oem:"100% of List",aftm:"75% of List",reco:"75% of List",parallel:"80% of List",recycled:"70% of List",isDefault:false,desc:"Suggested starting point for Suncorp.",debtors:["Suncorp Insurance","Shannons","Bingle Direct"]},
-  {id:6,insurer:"QBE",              oem:"100% of List",aftm:"75% of List",reco:"75% of List",parallel:"80% of List",recycled:"70% of List",isDefault:false,desc:"Suggested starting point for QBE.",debtors:["QBE Insurance"]},
+  {id:1,insurer:"Standard Baseline",appliesTo:"System Default",oem:"100% of List",aftm:"20% Markup on Cost",reco:"20% Markup on Cost",parallel:"20% Markup on Cost",recycled:"20% Markup on Cost",isDefault:true,template:true,desc:"Your workshop default fallback rule.",debtors:[]},
+  {id:2,insurer:"IAG",legal:"Insurance Australia Group",providedBy:"IAG",appliesTo:"IAG",oem:"100% of List",aftm:"20% Markup on Cost, capped at $200",reco:"75% of List",parallel:"80% of List",recycled:"70% of List",isDefault:false,template:true,desc:"Suggested margins for IAG.",debtors:["NRMA Insurance","RACV Insurance","CGU Insurance","SGIO","SGIC","Swann Insurance","WFI","Coles Insurance","NTI","Real Insurance","Buzz Insurance"],
+   exceptions:[{t:"Aftermarket priced on cost"}]},
+  {id:5,insurer:"Suncorp",legal:"Suncorp Group",providedBy:"Suncorp",appliesTo:"Suncorp",oem:"100% of List",aftm:"80% of List",reco:"75% of List",parallel:"80% of List",recycled:"80% of List",isDefault:false,desc:"Suggested starting point for Suncorp.",template:true,debtors:["AAI Limited","AAMI","GIO","Bingle","Vero Insurance","Apia","CIL","Shannons"],
+   exceptions:[{t:"Radiator / condenser priced on cost, plus 10%"}]},
+  {id:4,insurer:"Allianz",legal:"Allianz Australia",providedBy:"Allianz",appliesTo:"Allianz",oem:"100% of List",aftm:"70% of List, certified only",reco:"20% Markup on Cost",parallel:"80% of List, up to",recycled:"85% of List, up to",isDefault:false,template:true,desc:"Suggested margins for Allianz.",debtors:["Allianz Australia Insurance","TIO","RAA Insurance"],
+   exceptions:[{t:"Recon priced on cost"},{t:"Certification required"}]},
+  {id:7,insurer:"Auto & General",legal:"A&G",providedBy:"Auto & General",appliesTo:"Auto & General Insurance",oem:"100% of List",aftm:"75% of List",reco:"75% of List",parallel:"80% of List",recycled:"70% of List",isDefault:false,template:true,desc:"Suggested margins for Auto & General.",debtors:["Auto & General Insurance"],
+   exceptions:[{t:"OEM only · 7 categories",block:true},{t:"Radiator direct-bill (AAA)"}]},
+  {id:6,insurer:"QBE",disputed:true,appliesTo:"QBE Insurance",oem:"100% of List",aftm:"75% of List",reco:"75% of List",parallel:"80% of List",recycled:"70% of List",isDefault:false,template:true,desc:"No confirmed schedule yet — uses Standard Baseline.",debtors:["QBE Insurance"],
+   exceptions:[{t:"None recorded",none:true}]},
 ];
 const SUGGESTED = {
   "NRMA Insurance":{oem:"100",aftm:"70",reco:"20",parallel:"15"},
@@ -5559,6 +5572,198 @@ function FieldHelp({text}){
     </span>
   );
 }
+
+/* --- SYSTEM RULES LEDGER (Margin Settings home redesign, option 1a — answers OD #50) ---
+   System Rules grouped by the underwriter that actually sets the rates, instead of one
+   row per insurer brand: click a group to expand its member brands (grey figures echo
+   the group's own rates, since no brand carries an override today). Baseline is pinned
+   as its own row, last, and is not part of the collapsible list. */
+function SystemRulesLedger({groups, baseline, isAdmin, defaultRuleId, setDefaultRule, hasCustomRules, onCopy, onView}){
+  const [openIds,setOpenIds] = useState(()=>({[groups[0]?.id]:true}));
+  const [query,setQuery] = useState("");
+
+  // Column order/widths mirror "Your Rules" below (150px/150px name columns, 1fr rate
+  // columns in the same OEM/Aftm/Reco/Parallel/Recycled order) so the two tables read as
+  // one system — only the caret and Exceptions column are unique to this ledger.
+  const LCOLS = "26px 150px 150px 1fr 1fr 1fr 1fr 1fr 210px 190px";
+  const cellPad = {padding:"9px 8px"};
+  const chip = {fontSize:"10px",fontWeight:"600",color:"#374151",background:"#fff",border:"1px solid #d1d5db",borderRadius:"3px",padding:"1px 5px",whiteSpace:"nowrap"};
+  const strip = n => n.replace(/ Insurance$/,"");
+  const isSoft = (field,val) => val===baseline[field];
+
+  function Fig({value,soft}){
+    if(!value) return null;
+    const parts = String(value).split(/,\s*/);
+    return (
+      <div>
+        <span style={{fontSize:"13px",color:soft?"#9ca3af":"#374151"}}>{parts[0]}</span>
+        {!soft&&parts[1]&&<div style={{fontSize:"11px",color:"#9ca3af",marginTop:"1px"}}>{parts[1]}</div>}
+      </div>
+    );
+  }
+  function ExcCell({exceptions}){
+    return (
+      <div style={{display:"flex",flexWrap:"wrap",gap:"4px"}}>
+        {(exceptions||[]).map((e,i)=>{
+          const bg=e.block?"#fee2e2":"#f3f4f6", bd=e.block?"#fecaca":"#d1d5db", fg=e.block?"#991b1b":e.none?"#9ca3af":"#374151";
+          return (
+            <span key={i} style={{fontSize:"10px",fontWeight:"700",color:fg,background:e.none?"#fff":bg,border:"1px solid "+bd,borderStyle:e.none?"dashed":"solid",borderRadius:"3px",padding:"2px 6px",whiteSpace:"nowrap"}}>
+              {e.block&&<i className="fa fa-lock" style={{marginRight:"4px",fontSize:"8px"}}></i>}{e.t}
+            </span>
+          );
+        })}
+      </div>
+    );
+  }
+  function DefaultBtn({id}){
+    const on = defaultRuleId===id;
+    return (
+      <button onClick={e=>{e.stopPropagation();if(defaultRuleId!==id&&hasCustomRules)setDefaultRule(id);}}
+        title={hasCustomRules?(on?"This is the default rule":"Set as default"):"Standard Baseline is the fallback until you create your own rules"}
+        style={{padding:"4px 7px",borderRadius:"3px",border:"1px solid",borderColor:on?"#16a34a":"#e5e7eb",background:on?"#f0fdf4":"#f9fafb",cursor:(on||!hasCustomRules)?"default":"pointer",color:on?"#16a34a":"#9ca3af",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,opacity:hasCustomRules?1:0.55}}>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+      </button>
+    );
+  }
+  function ViewOnlyBtn({rule}){
+    return (
+      <button onClick={e=>{e.stopPropagation();onView(rule);}} style={{display:"flex",alignItems:"center",gap:"4px",background:"#f9fafb",border:"1px solid #e5e7eb",borderRadius:"3px",padding:"5px 10px",cursor:"pointer"}}>
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        <span style={{fontSize:"10px",color:"#9ca3af",fontWeight:"600"}}>View only</span>
+      </button>
+    );
+  }
+
+  const q = query.trim().toLowerCase();
+  const matchesQuery = g => !q || g.insurer.toLowerCase().indexOf(q)>-1 || (g.debtors||[]).some(d=>d.toLowerCase().indexOf(q)>-1);
+  const visible = groups.filter(matchesQuery);
+  const totalBrands = visible.reduce((n,g)=>{
+    const nameHit = !q || g.insurer.toLowerCase().indexOf(q)>-1;
+    const hits = (g.debtors||[]).filter(d=>d.toLowerCase().indexOf(q)>-1).length;
+    return n + ((q && !nameHit && hits) ? hits : Math.max((g.debtors||[]).length,1));
+  },0);
+  const anyClosed = visible.some(g=>!openIds[g.id]);
+  const toggleAll = () => { const next={...openIds}; visible.forEach(g=>{next[g.id]=anyClosed;}); setOpenIds(next); };
+
+  return (
+    <div>
+      <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",gap:"16px",marginBottom:"4px"}}>
+        <div>
+          <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+            <span style={{fontSize:"14px",fontWeight:"800",color:"#111827"}}>System Rules</span>
+            <span style={{fontSize:"11px",fontWeight:"700",background:"#fff",color:"#374151",border:"1px solid #d1d5db",borderRadius:"10px",padding:"2px 8px"}}>{visible.length} underwriter{visible.length===1?"":"s"} · {totalBrands} brand{totalBrands===1?"":"s"}</span>
+          </div>
+          <p style={{fontSize:"12px",color:"#6b7280",marginTop:"4px",maxWidth:"720px"}}>Read-only starting points, grouped by the underwriter that sets the rates. Expand a row to see the brands it covers — copy a group to create your own editable version.</p>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:"8px",flexShrink:0}}>
+          <label style={{display:"flex",alignItems:"center",border:"1px solid #d1d5db",borderRadius:"3px",background:"#fff",height:"28px",padding:"0 9px",gap:"7px",width:"220px"}}>
+            <i className="fa fa-search" style={{color:"#9ca3af",fontSize:"11px"}}></i>
+            <input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Find an underwriter or brand" style={{border:"none",outline:"none",fontSize:"11.5px",width:"100%"}}/>
+          </label>
+          <button onClick={toggleAll} style={{display:"inline-flex",alignItems:"center",gap:"6px",height:"28px",padding:"0 12px",border:"1px solid #d1d5db",borderRadius:"3px",background:"#fff",fontSize:"11.5px",fontWeight:"600",color:"#374151",cursor:"pointer",whiteSpace:"nowrap"}}>
+            <i className="fa fa-list"></i>{anyClosed?"Expand all":"Collapse all"}
+          </button>
+        </div>
+      </div>
+
+      <div style={{background:"#fff",border:"1px solid #d1d5db",overflowX:"auto"}}>
+        <div style={{display:"grid",gridTemplateColumns:LCOLS,background:"#f8fafc",borderBottom:"1px solid #e5e7eb",minWidth:"1300px"}}>
+          {["","Underwriter / Brand","Sub brands","OEM","Aftermarket","Recon","Parallel","Recycled","Exceptions","Actions"].map((h,i)=>(
+            <div key={i} style={{padding:"9px 8px",fontSize:"10.5px",fontWeight:"700",color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.55px",textAlign:i===9?"right":"left"}}>{h}</div>
+          ))}
+        </div>
+
+        {visible.map(g=>{
+          const open = !!q || !!openIds[g.id];
+          const shown = (g.debtors||[]).slice(0,3).map(strip);
+          const more = (g.debtors||[]).length>3 ? (g.debtors.length-3)+" more" : null;
+          return (
+            <React.Fragment key={g.id}>
+              <div onClick={()=>setOpenIds(o=>({...o,[g.id]:!o[g.id]}))}
+                style={{display:"grid",gridTemplateColumns:LCOLS,minWidth:"1300px",borderBottom:"1px solid #e5e7eb",cursor:"pointer",background:open?"#f0fdf4":"#fff",boxShadow:open?"inset 2px 0 0 #16a34a":"none",alignItems:"center"}}>
+                <div style={{...cellPad,textAlign:"center",color:"#9ca3af",fontSize:"11px"}}><i className={"fa fa-caret-"+(open?"down":"right")}></i></div>
+                <div style={cellPad}>
+                  <div style={{fontSize:"12.5px",fontWeight:"700",color:"#111827"}}>{g.insurer}</div>
+                  <div style={{fontSize:"10.5px",color:g.disputed?"#dc2626":"#6b7280",fontWeight:g.disputed?"700":"400",marginTop:"1px"}}>{g.disputed?"No rates confirmed":g.legal}</div>
+                </div>
+                <div style={cellPad}>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:"3px"}}>
+                    {shown.map(b=><span key={b} style={chip}>{b}</span>)}
+                    {more&&<span style={{fontSize:"10px",color:"#6b7280"}}>+{more}</span>}
+                  </div>
+                  {(g.debtors||[]).length>1&&<div style={{fontSize:"10px",color:"#374151",marginTop:"2px"}}>All {g.debtors.length} use these rates</div>}
+                </div>
+                {g.disputed ? (
+                  <div style={{gridColumn:"span 5",...cellPad,fontSize:"11.5px",color:"#374151"}}>
+                    Uses <strong>Standard Baseline</strong> until {g.insurer} confirm their schedule — {baseline.oem.replace(" of List","")} / {baseline.aftm.replace(" of List","")} / {baseline.reco.replace(" of List","")} / {baseline.parallel.replace(" of List","")} / {baseline.recycled.replace(" of List","")}.
+                  </div>
+                ) : (
+                  <>
+                    <div style={cellPad}><Fig value={g.oem}/></div>
+                    <div style={cellPad}><Fig value={g.aftm}/></div>
+                    <div style={cellPad}><Fig value={g.reco} soft={isSoft("reco",g.reco)}/></div>
+                    <div style={cellPad}><Fig value={g.parallel}/></div>
+                    <div style={cellPad}><Fig value={g.recycled}/></div>
+                  </>
+                )}
+                <div style={cellPad}><ExcCell exceptions={g.exceptions}/></div>
+                <div style={{...cellPad,display:"flex",justifyContent:"flex-end",gap:"5px"}} onClick={e=>e.stopPropagation()}>
+                  {isAdmin ? <><DefaultBtn id={g.id}/><button onClick={()=>onCopy(g)} style={{background:"#f9fafb",border:"1px solid #d1d5db",borderRadius:"3px",padding:"5px 12px",fontSize:"11px",fontWeight:"700",color:"#374151",cursor:"pointer",whiteSpace:"nowrap"}}>Copy &amp; customise</button></> : <ViewOnlyBtn rule={g}/>}
+                </div>
+              </div>
+
+              {open && !g.disputed && (g.debtors||[]).length>1 && (
+                <div style={{display:"flex",alignItems:"center",background:"#f0fdf4",borderBottom:"1px solid #dcfce7",padding:"7px 12px 7px 36px",fontSize:"11.5px",color:"#166534"}}>
+                  <i className="fa fa-level-down" style={{marginRight:"9px",color:"#16a34a",fontSize:"11px"}}></i>
+                  <span>{g.insurer} provided these rates for all {g.debtors.length} of their brands. Copy &amp; customise it if you have your own deal with them.</span>
+                </div>
+              )}
+
+              {open && (g.debtors||[]).filter(b=>!q || g.insurer.toLowerCase().indexOf(q)>-1 || b.toLowerCase().indexOf(q)>-1).map(b=>(
+                <div key={b} style={{display:"grid",gridTemplateColumns:LCOLS,minWidth:"1300px",borderBottom:"1px solid #f3f4f6",background:"#fcfdfc",alignItems:"center"}}>
+                  <div style={cellPad}></div>
+                  <div style={{padding:"7px 8px 7px 22px",fontSize:"11.5px"}}><i className="fa fa-long-arrow-right" style={{color:"#d1d5db",fontSize:"10px",marginRight:"7px"}}></i>{b}</div>
+                  <div style={{padding:"7px 8px",fontSize:"11px",color:"#9ca3af"}}>Uses {g.insurer} rates</div>
+                  <div style={{padding:"7px 8px"}}><Fig value={g.oem} soft/></div>
+                  <div style={{padding:"7px 8px"}}><Fig value={g.aftm} soft/></div>
+                  <div style={{padding:"7px 8px"}}><Fig value={g.reco} soft/></div>
+                  <div style={{padding:"7px 8px"}}><Fig value={g.parallel} soft/></div>
+                  <div style={{padding:"7px 8px"}}><Fig value={g.recycled} soft/></div>
+                  <div style={{padding:"7px 8px",fontSize:"11px",color:"#9ca3af"}}>{g.exceptions&&g.exceptions[0]&&g.exceptions[0].none?"None recorded":g.insurer+" exception applies"}</div>
+                  <div style={{padding:"7px 8px",display:"flex",justifyContent:"flex-end"}}>
+                    {isAdmin ? <button onClick={()=>onCopy({...g,insurer:b,appliesTo:b})} style={{background:"#f9fafb",border:"1px solid #d1d5db",borderRadius:"3px",padding:"4px 10px",fontSize:"11px",fontWeight:"600",color:"#374151",cursor:"pointer",whiteSpace:"nowrap"}}>Copy &amp; customise</button> : <ViewOnlyBtn rule={{...g,insurer:b}}/>}
+                  </div>
+                </div>
+              ))}
+            </React.Fragment>
+          );
+        })}
+
+        <div style={{display:"grid",gridTemplateColumns:LCOLS,minWidth:"1300px",background:"#f8fafc",alignItems:"center"}}>
+          <div style={cellPad}></div>
+          <div style={cellPad}>
+            <div style={{fontSize:"12.5px",fontWeight:"700",color:"#111827"}}>Standard Baseline</div>
+            <div style={{display:"flex",gap:"4px",marginTop:"3px"}}>
+              <span style={{fontSize:"9px",fontWeight:"800",letterSpacing:"0.3px",textTransform:"uppercase",background:"#dcfce7",color:"#15803d",border:"1px solid #bbf7d0",borderRadius:"3px",padding:"1px 5px"}}>Default</span>
+              <span style={{fontSize:"9px",fontWeight:"800",letterSpacing:"0.3px",textTransform:"uppercase",background:"#f1f5f9",color:"#475569",border:"1px solid #e2e8f0",borderRadius:"3px",padding:"1px 5px"}}>System</span>
+            </div>
+          </div>
+          <div style={cellPad}><span style={{fontSize:"11px",color:"#9ca3af"}}>Any insurer with no rule</span></div>
+          <div style={cellPad}><Fig value={baseline.oem}/></div>
+          <div style={cellPad}><Fig value={baseline.aftm}/></div>
+          <div style={cellPad}><Fig value={baseline.reco}/></div>
+          <div style={cellPad}><Fig value={baseline.parallel}/></div>
+          <div style={cellPad}><Fig value={baseline.recycled}/></div>
+          <div style={cellPad}><span style={{fontSize:"10px",fontWeight:"700",color:"#9ca3af",background:"#fff",border:"1px dashed #d1d5db",borderRadius:"3px",padding:"2px 6px"}}>None</span></div>
+          <div style={{...cellPad,display:"flex",justifyContent:"flex-end",gap:"5px"}}>
+            {isAdmin ? <><DefaultBtn id={baseline.id}/><button onClick={()=>onCopy(baseline)} style={{background:"#f9fafb",border:"1px solid #d1d5db",borderRadius:"3px",padding:"5px 12px",fontSize:"11px",fontWeight:"700",color:"#374151",cursor:"pointer",whiteSpace:"nowrap"}}>Copy &amp; customise</button></> : <ViewOnlyBtn rule={baseline}/>}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Dashboard({rules,setRules,onCreate,onEdit,onCopy,onView,initialTab}) {
   const [qId,setQId]   = useState(null);
   const [qRow,setQRow] = useState(null);
@@ -5608,6 +5813,23 @@ function Dashboard({rules,setRules,onCreate,onEdit,onCopy,onView,initialTab}) {
   const C6="150px 150px 1fr 1fr 1fr 1fr 1fr 200px", C5="150px 150px 1fr 1fr 1fr 1fr 1fr 220px";
   const COL_HDR={padding:"10px 8px",fontSize:"11px",fontWeight:"700",color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.6px"};
   const CELL={padding:"12px 8px",fontSize:"13px",color:"#6b7280"};
+
+  /* Rule table cells store the full plain-English rule string (see legacyStr in RuleForm).
+     A single clause is already short ("80% of List") and renders as-is; a compound
+     OR/capped rule is abbreviated to fit the row (resolver and cap detail are dropped —
+     still visible in full via View/Full edit). */
+  const ruleCellShort = str => {
+    if(!str || str==='--' || str==='Not Accepted' || (str.indexOf(' or ')===-1 && str.indexOf('capped at')===-1)){
+      return str;
+    }
+    return str
+      .replace(/Markup on Cost/gi,'Mkup')
+      .replace(/Show Mkup \(WA\)/gi,'WA Mkup')
+      .replace(/ of List/gi,' List')
+      .replace(/\s*\(whichever is \w+\)/i,'')
+      .replace(/,?\s*capped at .+$/i,'');
+  };
+  const RuleCell = ({value}) => <span style={CELL}>{ruleCellShort(value)}</span>;
 
   const TABS=[
     {id:'general',  label:'General Settings',  icon:<i className="fa fa-cog"/>, badge:'NEW'},
@@ -6006,39 +6228,17 @@ function Dashboard({rules,setRules,onCreate,onEdit,onCopy,onView,initialTab}) {
         </div>
         
 
-        {/* System Templates */}
-        <div>
-          <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"4px"}}>
-            <span style={{fontSize:"14px",fontWeight:"800",color:"#111827"}}>System Rules</span>
-            <span style={{fontSize:"11px",fontWeight:"700",background:"#fff",color:"#374151",border:"1px solid #d1d5db",borderRadius:"10px",padding:"2px 8px"}}>{SYSRULES.filter(r=>r.template).length} provided</span>
-          </div>
-          <p style={{fontSize:"12px",color:"#6b7280",marginBottom:"12px"}}>Read-only starting points. Copy any rule to create your own editable version.</p>
-          <div style={{background:"#fff",border:"1px solid #d1d5db",overflow:"hidden"}}>
-            <div style={{display:"grid",gridTemplateColumns:C6,background:"#f8fafc",padding:"0 16px",borderBottom:"1px solid #e5e7eb"}}>
-              {["Rule Name","Applies To","OEM","Aftm","Reco","Parallel","Recycled","Actions"].map(h=><div key={h} style={COL_HDR}>{h}</div>)}
-            </div>
-            {SYSRULES.filter(r=>r.template).map((r)=>(
-              <div key={r.id} style={{display:"grid",gridTemplateColumns:C6,padding:"0 16px",alignItems:"center",background:"#fff"}}>
-                <div style={{padding:"12px 8px"}}>
-                  <div style={{fontSize:"13px",fontWeight:"700",color:"#111827",marginBottom:"4px"}}>{r.insurer}</div>
-                                    <div style={{display:"flex",alignItems:"center",gap:"4px",marginBottom:"4px"}}>
-                    {defaultRuleId===r.id&&<span style={{fontSize:"9px",fontWeight:"700",background:"#dcfce7",color:"#166534",borderRadius:"3px",padding:"1px 5px"}}>DEFAULT</span>}
-                    <span style={{fontSize:"9px",fontWeight:"700",background:"#e5e7eb",color:"#6b7280",borderRadius:"3px",padding:"1px 5px"}}>SYSTEM</span>
-                  </div>
-{r.providedBy&&<div style={{fontSize:"9px",color:"#6b7280",lineHeight:"1.4",marginBottom:"5px",display:"flex",alignItems:"flex-start"}}>
-                    <span>Recommended margins provided by {r.providedBy}.</span>
-                    <FieldHelp text={"These margins have been provided by "+r.providedBy+" as their recommended baseline. You can review and adjust them to suit your business."}/>
-                  </div>}
-                </div>
-                <div style={{padding:"12px 8px"}}>
-                  <span style={{fontSize:"11px",color:"#374151"}}>{r.appliesTo||r.insurer}</span>
-                </div>
-                {["oem","aftm","reco","parallel","recycled"].map(f=><div key={f} style={CELL}>{r[f]}</div>)}
-                <div style={{padding:"12px 8px",display:"flex",alignItems:"center",gap:"6px"}}>{isAdmin?<><button onClick={()=>{if(defaultRuleId!==r.id&&sorted.length>0)setDefaultRule(r.id);}} title={sorted.length===0?"Standard Baseline is the fallback until you create your own rules":(defaultRuleId===r.id?"This is the default rule":"Set as default")} style={{padding:"4px 7px",borderRadius:"3px",border:"1px solid",borderColor:defaultRuleId===r.id?"#16a34a":"#e5e7eb",background:defaultRuleId===r.id?"#f0fdf4":"#f9fafb",cursor:(defaultRuleId===r.id||sorted.length===0)?"default":"pointer",color:defaultRuleId===r.id?"#16a34a":"#9ca3af",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,opacity:sorted.length===0?0.55:1}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg></button><button onClick={()=>onCopy(r)} style={{background:"#f9fafb",border:"1px solid #d1d5db",borderRadius:"3px",padding:"5px 12px",fontSize:"11px",fontWeight:"700",color:"#374151",cursor:"pointer",whiteSpace:"nowrap"}}>Copy &amp; customise</button></>:<button onClick={()=>onView(r)} style={{display:"flex",alignItems:"center",gap:"4px",background:"#f9fafb",border:"1px solid #e5e7eb",borderRadius:"3px",padding:"5px 10px",cursor:"pointer"}}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span style={{fontSize:"10px",color:"#9ca3af",fontWeight:"600"}}>View only</span></button>}</div>
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* System Rules — grouped-by-underwriter ledger (Margin Settings home redesign, option 1a, OD #50) */}
+        <SystemRulesLedger
+          groups={SYSRULES.filter(r=>r.template && r.id!==1 && r.id!==6)}
+          baseline={SYSRULES[0]}
+          isAdmin={isAdmin}
+          defaultRuleId={defaultRuleId}
+          setDefaultRule={setDefaultRule}
+          hasCustomRules={sorted.length>0}
+          onCopy={onCopy}
+          onView={onView}
+        />
 
         {/* Margin Rules */}
         <div>
@@ -6080,7 +6280,6 @@ function Dashboard({rules,setRules,onCreate,onEdit,onCopy,onView,initialTab}) {
                           <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
                             <span style={{fontWeight:"700",fontSize:"13px",color:"#111827"}}>{rule.insurer}</span>
                             {rule.pinned&&<svg width="11" height="11" viewBox="0 0 24 24" fill="#d97706" stroke="#d97706" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>}
-                            {((rule.exceptions?.length||0)+(rule.notAccepted?.length||0))>0&&<span style={{fontSize:"9px",fontWeight:"700",background:"#fef3c7",color:"#92400e",border:"1px solid #fde68a",borderRadius:"3px",padding:"1px 5px"}}>{(rule.exceptions?.length||0)+(rule.notAccepted?.length||0)} exception{((rule.exceptions?.length||0)+(rule.notAccepted?.length||0))>1?"s":""}</span>}
                           </div>
                           {defaultRuleId===rule.id&&<div style={{marginTop:"4px"}}><span style={{fontSize:"9px",fontWeight:"700",background:"#dcfce7",color:"#166534",borderRadius:"3px",padding:"1px 5px"}}>DEFAULT</span></div>}
                           </>
@@ -6114,7 +6313,7 @@ function Dashboard({rules,setRules,onCreate,onEdit,onCopy,onView,initialTab}) {
                             </div>
                           );
                         })()
-                            :<span style={CELL}>{rule[f]}</span>}
+                            :<RuleCell value={rule[f]}/>}
                       </div>
                     ))}
                     <div style={{padding:"12px 8px",display:"flex",gap:"3px",alignItems:"center",flexWrap:"nowrap"}}>
@@ -7006,20 +7205,33 @@ function RuleForm({onBack,onSave,editingRule,isCopy,existingRules=[],viewOnly=fa
   /* dual-write on save (see merge plan §6.4): the rich MRO config is what Check Price
      actually reads to compute prices; the legacy summary strings are what Dashboard's
      unmodified rule-list table (and its inline quick-edit) still expect.
+     legacyStr renders every clause (not just clauses[0]) plus the OR/higher-lower
+     resolver and any cap, so a compound rule reads the same way here as it does in
+     the rule editor's own Rule Summary — no bare "+" and no silently dropped clause.
      KNOWN LIMITATION: Dashboard's inline quick-edit (pencil icon, startQ/saveQ) only ever
      rewrites these legacy strings — it never calls saveRuleConfig, so a quick-edit made from
      the Dashboard table updates what the table shows but NOT what Check Price actually
-     charges. Documented rather than fixed: Dashboard is kept 100% verbatim per the merge
-     plan, so patching this would mean editing Dashboard itself. */
+     charges; quick-editing a compound cell will also collapse it back to a single clause.
+     Documented rather than fixed: Dashboard is kept 100% verbatim per the merge plan, so
+     patching this would mean editing Dashboard itself. */
+  const legacyClause = cl => {
+    if(cl.method==='pctList')    return `${cl.value}% of List`;
+    if(cl.method==='markupCost') return `${cl.value}% Markup on Cost`;
+    if(cl.method==='showMarkup') return `${cl.value}% Show Markup on Cost`;
+    if(cl.method==='listPrice')  return 'Dealer List';
+    return `$${cl.value} Fixed`;
+  };
   const legacyStr = t => {
     if(!t) return '--';
     if(isNA(t)) return 'Not Accepted';
-    const cl = t.clauses[0];
-    if(cl.method==='pctList')    return `${cl.value}% of List`;
-    if(cl.method==='markupCost') return `+${cl.value}% Markup on Cost`;
-    if(cl.method==='showMarkup') return `+${cl.value}% Show Markup on Cost`;
-    if(cl.method==='listPrice')  return 'Dealer List';
-    return `$${cl.value} Fixed`;
+    let s = t.clauses.map(legacyClause).join(t.clauses.length>1 ? ' or ' : '');
+    if(t.clauses.length>1) s += ` (whichever is ${t.resolver})`;
+    if(t.cap && t.cap.enabled){
+      if(t.cap.type==='capAtList')      s += ', capped at List Price';
+      else if(t.cap.type==='priceCeiling')  s += `, capped at $${t.cap.value}`;
+      else if(t.cap.type==='pctListCeiling') s += `, capped at ${t.cap.value}% of List`;
+    }
+    return s;
   };
   const doSave = () => {
     saveRuleConfig(ruleId, { types, ageRules, condRules, exceptions: mroExceptions });
@@ -7358,13 +7570,13 @@ function Onboarding({onBack,onFinish,onSaveRules}) {
 function RulesApp() {
   const [screen,setScreen]   = useState("dashboard");
   const [rules,setRules] = useState([
-    {id:101,insurer:"NRMA Standard",    appliesTo:"NRMA Insurance", oem:"100% of List",aftm:"75% of List",reco:"75% of List",parallel:"80% of List",recycled:"70% of List",pinned:false,
+    {id:101,insurer:"NRMA Standard",    appliesTo:"NRMA Insurance", oem:"100% of List",aftm:"80% of List or 20% Markup on Cost (whichever is higher)",reco:"75% of List",parallel:"80% of List",recycled:"70% of List",pinned:false,
       debtors:["NRMA Insurance","RACV Insurance","CGU Insurance","SGIO","SGIC","Swann Insurance","WFI"]},
     {id:102,insurer:"AAMI Standard",    appliesTo:"AAMI",           oem:"100% of List",aftm:"75% of List",reco:"75% of List",parallel:"80% of List",recycled:"70% of List",pinned:false,
       debtors:["AAI Limited","AAMI","GIO","Bingle","Vero Insurance","Apia"]},
     {id:103,insurer:"Allianz Standard", appliesTo:"Allianz",        oem:"100% of List",aftm:"70% of List",reco:"85% of List",parallel:"80% of List",recycled:"85% of List",pinned:false,
       debtors:["Allianz Australia Insurance","TIO","RAA Insurance"]},
-    {id:104,insurer:"Suncorp Standard", appliesTo:"Suncorp",        oem:"100% of List",aftm:"75% of List",reco:"75% of List",parallel:"80% of List",recycled:"70% of List",pinned:false,
+    {id:104,insurer:"Suncorp Standard", appliesTo:"Suncorp",        oem:"100% of List",aftm:"80% of List or 15% Markup on Cost (whichever is higher)",reco:"75% of List",parallel:"80% of List",recycled:"70% of List",pinned:false,
       debtors:["Suncorp Insurance","Shannons","Bingle Direct"]},
     {id:105,insurer:"QBE Standard",     appliesTo:"QBE",            oem:"100% of List",aftm:"75% of List",reco:"75% of List",parallel:"80% of List",recycled:"70% of List",pinned:false,
       debtors:["QBE Insurance"]},
