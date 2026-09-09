@@ -3625,7 +3625,9 @@ function typesFromLegacyRule(r){
 function getActiveTypes(ruleId){
   const saved = loadRuleConfig(ruleId);
   if(saved && Array.isArray(saved.types) && saved.types.length) return saved.types;
-  var rule=(typeof ALL_RULES!=='undefined'?ALL_RULES:[]).filter(function(r){return r.id===ruleId;})[0];
+  // Loose match - ruleId sometimes arrives as a string (e.g. read out of an onclick HTML
+  // attribute) while every ALL_RULES[].id is a number; don't let that silently miss here too.
+  var rule=(typeof ALL_RULES!=='undefined'?ALL_RULES:[]).filter(function(r){return r.id==ruleId;})[0];
   return (rule && rule.oem!=null) ? typesFromLegacyRule(rule) : PART_TYPES_INIT;
 }
 function getActiveAgeRules(ruleId){
@@ -3637,8 +3639,13 @@ function getActiveCondRules(ruleId){
   return (saved && Array.isArray(saved.condRules)) ? saved.condRules : COND_RULES_INIT;
 }
 function getActiveExceptions(ruleId){
+  // No shared/global fallback here (Shereen, 10 Sep 2026): if a rule has never been opened and
+  // saved with its own exceptions, Check Price must enforce none - not silently inherit
+  // EXCEPTION_GROUPS as if every rule carried the same safety-critical lockout by default. This
+  // is what made Standard Baseline (and every un-opened System/pre-seeded rule) show "Airbag/ABS
+  // - OEM only" despite its own ledger row displaying no exceptions at all.
   const saved = loadRuleConfig(ruleId);
-  return (saved && Array.isArray(saved.exceptions)) ? saved.exceptions : EXCEPTION_GROUPS;
+  return (saved && Array.isArray(saved.exceptions)) ? saved.exceptions : [];
 }
 
 window.MRO = { METHODS, CAP_TYPES, resolveRule, clauseValue, isNA, fmt, fmt0, PART_TYPES_INIT, SAMPLE_PARTS, EXCEPTION_GROUPS, PT_COLOR, PT_NAME, CURRENT_YEAR,
@@ -4486,7 +4493,15 @@ function closeRuleDropdown(){
   if(chevron) chevron.style.transform='';
 }
 function applyRuleDropdown(id){
-  activeRuleId=id;
+  // id arrives as a string - it's read out of an onclick="applyRuleDropdown('102')" HTML
+  // attribute literal - but every ALL_RULES[].id is a number (System Rule ids, the 5 pre-seeded
+  // custom rule ids, and Date.now() for a fresh copy). Every lookup against ALL_RULES elsewhere
+  // (getActiveRule, this file's getActiveTypes fallback, renderRuleDropdown's isActive check)
+  // uses strict === , so an unconverted string id silently fails every one of them - the
+  // picker doesn't error, it just falls back to whatever rule happens to be first in the list
+  // (Standard Baseline), while pricing separately falls back to the generic engine defaults.
+  // Coerce once, here, rather than loosen every comparison site to ==.
+  activeRuleId=(typeof id==='string' && id.trim()!=='' && !isNaN(id)) ? Number(id) : id;
   var rule=getActiveRule();
   if(rule)showToast(rule.insurer+' rule applied to this quote');
   document.getElementById('active-rule-name').textContent=rule.insurer;
@@ -7139,23 +7154,28 @@ function RuleForm({onBack,onSave,editingRule,isCopy,existingRules=[],viewOnly=fa
   });
   const ruleId = useMemo(() => {
     const id = isEdit ? editingRule.id : Date.now();
-    if(!loadRuleConfig(id)){
-      let seed = null;
-      if(isCopy && editingRule && editingRule.id!=null){
-        seed = loadRuleConfig(editingRule.id) || (editingRule.oem!=null ? seedFromLegacy(editingRule) : null);
-      } else if(isEdit){
-        seed = seedFromLegacy(editingRule);
-      }
+    // Only a fresh copy gets an eager persisted seed: its id is brand new, so nothing else
+    // (Check Price included) can be reading it yet. Editing an EXISTING rule in place must NOT
+    // eagerly write anything just from being opened - Shereen, 10 Sep 2026: "if it is not on
+    // the rule it should not be calculated on the grid." Merely opening a System/pre-seeded
+    // rule to check its pricing was silently attaching the full EXCEPTION_GROUPS/age-rule/
+    // cond-rule defaults to that rule's OWN saved config, before Save Rule was ever clicked -
+    // confirmed live: opening AAMI Standard's editor alone wrote its exceptions to storage.
+    // The draftSeed below gives the form the same convenient starting point in memory only;
+    // it becomes real only if Save Rule is actually clicked (see onSave's saveRuleConfig call).
+    if(isCopy && !loadRuleConfig(id) && editingRule && editingRule.id!=null){
+      const seed = loadRuleConfig(editingRule.id) || (editingRule.oem!=null ? seedFromLegacy(editingRule) : null);
       if(seed) saveRuleConfig(id, seed);
     }
     return id;
   }, []);
+  const draftSeed = useMemo(() => (isEdit && !loadRuleConfig(ruleId)) ? seedFromLegacy(editingRule) : null, []);
 
   const withPno = t => ({ pno:'OEM Part Number', ...t });
   const [types, setTypes] = useState(()=>getActiveTypes(ruleId).map(withPno));
-  const [ageRules, setAgeRules] = useState(()=>getActiveAgeRules(ruleId));
-  const [condRules, setCondRules] = useState(()=>getActiveCondRules(ruleId));
-  const [mroExceptions, setMroExceptions] = useState(()=>getActiveExceptions(ruleId));
+  const [ageRules, setAgeRules] = useState(()=>draftSeed ? draftSeed.ageRules : getActiveAgeRules(ruleId));
+  const [condRules, setCondRules] = useState(()=>draftSeed ? draftSeed.condRules : getActiveCondRules(ruleId));
+  const [mroExceptions, setMroExceptions] = useState(()=>draftSeed ? draftSeed.exceptions : getActiveExceptions(ruleId));
   const [focusId, setFocusId] = useState('oem');
   const [samplePart, setSamplePart] = useState(SAMPLE_PARTS[0]);
   const focusPt = types.find(t=>t.id===focusId) || types[0];
