@@ -3934,6 +3934,32 @@ function resolveCell(part, opt){
     lockReason:offerLockReason(typeId, part, ageRules, exceptions, cond.overrides)
   };
 }
+// Human label for the reference type's own winning rule clause on this line, e.g. "80% List" -
+// what a repairer actually needs to see when their type was matched to another type's rate,
+// rather than a generic "Parallel's rate" name they'd have to go look up themselves.
+function condRefRuleLabel(part, refTypeId){
+  if(!refTypeId) return null;
+  var pt=mroTypeRule(refTypeId, activeMroTypes());
+  if(!pt) return null;
+  var offer=lineOffersForPart(part)[refTypeId];
+  if(!offer) return null;
+  var res=window.MRO.resolveRule(pt, {list:part.list, cost:offer.cost});
+  if(res.na || !res.steps.length) return null;
+  var cl=res.steps[res.winnerIdx].cl;
+  if(cl.method==='pctList')    return cl.value+'% List';
+  if(cl.method==='markupCost') return cl.value+'% Mkup';
+  if(cl.method==='showMarkup') return cl.value+'% Show Mkup';
+  if(cl.method==='listPrice')  return 'Dealer List';
+  if(cl.method==='manual')     return '$'+cl.value+' Fixed';
+  return null;
+}
+// Manual selection is a softer gate than auto-select/recommend (see bestSidForPart /
+// _recCandidates below, which stay a hard gate on .allowed): a safety-exception lock is
+// now "allow but warn" like every other insurer-rule signal on this grid, so a repairer can
+// still choose it - they just see it flagged, on the cell and on the part line. Age-rule and
+// conditional (cross-type) locks are left as hard blocks - a different rule family, out of
+// scope for this change. See OD #52.
+function cellManualSelectable(cell){ return cell.allowed || cell.lockReason==='safety'; }
 function lockTooltipHtml(part, opt, cell){
   var tcol=TYPE_COLOR[opt.type]||'#337ab7';
   var msg = cell.lockReason==='age'
@@ -3943,6 +3969,15 @@ function lockTooltipHtml(part, opt, cell){
     : 'Not acceptable — blocked by a conditional rule on this line.';
   return '<div class="tth" style="color:'+tcol+'">'+opt.supplier+' &middot; '+opt.label+'</div>'
     +'<div class="ttflag"><span class="ttf-icon ttf-amber"><i class="fa fa-lock" style="font-size:7px;color:#fff"></i></span><span>'+msg+'</span></div>';
+}
+// Row-level "exception detected" flag - shown on the part line regardless of which cell is
+// selected, so a repairer notices the restriction before clicking into a column, now that the
+// per-cell lock alone no longer blocks the click. Mirrors the label already used per-cell.
+function _excRowPillHtml(part){
+  if(!part.exc) return '';
+  var lbl=partExceptionLabel(part, activeMroExceptions(), activeMroTypes());
+  if(!lbl) return '';
+  return '<span class="exc-pill oem" title="Exception detected — '+_escAttr(part.exc.category)+' is restricted under the active rule\'s Exceptions config: '+_escAttr(lbl)+'."><i class="fa fa-exclamation-triangle" style="font-size:8px;margin-right:3px"></i>'+lbl.toUpperCase()+'</span>';
 }
 function render(){
   var h='';
@@ -3954,7 +3989,7 @@ function render(){
       +'<span style="font-size:10px;font-weight:600;color:#111827;min-width:16px">'+(i+1)+'</span>'
       +'<input type="text" inputmode="numeric" id="qty-'+p.id+'" value="'+QTY[p.id]+'" placeholder="" style="width:24px;border:1px solid #d1d5db;border-radius:3px;padding:3px 4px;font-size:11px;text-align:center;color:#1f2937;font-family:inherit;-moz-appearance:textfield" onclick="event.stopPropagation()" onchange="QTY[\''+p.id+'\']=this.value">'
       +'</div>'
-      +'<div><div style="font-weight:700;color:#222;font-size:12px">'+p.name+'</div>'
+      +'<div><div style="font-weight:700;color:#222;font-size:12px;display:flex;align-items:center;gap:6px">'+p.name+_excRowPillHtml(p)+'</div>'
       +'<div style="font-size:11px;color:#6b7280;margin-top:2px">Dealer: '+p.num+'</div>'
       +'<div style="font-size:11px;color:#6b7280">List: '+fmt(p.list)+' ea</div>'
       +'</div></div></td>';
@@ -3966,7 +4001,7 @@ function render(){
       var en=_escAttr(p.name),ep=_escAttr(opt.pno),es=_escAttr(opt.supplier);
       var _fcls=CHIP_FILTER?(chipHas(opt,CHIP_FILTER,p)?' npc-hit':' npc-dim'):'';
       var _cell=resolveCell(p,opt);
-      if(!_cell.allowed){
+      if(!cellManualSelectable(_cell)){
         h+='<td class="new-price-cell npc-locked'+_fcls+' ttw">';
         var _etdL=isLongETD(opt);
         if(opt.best||opt.mandate||opt.cmt||opt.photo||_etdL){
@@ -3987,6 +4022,12 @@ function render(){
       }
       h+='<td class="new-price-cell'+(isSel?' npc-sel':'')+_fcls+' ttw" onclick="toggle(\''+p.id+'\',\''+sid+'\')">';
       var _etd=isLongETD(opt);
+      // Safety-exception offers are no longer hard-blocked (see cellManualSelectable) but the
+      // lock stays visible here, per-cell, so a repairer selecting it is a conscious choice -
+      // same "allow but warn" pattern as everywhere else on this grid, not a silent unlock.
+      if(_cell.lockReason==='safety'){
+        h+='<div class="chip-sq chip-etd" style="position:absolute;bottom:3px;left:3px;top:auto;right:auto;background:#fee2e2" title="Exception: '+_escAttr(partExceptionLabel(p,activeMroExceptions(),activeMroTypes())||'Restricted')+' under this rule"><i class="fa fa-lock" style="font-size:8px;color:#b91c1c"></i></div>';
+      }
       // No per-cell "recommended" badge - the row's green/MODIFY selection state (Recommended
       // is the default Quick Select) already shows which pick is recommended; a persistent
       // badge here was redundant with that and confusing once a repairer selected elsewhere.
@@ -4032,6 +4073,7 @@ function render(){
       h+='<div class="tt"><div class="tth" style="color:'+tcol+'">'+opt.supplier+' &middot; '+opt.label+'</div>'
         +(opt.best?'<div class="ttflag"><span class="ttf-icon ttf-green">'+chipIconSvg('best',8)+'</span><span><b>Same part #</b> - matches dealer #'+opt.pno+'</span></div>':'')
         +(opt.mandate?'<div class="ttflag"><span class="ttf-icon ttf-blue" style="font-size:9px;color:#fff">&#9733;</span><span><b>Donor Part Match</b> - Matches '+(opt.mandateInsurer||'insurer')+' donor part requirement</span></div>':'')
+        +(_cell.lockReason==='safety'?'<div class="ttflag"><span class="ttf-icon ttf-amber"><i class="fa fa-lock" style="font-size:7px;color:#fff"></i></span><span style="color:#b91c1c"><b>Exception</b> - '+(partExceptionLabel(p,activeMroExceptions(),activeMroTypes())||'Restricted')+' under this rule. Selectable, but flagged for review.</span></div>':'')
         +(opt.deliveryAlert?'<div class="ttflag"><span class="ttf-icon ttf-amber">'+chipIconSvg('eta',8)+'</span><span style="color:#d97706"><b>ETD</b> - '+(opt.deliveryNote||'ETD may slip')+'</span></div>':'')
         +(opt.cmt?'<div class="ttflag"><span class="ttf-icon ttf-grey">'+chipIconSvg('cmt',8)+'</span><span><b>Comment</b> - &ldquo;'+opt.cmt+'&rdquo;</span></div>':'')
         +(opt.photo?'<div class="ttflag"><span class="ttf-icon ttf-skyblue">'+chipIconSvg('photo',8)+'</span><span><b>Image</b> - Photo attached</span></div><div style="text-align:center;margin:2px 0 6px"><img src="'+getDemoPhotoSrc()+'" onclick="event.stopPropagation();openHeadlampPhoto()" style="width:100%;max-height:70px;object-fit:cover;border-radius:3px;cursor:pointer;border:1px solid #e5e7eb"></div>':'')
@@ -4049,7 +4091,7 @@ function render(){
         // engine actually did to reach this sell price, equivalent to what the deleted
         // QuoteGrid's CellPop popover showed.
         +(_cell.res.na?'<div class="ttr-sub"><span class="ttl">⛔ Not accepted under this rule</span><span class="ttv">$0.00</span></div>':'')
-        +(_cell.overridden?'<div class="ttr-sub"><span class="ttl">⇄ Matched to '+(window.MRO.PT_NAME(_cell.condRef)||'other type')+'\'s rate'+(_cell.condCapped?' &middot; capped':'')+'</span><span class="ttv">'+fmt(_cell.preOverride)+' &rarr; '+fmt(_cell.res.sell)+'</span></div>':'')
+        +(_cell.overridden?'<div class="ttr-sub"><span class="ttl">⇄ Matched to '+(condRefRuleLabel(p,_cell.condRef)||((window.MRO.PT_NAME(_cell.condRef)||'other type')+'\'s rate'))+(_cell.condCapped?' &middot; capped':'')+'</span><span class="ttv">'+fmt(_cell.preOverride)+' &rarr; '+fmt(_cell.res.sell)+'</span></div>':'')
         +(_cell.res.capped?'<div class="ttr-sub"><span class="ttl">⛰ Cap applied'+(_cell.pt&&_cell.pt.cap&&window.MRO.CAP_TYPES[_cell.pt.cap.type]?' ('+window.MRO.CAP_TYPES[_cell.pt.cap.type].label+')':'')+'</span><span class="ttv">'+fmt(_cell.res.preCapSell!=null?_cell.res.preCapSell:_cell.res.sell)+' &rarr; '+fmt(_cell.res.sell)+'</span></div>':'')
         +(_cell.lineOverridden?'<div class="ttr-sub"><span class="ttl">&#9998; Manually overridden for this line</span><span class="ttv">'+fmt(_cell.preLineOverride)+' &rarr; '+fmt(_cell.res.sell)+'</span></div>':'')
         +'<div class="ttr" style="border-bottom:none"><span class="ttl" style="display:inline-flex;align-items:center;gap:5px">Your Sell <span style="background:#f1f5f9;color:#6b7280;border-radius:10px;padding:1px 7px;font-size:9px;font-weight:600">'+_rulePill+'</span></span><span class="ttv">'+fmt(_sell)+'</span></div>'
@@ -4226,7 +4268,7 @@ function selectColumn(sid){
   for(var i=0;i<PARTS.length;i++){
     var p=PARTS[i],opt=null;
     for(var j=0;j<p.opts.length;j++){ if(p.opts[j].sid===sid){opt=p.opts[j];break;} }
-    if(opt && resolveCell(p,opt).allowed){ SEL[p.id]=sid; if(!QTY[p.id]) QTY[p.id]='1'; }
+    if(opt && cellManualSelectable(resolveCell(p,opt))){ SEL[p.id]=sid; if(!QTY[p.id]) QTY[p.id]='1'; }
   }
   updateTotals();render();
   if(document.getElementById('list-view')&&document.getElementById('list-view').style.display==='block') renderList();
@@ -4249,8 +4291,9 @@ function _partFor(pid){
 }
 function toggle(pid,sid){
   var o=_optFor(pid,sid),p=_partFor(pid);
-  // Locked by a vehicle-age rule, a safety exception, or a conditional rule - not selectable.
-  if(o&&p&&!resolveCell(p,o).allowed) return;
+  // Locked by a vehicle-age rule or a conditional rule - still a hard block. A safety-exception
+  // lock is "allow but warn" instead - see cellManualSelectable.
+  if(o&&p&&!cellManualSelectable(resolveCell(p,o))) return;
   // Selecting a part type this insurer refuses needs an explicit acknowledgement.
   if(SEL[pid]!==sid && !NA_ACK[pid+'|'+sid]){
     if(o&&isNotAccepted(o)){ openNaConfirm(pid,sid,o); return; }
@@ -4780,7 +4823,7 @@ function renderList(){
     var p=PARTS[i],ss=SEL[p.id];
     // Part header
     h+='<div class="lv-part-hd">'
-      +'<span class="lv-part-name">'+p.name+'</span>'
+      +'<span class="lv-part-name">'+p.name+'</span>'+_excRowPillHtml(p)
       +'<span class="lv-part-meta">Dealer Part Nr: <b>'+p.num.replace('#','')+'</b></span>'
       +'<span class="lv-part-meta">Qty: <input class="lv-qty-input" type="number" value="1" min="1"></span>'
       +'<span class="lv-part-meta">Dealer List Price: <b>'+fmt(p.list)+'</b></span>'
@@ -4792,7 +4835,8 @@ function renderList(){
       var opt=p.opts[j];
       var isSel=(ss===opt.sid);
       var _cellL=resolveCell(p,opt);
-      var _rowLocked=!_cellL.allowed;
+      var _rowLocked=!cellManualSelectable(_cellL);
+      var _rowExc=_cellL.lockReason==='safety';
       var scol=SUP_COLORS[opt.sid]||'#a3a3a3';
       var sname=SUP_NAMES[opt.sid]||opt.supplier;
       var _sell=_rowLocked?0:sellPrice(p,opt);
@@ -4826,9 +4870,10 @@ function renderList(){
         +'<div class="lv-info-row"><span>Part Type</span><span>'+opt.label+'</span></div>'
         +'<div class="lv-info-sep"></div>'
         +(_rowLocked
-          ? '<div class="lv-info-row" style="border-bottom:none"><span>Status</span><span style="color:#b91c1c">'+(_cellL.lockReason==='age'?'Blocked - age rule':_cellL.lockReason==='safety'?'Blocked - safety exception':'Blocked - conditional rule')+'</span></div>'
+          ? '<div class="lv-info-row" style="border-bottom:none"><span>Status</span><span style="color:#b91c1c">'+(_cellL.lockReason==='age'?'Blocked - age rule':'Blocked - conditional rule')+'</span></div>'
           // Same derivation chain, labels and order as the grid tooltip.
-          : '<div class="lv-info-row"><span>List Price</span><span>'+fmt(p.list)+'</span></div>'
+          : (_rowExc?'<div class="lv-info-row"><span style="color:#b91c1c">Exception</span><span style="color:#b91c1c">'+(partExceptionLabel(p,activeMroExceptions(),activeMroTypes())||'Restricted')+'</span></div>':'')
+            +'<div class="lv-info-row"><span>List Price</span><span>'+fmt(p.list)+'</span></div>'
             +(_discPctLV!=null?'<div class="lv-info-sub"><span>Dealer Discount <span class="lv-info-q">'+_discPctLV.toFixed(0)+'% (target 20%)</span></span><span>-'+fmt(p.list-opt.cost)+'</span></div>':'')
             +'<div class="lv-info-row"><span>'+(_setlLV>0?'Invoice Cost':'Your Cost')+'</span><span>'+fmt(opt.cost)+'</span></div>'
             +(_setlLV>0?'<div class="lv-info-sub"><span>Settlement Discount <span class="lv-info-q">'+_setlLblLV+'</span></span><span>-'+fmt(opt.cost-netCost(opt))+'</span></div>':'')
@@ -4846,7 +4891,7 @@ function renderList(){
       // Qty
       h+='<td style="text-align:center;font-size:12px;font-weight:'+(isSel?'700':'400')+'">1</td>';
       // Type
-      h+='<td><span class="lv-type" style="color:'+tcol+'">'+opt.label+'</span></td>';
+      h+='<td><span class="lv-type" style="color:'+tcol+'">'+opt.label+'</span>'+(_rowExc?' <i class="fa fa-lock" style="font-size:8px;color:#b91c1c" title="Exception: selectable, but flagged for review"></i>':'')+'</td>';
       // Financials
       if(_rowLocked){
         h+='<td class="lv-num">—</td><td class="lv-num">—</td><td class="lv-num">—</td><td class="lv-num">—</td>';
