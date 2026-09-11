@@ -4647,8 +4647,17 @@ function rulePillText(opt,part){
   if(c.lineOverridden)return 'manual price';
   if(c.res.na)return 'not accepted';
   if(c.overridden)return 'matched rate';
-  var e=getEffectiveRule(opt);
-  return e ? (e.mode==='markup' ? ('+'+e.pct+'% of cost') : (e.pct+'% of list')) : '';
+  // Label the clause that actually won resolveRule()'s higher/lower comparison (res.winnerIdx),
+  // not just clauses[0] - getEffectiveRule() only ever returns clauses[0] and so mislabelled
+  // e.g. an NRMA OEM line settled by its 20%-markup clause as "100% of list".
+  var steps=c.res.steps;
+  if(!steps || !steps.length) return '';
+  var cl=steps[c.res.winnerIdx||0].cl;
+  if(cl.method==='markupCost'||cl.method==='showMarkup') return '+'+cl.value+'% of cost';
+  if(cl.method==='pctList')    return cl.value+'% of list';
+  if(cl.method==='listPrice')  return 'dealer list';
+  if(cl.method==='manual')     return 'fixed price';
+  return '';
 }
 
 // -- Print menu --
