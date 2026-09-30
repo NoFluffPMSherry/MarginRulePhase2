@@ -7215,6 +7215,17 @@ const DESIGN_VARIANTS = [
   {id:'V5', label:'V5 · Dense + pinned', desc:'Everything collapsed · reorder to suit you · rule summary pinned to the bottom'},
 ];
 
+/* Variant from the URL: ?edit=V2 when served normally, or a plain #V2 hash (the only thing a hosted
+   artifact frame passes through). */
+function variantFromUrl(){
+  try{
+    const q=(new URLSearchParams(window.location.search).get('edit')||'').toUpperCase();
+    const h=(window.location.hash||'').replace(/^#/,'').toUpperCase();
+    const v=q||h;
+    return DESIGN_VARIANTS.some(d=>d.id===v)?v:null;
+  }catch(e){ return null; }
+}
+
 function ptLine(pt){
   if(isNA(pt)) return 'Not accepted';
   const parts = pt.clauses.map(cl=>{
@@ -7434,12 +7445,10 @@ function RuleForm({onBack,onSave,editingRule,isCopy,existingRules=[],viewOnly=fa
   };
 
   /* ── Phase 2 design-sprint options (V1–V5): layouts over the SAME state as above ── */
-  const [variant,setVariantRaw] = useState(()=>{
-    try{ const v=(new URLSearchParams(window.location.search).get('edit')||'').toUpperCase(); return DESIGN_VARIANTS.some(d=>d.id===v)?v:'V0'; }catch(e){ return 'V0'; }
-  });
+  const [variant,setVariantRaw] = useState(()=>variantFromUrl()||'V0');
   const setVariant = v => {
     setVariantRaw(v); setOpenCards(cardDefaults(v)); setConfirming(false);
-    try{ const u=new URL(window.location.href); if(v==='V0') u.searchParams.delete('edit'); else u.searchParams.set('edit',v); window.history.replaceState(null,'',u); }catch(e){}
+    try{ const u=new URL(window.location.href); if(v==='V0') u.searchParams.delete('edit'); else u.searchParams.set('edit',v); u.hash = v==='V0' ? '' : v; window.history.replaceState(null,'',u); }catch(e){}
   };
   const nAge = ageRules.filter(r=>r.enabled).length;
   const nCond = condRules.filter(r=>r.enabled).length;
@@ -8061,7 +8070,7 @@ function Onboarding({onBack,onFinish,onSaveRules}) {
 
 /* --- ROOT APP --- */
 function RulesApp() {
-  const [screen,setScreen]   = useState(()=>{ try{ return /^V[0-5]$/i.test(new URLSearchParams(window.location.search).get("edit")||"")?"form":"dashboard"; }catch(e){ return "dashboard"; } });
+  const [screen,setScreen]   = useState(()=>variantFromUrl()?"form":"dashboard");
   const [rules,setRules] = useState([
     {id:101,insurer:"NRMA Standard",    appliesTo:"NRMA Insurance", oem:"100% of List",aftm:"80% of List or 20% Markup on Cost (whichever is higher)",reco:"75% of List",parallel:"80% of List",recycled:"70% of List",pinned:false,
       debtors:["NRMA Insurance","RACV Insurance","CGU Insurance","SGIO","SGIC","Swann Insurance","WFI"]},
@@ -8129,7 +8138,7 @@ function RulesApp() {
 
 const root=ReactDOM.createRoot(document.getElementById('settings-react-root'));
 root.render(<RulesApp/>);
-try{ if(/^V[0-5]$/i.test(new URLSearchParams(window.location.search).get("edit")||"")) setTimeout(function(){ if(typeof switchTab==="function") switchTab("rules"); },0); }catch(e){}
+try{ if(variantFromUrl()) setTimeout(function(){ if(typeof switchTab==="function") switchTab("rules"); },0); }catch(e){}
 })();
 </script>
 

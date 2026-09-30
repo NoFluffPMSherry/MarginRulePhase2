@@ -30,7 +30,7 @@ linking that needs `http(s)://`).
 ## Phase 2 design sprint — Edit / Create Rule screen options
 Exploratory variants of the rule editor (see the Notion "Phase 2 Design Sprint" page). Each is a
 layout over the same rule state, so a rule saved in one option reads identically in the others and in
-Check Price. Open one directly with `?edit=` (e.g. `index.html?edit=V2`) or switch with the
+Check Price. Open one directly with `?edit=` (e.g. `index.html?edit=V2`) or a plain `#V2` hash, or switch with the
 "Design options" bar at the top of the Add/Edit Rule screen. Shared across V1–V5: suggested
 work-provider mapping chips, the plain-English "Your rule summary", and a confirm step when saving
 changes to advanced rules on an existing rule.
