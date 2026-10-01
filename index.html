@@ -1607,6 +1607,8 @@ input[type=number]{-moz-appearance:textfield}
 .sum-li{display:flex;gap:8px;font-size:12px;color:var(--text);padding:4px 0;line-height:1.5}
 .sum-li .bullet{color:var(--text-4)}
 .sum-li b{color:var(--ink)}
+.sum-exc{margin-top:12px;padding-top:12px;border-top:1px solid var(--border-lt)}
+.sum-sub{color:var(--text-3);font-weight:400}
 .sum-debtors{margin-top:12px;padding-top:12px;border-top:1px solid var(--border-lt)}
 .sum-dk{font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px}
 .sum-chips{display:flex;flex-wrap:wrap;gap:5px}
@@ -6740,8 +6742,18 @@ function ExamplePanel({ pt, samplePart, setSamplePart, types, condRules }){
 }
 
 /* ─── summary card — Phase 2 verbatim, "appliesTo" is Phase 1's mapped debtor list ─── */
-function SummaryCard({ types, ageRules, condRules, ruleName, appliesTo, eyebrow }){
+function SummaryCard({ types, ageRules, condRules, exceptions, notes, ruleName, appliesTo, eyebrow }){
   const line = ptLine;
+  const excLabel = g => {
+    const names = types.filter(t=>(g.allowedTypes||[]).includes(t.id)).map(t=>t.name);
+    let s = names.length===0 ? 'Not accepted' : names.length===types.length ? 'All types' : names.join(' + ')+' only';
+    const o = g.override;
+    if(o && o.enabled){
+      const m = METHODS[o.method];
+      s += ' · ' + (m.kind==='flat' ? 'dealer list' : m.kind==='dollar' ? `$${o.value} fixed` : o.method==='pctList' ? `${o.value}% of list` : `+${o.value}% markup`);
+    }
+    return s;
+  };
   return (
     <div className="sum">
       <div className="sum-eyebrow">{eyebrow||'Rule Summary'}</div>
@@ -6780,6 +6792,17 @@ function SummaryCard({ types, ageRules, condRules, ruleName, appliesTo, eyebrow 
         }
         return <div className="sum-li" key={r.id}><span className="bullet">•</span><span><b>When</b> {cond}, <b>{nm(r.target)}</b> should {then}</span></div>;
       })}
+      {((exceptions||[]).length>0 || (notes||[]).length>0) && (
+        <div className="sum-exc">
+          <div className="sum-dk">Exceptions ({(exceptions||[]).length + (notes||[]).length})</div>
+          {(notes||[]).map((n,i)=>(
+            <div className="sum-li" key={'n'+i}><span className="bullet">•</span><span><b>Baseline exception:</b> {n}</span></div>
+          ))}
+          {(exceptions||[]).map(g=>(
+            <div className="sum-li" key={g.id}><span className="bullet">•</span><span><b>{g.category}:</b> {excLabel(g)}{g.parts && g.parts.length ? <span className="sum-sub"> ({g.parts.length} part{g.parts.length===1?'':'s'})</span> : null}</span></div>
+          ))}
+        </div>
+      )}
       <div className="sum-debtors">
         <div className="sum-dk">Mapped debtors ({appliesTo.length})</div>
         <div className="sum-chips">
@@ -7538,7 +7561,8 @@ function RuleForm({onBack,onSave,editingRule,isCopy,existingRules=[],viewOnly=fa
       </div>
     </>
   );
-  const summaryCard = <SummaryCard eyebrow="Your rule summary" types={types} ageRules={ageRules} condRules={condRules} ruleName={ruleName} appliesTo={debtors}/>;
+  const baselineNotes = ((editingRule && editingRule.exceptions) || []).filter(e=>e && e.t).map(e=>e.t);
+  const summaryCard = <SummaryCard eyebrow="Your rule summary" types={types} ageRules={ageRules} condRules={condRules} exceptions={mroExceptions} notes={baselineNotes} ruleName={ruleName} appliesTo={debtors}/>;
   const summaryNote = <div className="dv-note">This is your real rule — exactly what Check Price will apply. It updates as you edit.</div>;
   const exampleDisclosure = (
     <div>
@@ -7851,7 +7875,7 @@ function RuleForm({onBack,onSave,editingRule,isCopy,existingRules=[],viewOnly=fa
         </div>
         <div className="rail">
           <ExamplePanel pt={focusPt} samplePart={samplePart} setSamplePart={setSamplePart} types={types} condRules={condRules}/>
-          <SummaryCard types={types} ageRules={ageRules} condRules={condRules} ruleName={ruleName} appliesTo={debtors}/>
+          <SummaryCard types={types} ageRules={ageRules} condRules={condRules} exceptions={mroExceptions} notes={baselineNotes} ruleName={ruleName} appliesTo={debtors}/>
           {!valid && !viewOnly && <div style={{background:"#fefce8",border:"1px solid #fde68a",borderRadius:"3px",padding:"10px 12px",fontSize:"12px",color:"#92400e"}}>{invalidMsg}</div>}
           <div className="rail-actions">
             <button className="btn btn-ghost btn-lg" style={{justifyContent:'center'}} onClick={onBack}>{viewOnly?"Close":"Cancel"}</button>
